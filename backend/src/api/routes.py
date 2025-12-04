@@ -70,6 +70,12 @@ class UndoDiagramRequest(BaseModel):
     session_id: str
 
 
+class RegenerateFormatRequest(BaseModel):
+    """Request model for regenerating diagram in different format."""
+    session_id: str
+    outformat: str
+
+
 class ExecuteCodeRequest(BaseModel):
     """Request model for direct code execution."""
     code: str
@@ -243,6 +249,52 @@ async def modify_diagram(request: ModifyDiagramRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to modify diagram: {error_detail}"
+        )
+
+
+@router.post("/regenerate-format", response_model=GenerateDiagramResponse)
+async def regenerate_format(request: RegenerateFormatRequest):
+    """
+    Regenerate diagram in a different output format.
+    
+    Args:
+        request: Regeneration request with session ID and desired format
+        
+    Returns:
+        Response with new diagram URL
+    """
+    try:
+        current_spec = current_specs.get(request.session_id)
+        if not current_spec:
+            raise HTTPException(
+                status_code=404,
+                detail="Session not found"
+            )
+        
+        # Create a copy of the spec with new format
+        from copy import deepcopy
+        spec_copy = deepcopy(current_spec)
+        spec_copy.outformat = request.outformat
+        
+        # Regenerate diagram with new format
+        diagram_path = generator.generate(spec_copy)
+        
+        # Return relative URL
+        diagram_filename = os.path.basename(diagram_path)
+        diagram_url = f"/api/diagrams/{diagram_filename}"
+        
+        return GenerateDiagramResponse(
+            diagram_url=diagram_url,
+            message=f"Diagram regenerated in {request.outformat.upper()} format",
+            session_id=request.session_id,
+            generated_code=None  # Don't regenerate code, just the diagram
+        )
+    
+    except Exception as e:
+        logger.error(f"Error regenerating format: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to regenerate diagram: {str(e)}"
         )
 
 

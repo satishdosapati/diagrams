@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generateDiagram, getDiagramUrl } from '../services/api'
+import { generateDiagram, getDiagramUrl, regenerateFormat } from '../services/api'
 import ProviderSelector from './ProviderSelector'
 import DiagramChat from './DiagramChat'
 import ExamplesPanel from './ExamplesPanel'
@@ -17,7 +17,9 @@ function DiagramGenerator() {
   const [diagramUrl, setDiagramUrl] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [downloadFormat, setDownloadFormat] = useState<OutputFormat>('png')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showChat, setShowChat] = useState(false)
@@ -49,6 +51,9 @@ function DiagramGenerator() {
         setGeneratedCode(response.generated_code)
       }
       
+      // Set download format to match generation format
+      setDownloadFormat(outputFormat)
+      
       // Extract filename from URL
       const filename = response.diagram_url.split('/').pop()
       if (filename) {
@@ -70,6 +75,26 @@ function DiagramGenerator() {
   const handleDiagramGenerated = (url: string) => {
     setDiagramUrl(url)
     setShowChat(true)
+  }
+
+  const handleFormatChange = async (newFormat: OutputFormat) => {
+    if (!sessionId || !diagramUrl) return
+    
+    setDownloadFormat(newFormat)
+    setIsRegenerating(true)
+    
+    try {
+      const response = await regenerateFormat(sessionId, newFormat)
+      const filename = response.diagram_url.split('/').pop()
+      if (filename) {
+        const url = getDiagramUrl(filename)
+        setDiagramUrl(url)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to regenerate format')
+    } finally {
+      setIsRegenerating(false)
+    }
   }
 
   return (
@@ -203,7 +228,7 @@ function DiagramGenerator() {
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Generated Diagram</h3>
               <div className="border rounded-lg p-4 bg-gray-50">
-                {outputFormat === 'dot' ? (
+                {downloadFormat === 'dot' ? (
                   <div className="w-full max-w-4xl mx-auto">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800 mb-2">
@@ -222,34 +247,57 @@ function DiagramGenerator() {
                   />
                 )}
               </div>
-              <div className="mt-4 flex gap-2">
-                <a
-                  href={diagramUrl}
-                  download
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                >
-                  Download {outputFormat.toUpperCase()}
-                </a>
-                {outputFormat === 'svg' && (
-                  <a
-                    href="https://app.diagrams.net/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <label htmlFor="downloadFormat" className="text-sm font-medium text-gray-700">
+                    Download as:
+                  </label>
+                  <select
+                    id="downloadFormat"
+                    value={downloadFormat}
+                    onChange={(e) => handleFormatChange(e.target.value as OutputFormat)}
+                    disabled={isRegenerating}
+                    className="px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    Open in Draw.io
-                  </a>
-                )}
-                {outputFormat === 'dot' && (
+                    <option value="png">PNG</option>
+                    <option value="svg">SVG</option>
+                    <option value="pdf">PDF</option>
+                    <option value="dot">DOT</option>
+                    <option value="jpg">JPG</option>
+                  </select>
+                  {isRegenerating && (
+                    <span className="text-sm text-gray-500">Regenerating...</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
                   <a
-                    href="https://edotor.net/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    href={diagramUrl}
+                    download
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    Open in Edotor
+                    Download {downloadFormat.toUpperCase()}
                   </a>
-                )}
+                  {downloadFormat === 'svg' && (
+                    <a
+                      href="https://app.diagrams.net/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      Open in Draw.io
+                    </a>
+                  )}
+                  {downloadFormat === 'dot' && (
+                    <a
+                      href="https://edotor.net/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      Open in Edotor
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           )}

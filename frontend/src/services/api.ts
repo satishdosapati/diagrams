@@ -127,6 +127,24 @@ export async function undoDiagram(sessionId: string): Promise<ModifyDiagramRespo
   return response.json();
 }
 
+export async function regenerateFormat(
+  sessionId: string,
+  format: string
+): Promise<GenerateDiagramResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/regenerate-format`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, outformat: format }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to regenerate format');
+  }
+
+  return response.json();
+}
+
 export interface ExecuteCodeRequest {
   code: string;
   provider?: string;
