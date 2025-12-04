@@ -197,7 +197,7 @@ class ComponentResolver:
         if similar_classes:
             error_parts.append(
                 f"\nDid you mean: {', '.join(similar_classes[:3])}?"
-            )
+                )
         
         sorted_classes = sorted(available_classes)
         error_parts.append(
