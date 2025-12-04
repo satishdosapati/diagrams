@@ -1,7 +1,7 @@
 """
 Simplified ArchitectureSpec model for MVP (AWS only).
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List, Literal
 from enum import Enum
 
