@@ -75,6 +75,48 @@ def normalize_format_list(formats: Union[str, List[str]]) -> Union[str, List[str
     return normalize_format(formats)
 
 
+# Python reserved keywords that cannot be used as variable names
+PYTHON_RESERVED_KEYWORDS = {
+    "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else",
+    "except", "False", "finally", "for", "from", "global", "if", "import", "in", "is",
+    "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return", "True", "try",
+    "while", "with", "yield"
+}
+
+
+def sanitize_variable_name(name: str) -> str:
+    """
+    Sanitize a variable name to ensure it's a valid Python identifier and not a reserved keyword.
+    
+    Args:
+        name: Variable name to sanitize
+        
+    Returns:
+        Sanitized variable name that is safe to use in Python code
+    """
+    # Replace hyphens with underscores
+    sanitized = name.replace("-", "_")
+    
+    # Check if it's a reserved keyword
+    if sanitized.lower() in PYTHON_RESERVED_KEYWORDS:
+        # Append suffix to make it safe
+        sanitized = f"{sanitized}_comp"
+    
+    # Ensure it starts with a letter or underscore (Python identifier rules)
+    if sanitized and not (sanitized[0].isalpha() or sanitized[0] == "_"):
+        sanitized = f"_{sanitized}"
+    
+    # Ensure it's a valid Python identifier
+    if not sanitized.isidentifier():
+        # Replace invalid characters with underscores
+        sanitized = "".join(c if c.isalnum() or c == "_" else "_" for c in sanitized)
+        # Ensure it doesn't start with a number
+        if sanitized and sanitized[0].isdigit():
+            sanitized = f"comp_{sanitized}"
+    
+    return sanitized
+
+
 class DiagramsEngine:
     """Generates architecture diagrams using the Diagrams library."""
     
@@ -176,7 +218,7 @@ class DiagramsEngine:
         # Generate standalone components (not in any cluster)
         for comp in spec.components:
             if comp.id not in components_in_clusters:
-                var_name = comp.id.replace("-", "_")
+                var_name = sanitize_variable_name(comp.id)
                 
                 # Handle blank/placeholder nodes
                 if comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"]):
@@ -236,7 +278,7 @@ class DiagramsEngine:
         cluster_map: dict
     ):
         """Generate cluster code block with parent_id-based nesting support."""
-        cluster_var = cluster.id.replace("-", "_")
+        cluster_var = sanitize_variable_name(cluster.id)
         cluster_vars[cluster.id] = cluster_var
         
         # Build Cluster constructor parameters
@@ -255,7 +297,7 @@ class DiagramsEngine:
         for comp_id in cluster.component_ids:
             comp = cluster_component_map.get(comp_id)
             if comp:
-                var_name = comp.id.replace("-", "_")
+                var_name = sanitize_variable_name(comp.id)
                 
                 # Handle blank/placeholder nodes
                 if comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"]):
