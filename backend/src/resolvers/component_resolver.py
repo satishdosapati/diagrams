@@ -2,7 +2,7 @@
 ComponentResolver - Maps components to provider-specific Diagrams classes.
 Uses library-first discovery as source of truth.
 """
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Set
 import importlib
 import logging
 
