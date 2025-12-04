@@ -5,7 +5,7 @@ import os
 from strands import Agent
 from strands.models import BedrockModel
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, Optional
 
 
 class DiagramClassification(BaseModel):
@@ -17,7 +17,7 @@ class DiagramClassification(BaseModel):
         "data_pipeline",
         "c4_model"
     ]
-    provider: Literal["aws", "azure", "gcp"] | None
+    provider: Optional[Literal["aws", "azure", "gcp"]] = None
     complexity: Literal["simple", "medium", "complex"] = "medium"
 
 
