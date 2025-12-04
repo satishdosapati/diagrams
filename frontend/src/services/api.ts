@@ -40,34 +40,6 @@ export interface GenerateDiagramResponse {
   generated_code?: string;
 }
 
-export interface ModifyDiagramRequest {
-  session_id: string;
-  modification: string;
-}
-
-export interface ArchitectureSpec {
-  title: string;
-  provider: string;
-  components: Array<{
-    id: string;
-    node_id: string;
-    label?: string;
-    [key: string]: unknown;
-  }>;
-  connections: Array<{
-    from_id: string;
-    to_id: string;
-    [key: string]: unknown;
-  }>;
-  [key: string]: unknown;
-}
-
-export interface ModifyDiagramResponse {
-  diagram_url: string;
-  message: string;
-  changes: string[];
-  updated_spec: ArchitectureSpec;
-}
 
 export async function generateDiagram(
   description: string,
@@ -94,55 +66,6 @@ export function getDiagramUrl(filename: string): string {
   return `${API_BASE_URL}/api/diagrams/${filename}`;
 }
 
-export async function modifyDiagram(
-  sessionId: string,
-  modification: string
-): Promise<ModifyDiagramResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/modify-diagram`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, modification }),
-    });
-
-    if (!response.ok) {
-      // Try to get error details from response
-      let errorMessage = 'Failed to modify diagram';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || errorMessage;
-      } catch (e) {
-        // If response is not JSON, use status text
-        errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    return response.json();
-  } catch (error) {
-    // Handle network errors (CORS, connection refused, etc.)
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(`Network error: Unable to connect to backend. Please ensure the backend is running on ${API_BASE_URL}`);
-    }
-    // Re-throw other errors as-is
-    throw error;
-  }
-}
-
-export async function undoDiagram(sessionId: string): Promise<ModifyDiagramResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/undo-diagram`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to undo');
-  }
-
-  return response.json();
-}
 
 export async function regenerateFormat(
   sessionId: string,

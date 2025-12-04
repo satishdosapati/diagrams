@@ -17,7 +17,7 @@ class TestEndToEndWorkflows:
     """Test complete user workflows."""
     
     def test_complete_diagram_workflow(self):
-        """Test complete workflow: generate -> modify -> regenerate format."""
+        """Test complete workflow: generate -> regenerate format."""
         # Step 1: Generate diagram
         gen_response = client.post(
             "/api/generate-diagram",
@@ -32,19 +32,7 @@ class TestEndToEndWorkflows:
         session_id = gen_data["session_id"]
         assert "diagram_url" in gen_data
         
-        # Step 2: Modify diagram
-        mod_response = client.post(
-            "/api/modify-diagram",
-            json={
-                "session_id": session_id,
-                "modification": "Add CloudFront CDN in front"
-            }
-        )
-        assert mod_response.status_code == 200
-        mod_data = mod_response.json()
-        assert "changes" in mod_data
-        
-        # Step 3: Regenerate in different format
+        # Step 2: Regenerate in different format
         regen_response = client.post(
             "/api/regenerate-format",
             json={
@@ -118,16 +106,6 @@ with Diagram("Architecture", show=False, filename="test", outformat="png"):
     
     def test_error_handling_workflow(self):
         """Test error handling across the system."""
-        # Test invalid session
-        response = client.post(
-            "/api/modify-diagram",
-            json={
-                "session_id": "nonexistent-session-12345",
-                "modification": "test"
-            }
-        )
-        assert response.status_code == 404
-        
         # Test invalid format
         response = client.post(
             "/api/generate-diagram",

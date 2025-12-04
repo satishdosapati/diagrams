@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { generateDiagram, getDiagramUrl, regenerateFormat } from '../services/api'
 import ProviderSelector from './ProviderSelector'
-import DiagramChat from './DiagramChat'
 import ExamplesPanel from './ExamplesPanel'
 import AdvancedCodeMode from './AdvancedCodeMode'
 
@@ -22,7 +21,6 @@ function DiagramGenerator() {
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [showChat, setShowChat] = useState(false)
   const [showExamples, setShowExamples] = useState(true)
 
   const handleGenerate = async () => {
@@ -59,7 +57,6 @@ function DiagramGenerator() {
       if (filename) {
         const url = getDiagramUrl(filename)
         setDiagramUrl(url)
-        setShowChat(true)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate diagram')
@@ -74,7 +71,6 @@ function DiagramGenerator() {
 
   const handleDiagramGenerated = (url: string) => {
     setDiagramUrl(url)
-    setShowChat(true)
   }
 
   const handleFormatChange = async (newFormat: OutputFormat) => {
@@ -300,18 +296,6 @@ function DiagramGenerator() {
             </div>
           )}
 
-          {showChat && diagramUrl && sessionId && (
-            <div className="mt-6 border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4">Modify Diagram</h3>
-              <div className="border rounded-lg" style={{ height: '600px' }}>
-                <DiagramChat
-                  initialDiagramUrl={diagramUrl}
-                  sessionId={sessionId}
-                  onDiagramUpdate={(url) => setDiagramUrl(url)}
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Examples Sidebar - Small */}

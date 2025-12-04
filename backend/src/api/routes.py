@@ -13,7 +13,6 @@ import re
 
 from typing import Optional, Union, List, Literal
 from ..agents.diagram_agent import DiagramAgent
-from ..agents.modification_agent import ModificationAgent
 from ..generators.universal_generator import UniversalGenerator
 from ..models.spec import ArchitectureSpec, GraphvizAttributes
 
@@ -22,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 # Initialize agents and generator
 agent = DiagramAgent()
-modification_agent = ModificationAgent()
 generator = UniversalGenerator()
 
 # Cache for DiagramsEngine and ComponentResolver instances per provider
@@ -109,25 +107,6 @@ class GenerateDiagramResponse(BaseModel):
     message: str
     session_id: str
     generated_code: Optional[str] = None
-
-
-class ModifyDiagramRequest(BaseModel):
-    """Request model for diagram modification."""
-    session_id: str
-    modification: str
-
-
-class ModifyDiagramResponse(BaseModel):
-    """Response model for diagram modification."""
-    diagram_url: str
-    message: str
-    changes: list[str]
-    updated_spec: dict
-
-
-class UndoDiagramRequest(BaseModel):
-    """Request model for undo operation."""
-    session_id: str
 
 
 class RegenerateFormatRequest(BaseModel):
@@ -350,96 +329,6 @@ async def get_diagram(filename: str):
     return FileResponse(str(file_path))
 
 
-@router.post("/modify-diagram", response_model=ModifyDiagramResponse, tags=["diagrams"])
-async def modify_diagram(request: ModifyDiagramRequest):
-    """
-    Modify existing diagram based on chat message.
-    
-    Use this endpoint to make changes to an existing diagram through natural language.
-    Requires a valid session_id from a previous diagram generation.
-    
-    **Example Request:**
-    ```json
-    {
-        "session_id": "uuid-from-previous-request",
-        "modification": "Add a Lambda function between API Gateway and DynamoDB"
-    }
-    ```
-    
-    **Example Response:**
-    ```json
-    {
-        "diagram_url": "/api/diagrams/updated_diagram.png",
-        "message": "Diagram modified successfully",
-        "changes": ["Added Lambda function", "Updated connections"],
-        "updated_spec": {...}
-    }
-    ```
-    
-    Args:
-        request: Modification request containing:
-            - session_id: Session ID from previous diagram generation
-            - modification: Natural language description of desired changes
-    
-    Returns:
-        ModifyDiagramResponse with:
-            - diagram_url: URL to access the updated diagram
-            - message: Success message
-            - changes: List of changes made
-            - updated_spec: Updated architecture specification
-    
-    Raises:
-        HTTPException: 
-            - 404: Session not found or expired
-            - 500: Modification failed
-    """
-    try:
-        # Get current spec
-        current_spec = _get_session_spec(request.session_id)
-        if not current_spec:
-            raise HTTPException(
-                status_code=404,
-                detail="Session not found or expired. Please generate a diagram first."
-            )
-        
-        # Modify spec
-        updated_spec, changes = modification_agent.modify(
-            request.session_id,
-            current_spec,
-            request.modification
-        )
-        
-        # Generate updated diagram using universal generator
-        diagram_path = generator.generate(updated_spec)
-        
-        # Update stored spec
-        _update_session_spec(request.session_id, updated_spec)
-        
-        # Return response
-        diagram_filename = os.path.basename(diagram_path)
-        diagram_url = f"/api/diagrams/{diagram_filename}"
-        
-        return ModifyDiagramResponse(
-            diagram_url=diagram_url,
-            message="Diagram updated successfully",
-            changes=changes,
-            updated_spec=updated_spec.model_dump()
-        )
-    
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is
-        raise
-    except Exception as e:
-        logger.error(f"Error modifying diagram: {str(e)}", exc_info=True)
-        error_detail = str(e)
-        if os.getenv("DEBUG", "false").lower() == "true":
-            error_detail += f"\n\nTraceback:\n{traceback.format_exc()}"
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to modify diagram: {error_detail}"
-        )
-
-
 @router.post("/regenerate-format", response_model=GenerateDiagramResponse, tags=["diagrams"])
 async def regenerate_format(request: RegenerateFormatRequest):
     """
@@ -517,36 +406,6 @@ async def regenerate_format(request: RegenerateFormatRequest):
         )
 
 
-@router.post("/undo-diagram", response_model=ModifyDiagramResponse)
-async def undo_diagram(request: UndoDiagramRequest):
-    """
-    Undo last modification (simplified - just returns current spec).
-    In full implementation, would maintain history stack.
-    """
-    try:
-        current_spec = _get_session_spec(request.session_id)
-        if not current_spec:
-            raise HTTPException(
-                status_code=404,
-                detail="Session not found or expired"
-            )
-        
-        # Regenerate diagram with current spec using universal generator
-        diagram_path = generator.generate(current_spec)
-        
-        diagram_filename = os.path.basename(diagram_path)
-        diagram_url = f"/api/diagrams/{diagram_filename}"
-        
-        return ModifyDiagramResponse(
-            diagram_url=diagram_url,
-            message="Diagram restored",
-            changes=[],
-            updated_spec=current_spec.model_dump()
-        )
-    
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is (e.g., 404 for session not found)
-        raise
     except Exception as e:
         logger.error(f"Error undoing diagram: {str(e)}", exc_info=True)
         raise HTTPException(
