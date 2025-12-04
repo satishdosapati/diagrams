@@ -26,8 +26,6 @@ VALID_FORMATS = {
 
 # Format normalization mapping (invalid -> valid)
 FORMAT_NORMALIZATION = {
-    "jpg": "png",
-    "jpeg": "png",
     "gif": "png",  # GIF not supported, use PNG
 }
 
@@ -37,7 +35,7 @@ def normalize_format(format_str: str) -> str:
     Normalize output format to a valid Graphviz format.
     
     Args:
-        format_str: Format string (e.g., "jpg", "png", "svg")
+        format_str: Format string (e.g., "png", "svg", "pdf")
         
     Returns:
         Normalized format string (valid Graphviz format)
