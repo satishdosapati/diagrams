@@ -15,10 +15,10 @@ class ModificationAgent:
     
     def __init__(self):
         """Initialize the modification agent with state management."""
-        region = os.getenv("AWS_REGION", "us-east-1")
         model_id = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-20250514-v1:0")
         
-        self.model = BedrockModel(model_id=model_id, region=region)
+        # Create Bedrock model (region configured via AWS_REGION env var or boto3 default)
+        self.model = BedrockModel(model_id=model_id)
         # Use a temporary directory for session storage (in-memory-like behavior)
         # Note: FileSessionManager requires a session_id, so we'll create one per session
         self.storage_dir = os.path.join(tempfile.gettempdir(), "diagram-generator-sessions")
@@ -70,7 +70,7 @@ Always maintain the same provider as the original spec unless explicitly request
         # Create agent instance with session manager for this session
         agent = Agent(
             model=self.model,
-            structured_output=ArchitectureSpec,
+            structured_output_model=ArchitectureSpec,
             session_manager=session_manager,
             system_prompt=self.system_prompt
         )

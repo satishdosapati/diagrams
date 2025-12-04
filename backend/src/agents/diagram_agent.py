@@ -15,14 +15,10 @@ class DiagramAgent:
     def __init__(self):
         """Initialize the agent with Bedrock model."""
         # Get model configuration from environment
-        region = os.getenv("AWS_REGION", "us-east-1")
         model_id = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-20250514-v1:0")
         
-        # Create Bedrock model
-        model = BedrockModel(
-            model_id=model_id,
-            region=region
-        )
+        # Create Bedrock model (region configured via AWS_REGION env var or boto3 default)
+        model = BedrockModel(model_id=model_id)
         
         # Initialize classifier
         self.classifier = ClassifierAgent()
@@ -30,7 +26,7 @@ class DiagramAgent:
         # Create agent with structured output
         self.agent = Agent(
             model=model,
-            structured_output=ArchitectureSpec,
+            structured_output_model=ArchitectureSpec,
             system_prompt="""You are an expert at understanding cloud architecture descriptions and converting them into structured specifications.
 
 Your task:

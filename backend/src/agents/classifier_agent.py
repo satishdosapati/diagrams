@@ -26,14 +26,14 @@ class ClassifierAgent:
     
     def __init__(self):
         """Initialize classifier agent."""
-        region = os.getenv("AWS_REGION", "us-east-1")
         model_id = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-20250514-v1:0")
         
-        model = BedrockModel(model_id=model_id, region=region)
+        # Create Bedrock model (region configured via AWS_REGION env var or boto3 default)
+        model = BedrockModel(model_id=model_id)
         
         self.agent = Agent(
             model=model,
-            structured_output=DiagramClassification,
+            structured_output_model=DiagramClassification,
             system_prompt="""Classify architecture diagram requests into types:
 
 - cloud_architecture: AWS/Azure/GCP service diagrams
