@@ -2,9 +2,10 @@
 Modification agent for iterative diagram refinement with state management.
 """
 import os
+import tempfile
 from strands import Agent
 from strands.models import BedrockModel
-from strands.session import InMemorySessionManager
+from strands.session.file_session_manager import FileSessionManager
 
 from ..models.spec import ArchitectureSpec
 
@@ -17,14 +18,13 @@ class ModificationAgent:
         region = os.getenv("AWS_REGION", "us-east-1")
         model_id = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-20250514-v1:0")
         
-        model = BedrockModel(model_id=model_id, region=region)
-        self.session_manager = InMemorySessionManager()
+        self.model = BedrockModel(model_id=model_id, region=region)
+        # Use a temporary directory for session storage (in-memory-like behavior)
+        # Note: FileSessionManager requires a session_id, so we'll create one per session
+        self.storage_dir = os.path.join(tempfile.gettempdir(), "diagram-generator-sessions")
+        os.makedirs(self.storage_dir, exist_ok=True)
         
-        self.agent = Agent(
-            model=model,
-            structured_output=ArchitectureSpec,
-            session_manager=self.session_manager,
-            system_prompt="""You are an expert at modifying existing architecture diagrams based on user requests.
+        self.system_prompt = """You are an expert at modifying existing architecture diagrams based on user requests.
 
 Your task:
 1. Understand the current architecture specification
@@ -42,7 +42,6 @@ Common modifications:
 
 Always maintain the same provider as the original spec unless explicitly requested to change.
 """
-        )
     
     def modify(
         self,
@@ -61,6 +60,21 @@ Always maintain the same provider as the original spec unless explicitly request
         Returns:
             Tuple of (updated_spec, list_of_changes)
         """
+        # Create a session manager for this specific session
+        # FileSessionManager requires session_id in constructor
+        session_manager = FileSessionManager(
+            session_id=session_id,
+            storage_dir=self.storage_dir
+        )
+        
+        # Create agent instance with session manager for this session
+        agent = Agent(
+            model=self.model,
+            structured_output=ArchitectureSpec,
+            session_manager=session_manager,
+            system_prompt=self.system_prompt
+        )
+        
         # Build context
         context = self._build_context(current_spec)
         
@@ -74,7 +88,7 @@ Return the updated ArchitectureSpec as JSON.
 """
         
         # Agent maintains state across calls
-        response = self.agent.invoke(prompt, session_id=session_id)
+        response = agent.invoke(prompt, session_id=session_id)
         
         # Get updated spec
         updated_spec = response.structured_output
