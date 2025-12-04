@@ -179,18 +179,30 @@ class DiagramsEngine:
         for comp in spec.components:
             if comp.id not in components_in_clusters:
                 var_name = comp.id.replace("-", "_")
-                node_class = resolver.resolve_component_class(comp)
                 
-                module = node_class.__module__
-                class_name = node_class.__name__
-                
-                # Check if component has custom Graphviz attributes
-                if comp.graphviz_attrs:
-                    attrs_str = self._format_attr_dict(comp.graphviz_attrs)
-                    lines.append(f'{indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                # Handle blank/placeholder nodes
+                if comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"]):
+                    # Generate blank node: Node("", shape="plaintext", width="0", height="0")
+                    blank_attrs = comp.graphviz_attrs or {}
+                    blank_attrs.setdefault("shape", "plaintext")
+                    blank_attrs.setdefault("width", "0")
+                    blank_attrs.setdefault("height", "0")
+                    attrs_str = self._format_attr_dict(blank_attrs)
+                    lines.append(f'{indent}{var_name} = Node("", **{attrs_str})')
+                    component_vars[comp.id] = var_name
                 else:
-                    lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
-                component_vars[comp.id] = var_name
+                    node_class = resolver.resolve_component_class(comp)
+                    
+                    module = node_class.__module__
+                    class_name = node_class.__name__
+                    
+                    # Check if component has custom Graphviz attributes
+                    if comp.graphviz_attrs:
+                        attrs_str = self._format_attr_dict(comp.graphviz_attrs)
+                        lines.append(f'{indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                    else:
+                        lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
+                    component_vars[comp.id] = var_name
         
         # Generate clusters (with parent_id-based nesting support)
         if spec.clusters:
@@ -246,18 +258,30 @@ class DiagramsEngine:
             comp = cluster_component_map.get(comp_id)
             if comp:
                 var_name = comp.id.replace("-", "_")
-                node_class = resolver.resolve_component_class(comp)
                 
-                module = node_class.__module__
-                class_name = node_class.__name__
-                
-                # Check if component has custom Graphviz attributes
-                if comp.graphviz_attrs:
-                    attrs_str = self._format_attr_dict(comp.graphviz_attrs)
-                    lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                # Handle blank/placeholder nodes
+                if comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"]):
+                    # Generate blank node: Node("", shape="plaintext", width="0", height="0")
+                    blank_attrs = comp.graphviz_attrs or {}
+                    blank_attrs.setdefault("shape", "plaintext")
+                    blank_attrs.setdefault("width", "0")
+                    blank_attrs.setdefault("height", "0")
+                    attrs_str = self._format_attr_dict(blank_attrs)
+                    lines.append(f'{cluster_indent}{var_name} = Node("", **{attrs_str})')
+                    component_vars[comp.id] = var_name
                 else:
-                    lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}")')
-                component_vars[comp.id] = var_name
+                    node_class = resolver.resolve_component_class(comp)
+                    
+                    module = node_class.__module__
+                    class_name = node_class.__name__
+                    
+                    # Check if component has custom Graphviz attributes
+                    if comp.graphviz_attrs:
+                        attrs_str = self._format_attr_dict(comp.graphviz_attrs)
+                        lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                    else:
+                        lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}")')
+                    component_vars[comp.id] = var_name
         
         # Generate nested clusters (children with this cluster as parent)
         child_clusters = [c for c in all_clusters if c.parent_id == cluster.id]
@@ -433,6 +457,14 @@ class DiagramsEngine:
         )
         if needs_edge:
             imports_set.add("from diagrams import Edge")
+        
+        # Check if Node import is needed for blank nodes
+        needs_node = any(
+            comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"])
+            for comp in spec.components
+        )
+        if needs_node:
+            imports_set.add("from diagrams import Node")
         
         for comp in spec.components:
             node_class = resolver.resolve_component_class(comp)

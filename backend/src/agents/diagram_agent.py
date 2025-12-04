@@ -87,6 +87,32 @@ Rules:
 - Set provider field correctly
 - Use the exact node_id strings from the lists above (e.g., "ec2", "lambda", "vpc")
 
+CLUSTERING GUIDELINES (IMPORTANT):
+- Always create clusters when you have 3+ components of similar types or layers
+- Group related components together for better visual organization:
+  * Frontend/Edge: Route53, CloudFront, WAF, API Gateway
+  * Network: VPC, Subnets, Internet Gateway, NAT Gateway
+  * Compute: EC2, Lambda, ECS, EKS instances
+  * Data: RDS, DynamoDB, S3, ElastiCache
+  * Integration: SQS, SNS, EventBridge
+- For VPC architectures, create nested clusters: VPC → Subnets → Resources
+- Use descriptive cluster names like "Frontend Layer", "Backend Services", "Data Layer", "VPC Network"
+- Example cluster structure:
+  {{
+    "clusters": [
+      {{
+        "id": "frontend",
+        "name": "Frontend Layer",
+        "component_ids": ["api", "cdn"]
+      }},
+      {{
+        "id": "backend",
+        "name": "Backend Services",
+        "component_ids": ["lambda1", "lambda2"]
+      }}
+    ]
+  }}
+
 AWS Architectural Best Practices (when provider is AWS):
 {aws_guidance}
 
@@ -97,7 +123,7 @@ IMPORTANT for AWS architectures:
 - Follow common patterns: API Gateway → Lambda → DynamoDB, ALB → EC2 → RDS
 - Add missing dependencies (e.g., if EC2 exists, ensure VPC and Subnet exist)
 
-Example:
+Example 1 - Simple Architecture:
 Input: "Create a serverless API with API Gateway, Lambda, and DynamoDB"
 Output:
 {{
@@ -111,6 +137,42 @@ Output:
   "connections": [
     {{"from_id": "api", "to_id": "lambda"}},
     {{"from_id": "lambda", "to_id": "db"}}
+  ]
+}}
+
+Example 2 - Architecture with Clusters:
+Input: "Create a microservices architecture with API Gateway, CloudFront, three Lambda functions, and DynamoDB"
+Output:
+{{
+  "title": "Microservices Architecture",
+  "provider": "aws",
+  "components": [
+    {{"id": "api", "name": "API Gateway", "type": "api_gateway"}},
+    {{"id": "cdn", "name": "CloudFront", "type": "cloudfront"}},
+    {{"id": "lambda1", "name": "Service 1", "type": "lambda"}},
+    {{"id": "lambda2", "name": "Service 2", "type": "lambda"}},
+    {{"id": "lambda3", "name": "Service 3", "type": "lambda"}},
+    {{"id": "db", "name": "Database", "type": "dynamodb"}}
+  ],
+  "clusters": [
+    {{
+      "id": "frontend",
+      "name": "Frontend Layer",
+      "component_ids": ["api", "cdn"]
+    }},
+    {{
+      "id": "backend",
+      "name": "Backend Services",
+      "component_ids": ["lambda1", "lambda2", "lambda3"]
+    }}
+  ],
+  "connections": [
+    {{"from_id": "api", "to_id": "lambda1"}},
+    {{"from_id": "api", "to_id": "lambda2"}},
+    {{"from_id": "api", "to_id": "lambda3"}},
+    {{"from_id": "lambda1", "to_id": "db"}},
+    {{"from_id": "lambda2", "to_id": "db"}},
+    {{"from_id": "lambda3", "to_id": "db"}}
   ]
 }}
 """

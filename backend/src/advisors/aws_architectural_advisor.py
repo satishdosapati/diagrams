@@ -4,7 +4,7 @@ AWS Architectural Advisor - Uses AWS Knowledge Base MCP to provide architectural
 import os
 import logging
 from typing import Optional, List, Dict, Tuple
-from ..models.spec import ArchitectureSpec, Component, Connection
+from ..models.spec import ArchitectureSpec, Component, Connection, Cluster, GraphvizAttributes
 
 logger = logging.getLogger(__name__)
 
@@ -447,24 +447,322 @@ AWS Architectural Best Practices:
                 new_connections.append(suggested)
                 logger.debug(f"[ADVISOR] Added: {suggested.from_id} → {suggested.to_id}")
         
+        # Auto-create clusters if none exist and we have enough components
+        auto_clusters = []
+        if not spec.clusters and len(sorted_components) >= 3:
+            logger.info(f"[ADVISOR] Auto-creating clusters for better organization...")
+            auto_clusters = self._auto_create_clusters(sorted_components)
+            if auto_clusters:
+                logger.info(f"[ADVISOR] Created {len(auto_clusters)} clusters")
+        
+        # Optimize edges with blank nodes if we have clusters
+        final_components = sorted_components
+        final_connections = new_connections
+        final_clusters = auto_clusters if auto_clusters else spec.clusters
+        
+        if final_clusters and len(new_connections) >= 5:
+            logger.info(f"[ADVISOR] Optimizing edges with blank nodes...")
+            optimized_components, optimized_connections = self._optimize_edges_with_blank_nodes(
+                ArchitectureSpec(
+                    title=spec.title,
+                    provider=spec.provider,
+                    components=sorted_components,
+                    connections=new_connections,
+                    clusters=final_clusters
+                )
+            )
+            if len(optimized_components) > len(final_components):
+                final_components = optimized_components
+                final_connections = optimized_connections
+                logger.info(f"[ADVISOR] Inserted {len(optimized_components) - len(sorted_components)} blank nodes for cleaner routing")
+        
+        # Prepare graphviz attributes for edge merging
+        graphviz_attrs = spec.graphviz_attrs
+        if len(final_connections) > 10:
+            logger.info(f"[ADVISOR] Applying edge merging for complex diagram ({len(final_connections)} connections)...")
+            if not graphviz_attrs:
+                graphviz_attrs = GraphvizAttributes()
+            graphviz_attrs.graph_attr["concentrate"] = "true"
+            graphviz_attrs.graph_attr["splines"] = "spline"
+            logger.info(f"[ADVISOR] Edge merging enabled (concentrate=true, splines=spline)")
+        
         # Create enhanced spec
         enhanced_spec = ArchitectureSpec(
             title=spec.title,
             provider=spec.provider,
             is_multi_cloud=spec.is_multi_cloud,
-            components=sorted_components,
-            connections=new_connections,
+            components=final_components,
+            connections=final_connections,
+            clusters=final_clusters,
+            graphviz_attrs=graphviz_attrs,
+            direction=spec.direction,
+            outformat=spec.outformat,
             metadata={
                 **spec.metadata,
                 "enhanced": True,
                 "warnings": warnings,
                 "advisor_consulted": True,
+                "auto_clustered": bool(auto_clusters),
+                "edge_optimized": len(final_components) > len(sorted_components),
                 # "mcp_enabled": self.use_mcp  # MCP implementation commented out
                 "mcp_enabled": False
             }
         )
         
         logger.info(f"[ADVISOR] === Enhancement complete ===")
-        logger.info(f"[ADVISOR] Final: {len(sorted_components)} components, {len(new_connections)} connections")
+        logger.info(f"[ADVISOR] Final: {len(sorted_components)} components, {len(new_connections)} connections, {len(enhanced_spec.clusters)} clusters")
         return enhanced_spec
+    
+    def _auto_create_clusters(self, components: List[Component]) -> List[Cluster]:
+        """
+        Automatically create clusters based on component types and architectural layers.
+        
+        Clustering strategy:
+        1. Group by architectural layer (Frontend, Backend, Data, etc.)
+        2. Group VPC-related components hierarchically
+        3. Group similar component types (all databases, all compute, etc.)
+        
+        Args:
+            components: List of components to cluster
+            
+        Returns:
+            List of Cluster objects
+        """
+        clusters = []
+        component_ids = {c.id for c in components}
+        
+        # Group components by layer
+        layer_groups = {
+            "Frontend/Edge": [],
+            "Network": [],
+            "Application": [],
+            "Compute": [],
+            "Integration": [],
+            "Data": [],
+            "Analytics": [],
+            "Security/Management": []
+        }
+        
+        for comp in components:
+            node_id = comp.get_node_id()
+            layer_order = self.get_layer_order(node_id)
+            
+            if layer_order == 0 or layer_order == 1:
+                layer_groups["Frontend/Edge"].append(comp.id)
+            elif layer_order == 2 or layer_order == 3:
+                layer_groups["Network"].append(comp.id)
+            elif layer_order == 4:
+                layer_groups["Application"].append(comp.id)
+            elif layer_order == 5:
+                layer_groups["Compute"].append(comp.id)
+            elif layer_order == 6:
+                layer_groups["Integration"].append(comp.id)
+            elif layer_order == 7:
+                layer_groups["Data"].append(comp.id)
+            elif layer_order == 8:
+                layer_groups["Analytics"].append(comp.id)
+            elif layer_order == 9:
+                layer_groups["Security/Management"].append(comp.id)
+        
+        # Create clusters for layers with 2+ components
+        cluster_id_counter = 1
+        for layer_name, comp_ids in layer_groups.items():
+            if len(comp_ids) >= 2:
+                cluster_id = f"cluster_{cluster_id_counter}"
+                clusters.append(Cluster(
+                    id=cluster_id,
+                    name=layer_name,
+                    component_ids=comp_ids,
+                    parent_id=None
+                ))
+                cluster_id_counter += 1
+        
+        # Special handling: VPC hierarchy
+        vpc_components = [c for c in components if c.get_node_id() == "vpc"]
+        subnet_components = [c for c in components if "subnet" in c.get_node_id()]
+        vpc_related = [c for c in components if c.get_node_id() in ["nat_gateway", "internet_gateway"]]
+        
+        if vpc_components and (subnet_components or vpc_related):
+            # Check if VPC components are already in a cluster
+            vpc_in_cluster = False
+            for cluster in clusters:
+                if vpc_components[0].id in cluster.component_ids:
+                    vpc_in_cluster = True
+                    # Add VPC-related components to this cluster
+                    for comp in subnet_components + vpc_related:
+                        if comp.id not in cluster.component_ids:
+                            cluster.component_ids.append(comp.id)
+                    break
+            
+            if not vpc_in_cluster:
+                # Create VPC cluster
+                vpc_cluster_ids = [c.id for c in vpc_components + subnet_components + vpc_related]
+                if len(vpc_cluster_ids) >= 2:
+                    clusters.append(Cluster(
+                        id=f"cluster_{cluster_id_counter}",
+                        name="VPC Network",
+                        component_ids=vpc_cluster_ids,
+                        parent_id=None
+                    ))
+                    cluster_id_counter += 1
+        
+        # If we have many components but no good clusters, try grouping by type
+        if not clusters and len(components) >= 4:
+            # Group by component type
+            type_groups = {}
+            for comp in components:
+                node_id = comp.get_node_id()
+                if node_id not in type_groups:
+                    type_groups[node_id] = []
+                type_groups[node_id].append(comp.id)
+            
+            # Create clusters for types with 2+ components
+            for node_type, comp_ids in type_groups.items():
+                if len(comp_ids) >= 2:
+                    type_name = node_type.replace("_", " ").title()
+                    clusters.append(Cluster(
+                        id=f"cluster_{cluster_id_counter}",
+                        name=f"{type_name} Services",
+                        component_ids=comp_ids,
+                        parent_id=None
+                    ))
+                    cluster_id_counter += 1
+        
+        return clusters
+    
+    def _optimize_edges_with_blank_nodes(self, spec: ArchitectureSpec) -> Tuple[List[Component], List[Connection]]:
+        """
+        Intelligently insert blank nodes to reduce edge clutter.
+        
+        Detects patterns that benefit from blank nodes:
+        - Multiple connections between clusters
+        - Fan-out patterns (one source → many targets)
+        - Fan-in patterns (many sources → one target)
+        - Cluster-to-cluster connections
+        
+        Args:
+            spec: Architecture specification
+            
+        Returns:
+            Tuple of (new_components, new_connections) with blank nodes inserted
+        """
+        new_components = list(spec.components)
+        new_connections = list(spec.connections)
+        
+        if not spec.clusters or len(spec.connections) < 5:
+            # Not enough complexity to benefit from blank nodes
+            return new_components, new_connections
+        
+        # Build cluster membership map
+        component_to_cluster = {}
+        for cluster in spec.clusters:
+            for comp_id in cluster.component_ids:
+                component_to_cluster[comp_id] = cluster.id
+        
+        # Detect cluster-to-cluster connections
+        cluster_connections = {}
+        for conn in spec.connections:
+            from_cluster = component_to_cluster.get(conn.from_id)
+            to_cluster = component_to_cluster.get(conn.to_id)
+            
+            if from_cluster and to_cluster and from_cluster != to_cluster:
+                key = (from_cluster, to_cluster)
+                if key not in cluster_connections:
+                    cluster_connections[key] = []
+                cluster_connections[key].append(conn)
+        
+        # Insert blank nodes for cluster-to-cluster connections with 2+ edges
+        blank_node_counter = 1
+        processed_connections = set()
+        
+        for (from_cluster_id, to_cluster_id), conns in cluster_connections.items():
+            if len(conns) >= 2:
+                # Create blank node
+                blank_id = f"blank_{blank_node_counter}"
+                blank_node = Component(
+                    id=blank_id,
+                    name="",
+                    type="blank",
+                    is_blank_node=True,
+                    graphviz_attrs={
+                        "shape": "plaintext",
+                        "width": "0",
+                        "height": "0"
+                    }
+                )
+                new_components.append(blank_node)
+                
+                # Replace direct connections with connections via blank node
+                for conn in conns:
+                    if (conn.from_id, conn.to_id) not in processed_connections:
+                        # Remove original connection
+                        new_connections.remove(conn)
+                        processed_connections.add((conn.from_id, conn.to_id))
+                        
+                        # Add connection from source to blank node
+                        new_connections.append(Connection(
+                            from_id=conn.from_id,
+                            to_id=blank_id,
+                            label=conn.label,
+                            graphviz_attrs=conn.graphviz_attrs,
+                            direction=conn.direction
+                        ))
+                        
+                        # Add connection from blank node to target
+                        new_connections.append(Connection(
+                            from_id=blank_id,
+                            to_id=conn.to_id,
+                            direction="forward"
+                        ))
+                
+                blank_node_counter += 1
+        
+        # Detect fan-out patterns (one source → many targets in same cluster)
+        source_targets = {}
+        for conn in new_connections:
+            if conn.from_id not in source_targets:
+                source_targets[conn.from_id] = []
+            source_targets[conn.from_id].append(conn.to_id)
+        
+        for source_id, target_ids in source_targets.items():
+            if len(target_ids) >= 3:
+                # Check if targets are in the same cluster
+                target_clusters = [component_to_cluster.get(tid) for tid in target_ids]
+                if len(set(target_clusters)) == 1 and target_clusters[0]:  # All in same cluster
+                    # Create blank node for fan-out
+                    blank_id = f"blank_{blank_node_counter}"
+                    blank_node = Component(
+                        id=blank_id,
+                        name="",
+                        type="blank",
+                        is_blank_node=True,
+                        graphviz_attrs={
+                            "shape": "plaintext",
+                            "width": "0",
+                            "height": "0"
+                        }
+                    )
+                    new_components.append(blank_node)
+                    
+                    # Replace connections
+                    for target_id in target_ids:
+                        # Find and replace connection
+                        for conn in new_connections[:]:
+                            if conn.from_id == source_id and conn.to_id == target_id:
+                                new_connections.remove(conn)
+                                # Add connection via blank node
+                                new_connections.append(Connection(
+                                    from_id=source_id,
+                                    to_id=blank_id,
+                                    direction="forward"
+                                ))
+                                new_connections.append(Connection(
+                                    from_id=blank_id,
+                                    to_id=target_id,
+                                    direction="forward"
+                                ))
+                    
+                    blank_node_counter += 1
+        
+        return new_components, new_connections
 

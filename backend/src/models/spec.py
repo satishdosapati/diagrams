@@ -262,13 +262,16 @@ class Component(BaseModel):
     
     The type field accepts either a NodeType enum value or a string node_id.
     String values are validated against the node registry at runtime.
+    
+    For blank/placeholder nodes, set type to "blank" or "placeholder" and name to empty string.
     """
     id: str = Field(..., description="Unique identifier")
     name: str = Field(..., description="Display name")
-    type: Union[NodeType, str] = Field(..., description="Component type (enum or node_id string)")
+    type: Union[NodeType, str] = Field(..., description="Component type (enum or node_id string). Use 'blank' for placeholder nodes.")
     provider: Optional[str] = Field(None, description="Cloud provider (inherits from spec if not set)")
     metadata: dict = Field(default_factory=dict, description="Additional properties")
     graphviz_attrs: Optional[dict] = Field(None, description="Component-specific Graphviz node attributes")
+    is_blank_node: bool = Field(default=False, description="Whether this is a blank placeholder node for edge routing")
     
     @field_validator('type')
     @classmethod
