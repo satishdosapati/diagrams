@@ -70,6 +70,8 @@ class DiagramsEngine:
             component_vars[comp.id] = var_name
         
         # Generate connections
+        # Note: The diagrams library doesn't support labeled edges via >> operator
+        # Labels are ignored and simple connections are created
         if spec.connections:
             lines.append("")
             for conn in spec.connections:
@@ -77,10 +79,8 @@ class DiagramsEngine:
                 to_var = component_vars.get(conn.to_id)
                 
                 if from_var and to_var:
-                    if conn.label:
-                        lines.append(f'{indent}{from_var} >> "{conn.label}" >> {to_var}')
-                    else:
-                        lines.append(f'{indent}{from_var} >> {to_var}')
+                    # Create simple connection (labels not supported by diagrams library)
+                    lines.append(f'{indent}{from_var} >> {to_var}')
         
         return "\n".join(lines)
     
