@@ -94,11 +94,17 @@ def sanitize_variable_name(name: str) -> str:
     Returns:
         Sanitized variable name that is safe to use in Python code
     """
+    if not name:
+        return "comp"
+    
     # Replace hyphens with underscores
     sanitized = name.replace("-", "_")
     
-    # Check if it's a reserved keyword
-    if sanitized.lower() in PYTHON_RESERVED_KEYWORDS:
+    # Normalize to check against keywords (Python keywords are case-insensitive for reservation)
+    normalized = sanitized.lower()
+    
+    # Check if it's a reserved keyword (case-insensitive check)
+    if normalized in PYTHON_RESERVED_KEYWORDS:
         # Append suffix to make it safe
         sanitized = f"{sanitized}_comp"
     
@@ -113,6 +119,13 @@ def sanitize_variable_name(name: str) -> str:
         # Ensure it doesn't start with a number
         if sanitized and sanitized[0].isdigit():
             sanitized = f"comp_{sanitized}"
+        # Final check - if still not valid, prefix with comp_
+        if not sanitized.isidentifier():
+            sanitized = f"comp_{sanitized}"
+    
+    # Final safety check: if somehow it's still a keyword, append suffix again
+    if sanitized.lower() in PYTHON_RESERVED_KEYWORDS:
+        sanitized = f"{sanitized}_comp"
     
     return sanitized
 
