@@ -10,6 +10,7 @@ from ..models.spec import ArchitectureSpec
 from ..models.node_registry import get_registry
 from .classifier_agent import ClassifierAgent
 from ..advisors.aws_architectural_advisor import AWSArchitecturalAdvisor
+from ..validators.input_validator import InputValidator
 
 
 class DiagramAgent:
@@ -31,6 +32,9 @@ class DiagramAgent:
         
         # Initialize AWS Architectural Advisor
         self.aws_advisor = AWSArchitecturalAdvisor()
+        
+        # Initialize Input Validator
+        self.input_validator = InputValidator()
         
         # Generate system prompt with node lists from registry
         system_prompt = self._generate_system_prompt()
@@ -122,7 +126,15 @@ Output:
             
         Returns:
             ArchitectureSpec object
+            
+        Raises:
+            ValueError: If input is invalid or out-of-context
         """
+        # Validate input first
+        is_valid, error_message = self.input_validator.validate(description)
+        if not is_valid:
+            raise ValueError(error_message)
+        
         # Classify diagram type (pass provider if available)
         classification = self.classifier.classify(description, provider_hint=provider)
         
