@@ -78,18 +78,35 @@ export async function modifyDiagram(
   sessionId: string,
   modification: string
 ): Promise<ModifyDiagramResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/modify-diagram`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, modification }),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/modify-diagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, modification }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to modify diagram');
+    if (!response.ok) {
+      // Try to get error details from response
+      let errorMessage = 'Failed to modify diagram';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  } catch (error) {
+    // Handle network errors (CORS, connection refused, etc.)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(`Network error: Unable to connect to backend. Please ensure the backend is running on ${API_BASE_URL}`);
+    }
+    // Re-throw other errors as-is
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function undoDiagram(sessionId: string): Promise<ModifyDiagramResponse> {

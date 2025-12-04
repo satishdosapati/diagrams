@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { getDiagramUrl } from '../services/api'
+import { getDiagramUrl, modifyDiagram } from '../services/api'
 
 interface ChatMessage {
   id: string
@@ -14,16 +14,6 @@ interface DiagramChatProps {
   initialDiagramUrl: string | null
   sessionId: string | null
   onDiagramUpdate: (diagramUrl: string) => void
-}
-
-async function modifyDiagram(sessionId: string, modification: string) {
-  const response = await fetch('http://localhost:8000/api/modify-diagram', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, modification }),
-  })
-  if (!response.ok) throw new Error('Failed to modify diagram')
-  return response.json()
 }
 
 async function undoDiagram(sessionId: string) {
@@ -92,6 +82,7 @@ function DiagramChat({ initialDiagramUrl, sessionId, onDiagramUpdate }: DiagramC
         onDiagramUpdate(assistantMessage.diagramUrl)
       }
     } catch (error) {
+      console.error('Modify diagram error:', error)
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
