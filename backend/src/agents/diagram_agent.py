@@ -9,6 +9,7 @@ from strands.models import BedrockModel
 from ..models.spec import ArchitectureSpec
 from ..models.node_registry import get_registry
 from .classifier_agent import ClassifierAgent
+from ..advisors.aws_architectural_advisor import AWSArchitecturalAdvisor
 
 
 class DiagramAgent:
@@ -27,6 +28,9 @@ class DiagramAgent:
         
         # Load registry for generating node lists
         self.registry = get_registry()
+        
+        # Initialize AWS Architectural Advisor
+        self.aws_advisor = AWSArchitecturalAdvisor()
         
         # Generate system prompt with node lists from registry
         system_prompt = self._generate_system_prompt()
@@ -55,6 +59,9 @@ class DiagramAgent:
         azure_list = format_node_list(azure_nodes)
         gcp_list = format_node_list(gcp_nodes)
         
+        # Get AWS architectural guidance
+        aws_guidance = self.aws_advisor._get_static_guidance()
+        
         return f"""You are an expert at understanding cloud architecture descriptions and converting them into structured specifications.
 
 Your task:
@@ -75,6 +82,16 @@ Rules:
 - Create a descriptive title
 - Set provider field correctly
 - Use the exact node_id strings from the lists above (e.g., "ec2", "lambda", "vpc")
+
+AWS Architectural Best Practices (when provider is AWS):
+{aws_guidance}
+
+IMPORTANT for AWS architectures:
+- Order components logically: Internet/Edge → Network → Application → Compute → Data
+- VPC should contain Subnets (add connection: VPC → Subnet)
+- Subnets should contain EC2 instances (add connection: Subnet → EC2)
+- Follow common patterns: API Gateway → Lambda → DynamoDB, ALB → EC2 → RDS
+- Add missing dependencies (e.g., if EC2 exists, ensure VPC and Subnet exist)
 
 Example:
 Input: "Create a serverless API with API Gateway, Lambda, and DynamoDB"
@@ -133,6 +150,10 @@ Return a valid ArchitectureSpec JSON with components and connections."""
         
         # Set provider (UI selection takes precedence)
         spec.provider = final_provider
+        
+        # Enhance spec with AWS architectural guidance if AWS provider
+        if final_provider == "aws":
+            spec = self.aws_advisor.enhance_spec(spec)
         
         return spec
 

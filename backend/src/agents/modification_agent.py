@@ -9,6 +9,8 @@ from strands.session.file_session_manager import FileSessionManager
 
 from ..models.spec import ArchitectureSpec
 from ..models.node_registry import get_registry
+from ..advisors.aws_architectural_advisor import AWSArchitecturalAdvisor
+import logging
 
 
 class ModificationAgent:
@@ -27,6 +29,9 @@ class ModificationAgent:
         
         # Load registry for generating node lists
         self.registry = get_registry()
+        
+        # Initialize AWS Architectural Advisor
+        self.aws_advisor = AWSArchitecturalAdvisor()
         
         # Base system prompt (will be enhanced with node lists per request)
         self.base_system_prompt = """You are an expert at modifying existing architecture diagrams based on user requests.
@@ -65,6 +70,14 @@ Always maintain the same provider as the original spec unless explicitly request
         Returns:
             Tuple of (updated_spec, list_of_changes)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # STEP 1: Consult architecture advisor BEFORE modification
+        # Get architectural guidance for the modification
+        advisor_guidance = self._get_advisor_guidance(current_spec, modification)
+        logger.info(f"Architecture advisor consulted for modification: {modification[:50]}...")
+        
         # Create a session manager for this specific session
         # FileSessionManager requires session_id in constructor
         session_manager = FileSessionManager(
@@ -83,13 +96,15 @@ Always maintain the same provider as the original spec unless explicitly request
             system_prompt=system_prompt
         )
         
-        # Build context
+        # Build context with advisor guidance
         context = self._build_context(current_spec)
         
         prompt = f"""
 {context}
 
 User Request: {modification}
+
+{advisor_guidance}
 
 Modify the architecture specification according to the user's request.
 Use provider "{current_spec.provider}" and appropriate node types from the lists above.
@@ -100,6 +115,7 @@ IMPORTANT:
 - Maintain component IDs for unchanged components
 - Only add/modify/remove components as requested
 - Keep the same provider unless explicitly asked to change
+- Follow architectural best practices for component ordering and connections
 """
 
         # Agent maintains state across calls (session_manager handles session_id)
@@ -130,10 +146,96 @@ IMPORTANT:
                 "This is allowed if explicitly requested by user."
             )
         
+        # STEP 2: Consult architecture advisor AFTER modification
+        # Enhance spec with architectural guidance (always consult advisor)
+        logger.info(f"Architecture advisor enhancing spec for provider: {updated_spec.provider}")
+        updated_spec = self._enhance_with_advisor(updated_spec)
+        
         # Detect changes
         changes = self._detect_changes(current_spec, updated_spec)
         
+        # Log advisor contributions
+        if updated_spec.metadata.get("enhanced"):
+            advisor_changes = [
+                "Component ordering optimized",
+                "Connections validated and enhanced"
+            ]
+            changes.extend(advisor_changes)
+            logger.info("Architecture advisor enhancements applied")
+        
         return updated_spec, changes
+    
+    def _get_advisor_guidance(self, spec: ArchitectureSpec, modification: str) -> str:
+        """
+        Get architectural guidance from advisor for the modification.
+        
+        Args:
+            spec: Current architecture specification
+            modification: User's modification request
+            
+        Returns:
+            Architectural guidance string
+        """
+        guidance_parts = []
+        
+        # Get provider-specific guidance
+        if spec.provider == "aws":
+            # Analyze modification to provide specific guidance
+            modification_lower = modification.lower()
+            
+            # Check if adding components
+            if any(word in modification_lower for word in ["add", "create", "new", "include"]):
+                # Suggest dependencies
+                if "ec2" in modification_lower or "instance" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: If adding EC2 instances, ensure VPC and Subnet exist. "
+                        "EC2 instances should be connected: VPC → Subnet → EC2"
+                    )
+                if "lambda" in modification_lower or "function" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: Lambda functions commonly connect to API Gateway or EventBridge. "
+                        "Consider adding these connections if they exist."
+                    )
+                if "rds" in modification_lower or "database" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: RDS databases require VPC and Subnet. "
+                        "Ensure proper network connections: VPC → Subnet → RDS"
+                    )
+            
+            # Check if modifying connections
+            if any(word in modification_lower for word in ["connect", "link", "route"]):
+                guidance_parts.append(
+                    "NOTE: Ensure connections follow AWS architectural patterns. "
+                    "Common patterns: API Gateway → Lambda → DynamoDB, ALB → EC2 → RDS"
+                )
+            
+            # Add general AWS guidance
+            if guidance_parts:
+                return "\n\nArchitectural Guidance:\n" + "\n".join(f"- {g}" for g in guidance_parts)
+        
+        return ""
+    
+    def _enhance_with_advisor(self, spec: ArchitectureSpec) -> ArchitectureSpec:
+        """
+        Enhance spec with architectural advisor (provider-aware).
+        
+        Args:
+            spec: Architecture specification to enhance
+            
+        Returns:
+            Enhanced architecture specification
+        """
+        logger = logging.getLogger(__name__)
+        
+        # Use AWS advisor for AWS provider
+        if spec.provider == "aws":
+            logger.info("Consulting AWS Architectural Advisor for enhancement")
+            return self.aws_advisor.enhance_spec(spec)
+        
+        # For other providers, return as-is (can be extended with Azure/GCP advisors)
+        # TODO: Add Azure and GCP advisors
+        logger.info(f"Architectural advisor not available for provider: {spec.provider}")
+        return spec
     
     def _generate_system_prompt(self, provider: str) -> str:
         """Generate system prompt with node lists for the specified provider."""
@@ -148,12 +250,33 @@ IMPORTANT:
         
         node_list = format_node_list(provider_nodes)
         
+        # Add AWS architectural guidance if AWS provider
+        aws_guidance = ""
+        if provider == "aws":
+            aws_guidance = f"""
+
+AWS Architectural Best Practices:
+{self.aws_advisor._get_static_guidance()}
+
+When modifying AWS architectures:
+- Maintain logical component ordering: Internet/Edge → Network → Application → Compute → Data
+- Ensure VPC contains Subnets, Subnets contain EC2 instances
+- Follow common patterns: API Gateway → Lambda → DynamoDB, ALB → EC2 → RDS
+"""
+        
         return f"""{self.base_system_prompt}
 
 Available node types for provider "{provider}":
 {node_list}
 
 When adding new components, use the exact node_id strings from the list above (e.g., "ec2", "lambda", "vpc").
+{aws_guidance}
+
+IMPORTANT: Always consult architectural best practices when modifying diagrams:
+- Maintain logical component ordering
+- Ensure proper connections between components
+- Add missing dependencies when adding new components
+- Follow provider-specific architectural patterns
 """
     
     def _build_context(self, spec: ArchitectureSpec) -> str:
