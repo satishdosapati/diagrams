@@ -84,7 +84,7 @@ function DiagramChat({ initialDiagramUrl, sessionId, onDiagramUpdate }: DiagramC
     } catch (error) {
       // Log error for debugging (in production, this would go to error tracking service)
       const errorMsg = error instanceof Error ? error.message : 'Failed to modify diagram'
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.error('Modify diagram error:', error)
       }
       const errorMessage: ChatMessage = {
@@ -112,7 +112,7 @@ function DiagramChat({ initialDiagramUrl, sessionId, onDiagramUpdate }: DiagramC
       }
     } catch (error) {
       // Log error for debugging (in production, this would go to error tracking service)
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.error('Undo failed:', error)
       }
       // Show error to user

@@ -1,14 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
-import { executeCode, getCompletions, validateCode, getDiagramUrl } from '../services/api'
+import { executeCode, getCompletions, validateCode, getDiagramUrl, type CompletionsResponse } from '../services/api'
 import type { editor } from 'monaco-editor'
+import * as monaco from 'monaco-editor'
 
 type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot'
-
-interface CompletionData {
-  completions?: string[]
-  [key: string]: unknown
-}
 
 interface AdvancedCodeModeProps {
   provider: 'aws' | 'azure' | 'gcp'
@@ -23,7 +19,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
   const [isExecuting, setIsExecuting] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const [warnings, setWarnings] = useState<string[]>([])
-  const [completions, setCompletions] = useState<CompletionData | null>(null)
+  const [completions, setCompletions] = useState<CompletionsResponse | null>(null)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
   // Load completions on mount
@@ -44,7 +40,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
       setCompletions(data)
     } catch (error) {
       // Log error for debugging (in production, this would go to error tracking service)
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.error('Failed to load completions:', error)
       }
       // Silently fail - completions are optional
@@ -86,6 +82,15 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
           endColumn: position.column
         })
 
+        // Calculate word range at current position
+        const word = model.getWordUntilPosition(position)
+        const range: monaco.IRange = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn
+        }
+
         // Import statement completions
         if (textUntilPosition.includes('from diagrams.') && textUntilPosition.endsWith('import ')) {
           const moduleMatch = textUntilPosition.match(/from diagrams\.(\w+)\.(\w+) import $/)
@@ -98,7 +103,8 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
                 kind: monaco.languages.CompletionItemKind.Class,
                 insertText: className,
                 detail: `from diagrams.${provider}.${category} import ${className}`,
-                documentation: completions.imports[className] || ''
+                documentation: completions.imports[className] || '',
+                range: range
               })
             })
           }
@@ -112,8 +118,9 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
                 label: className,
                 kind: monaco.languages.CompletionItemKind.Class,
                 insertText: `${className}("Label")`,
-                detail: completions.imports[className],
-                documentation: `Instantiate ${className} component`
+                detail: completions.imports[className] || '',
+                documentation: `Instantiate ${className} component`,
+                range: range
               })
             })
           }
@@ -126,7 +133,8 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
               label: op,
               kind: monaco.languages.CompletionItemKind.Operator,
               insertText: op,
-              detail: `Connection operator: ${op === '>>' ? 'Forward flow' : op === '<<' ? 'Reverse flow' : 'Bidirectional'}`
+              detail: `Connection operator: ${op === '>>' ? 'Forward flow' : op === '<<' ? 'Reverse flow' : 'Bidirectional'}`,
+              range: range
             })
           })
         }
