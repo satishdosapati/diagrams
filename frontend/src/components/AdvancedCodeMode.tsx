@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { executeCode, getCompletions, validateCode, getDiagramUrl } from '../services/api'
+import type { editor } from 'monaco-editor'
 
 type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot' | 'jpg'
+
+interface CompletionData {
+  completions?: string[]
+  [key: string]: unknown
+}
 
 interface AdvancedCodeModeProps {
   provider: 'aws' | 'azure' | 'gcp'
@@ -17,8 +23,8 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
   const [isExecuting, setIsExecuting] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const [warnings, setWarnings] = useState<string[]>([])
-  const [completions, setCompletions] = useState<any>(null)
-  const editorRef = useRef<any>(null)
+  const [completions, setCompletions] = useState<CompletionData | null>(null)
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
   // Load completions on mount
   useEffect(() => {
@@ -37,12 +43,17 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
       const data = await getCompletions(provider)
       setCompletions(data)
     } catch (error) {
-      console.error('Failed to load completions:', error)
+      // Log error for debugging (in production, this would go to error tracking service)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load completions:', error)
+      }
+      // Silently fail - completions are optional
+      setCompletions(null)
     }
   }
 
-  const handleEditorDidMount = (editor: any, monaco: any) => {
-    editorRef.current = editor
+  const handleEditorDidMount = (editorInstance: editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => {
+    editorRef.current = editorInstance
     
     // Configure Monaco for Python
     monaco.languages.setLanguageConfiguration('python', {
@@ -66,8 +77,8 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
 
     // Register custom completion provider
     monaco.languages.registerCompletionItemProvider('python', {
-      provideCompletionItems: (model: any, position: any) => {
-        const suggestions: any[] = []
+      provideCompletionItems: (model: editor.ITextModel, position: monaco.Position) => {
+        const suggestions: monaco.languages.CompletionItem[] = []
         const textUntilPosition = model.getValueInRange({
           startLineNumber: 1,
           startColumn: 1,

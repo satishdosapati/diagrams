@@ -82,11 +82,15 @@ function DiagramChat({ initialDiagramUrl, sessionId, onDiagramUpdate }: DiagramC
         onDiagramUpdate(assistantMessage.diagramUrl)
       }
     } catch (error) {
-      console.error('Modify diagram error:', error)
+      // Log error for debugging (in production, this would go to error tracking service)
+      const errorMsg = error instanceof Error ? error.message : 'Failed to modify diagram'
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Modify diagram error:', error)
+      }
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Failed to modify diagram'}`,
+        content: `Error: ${errorMsg}`,
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, errorMessage])
@@ -107,7 +111,18 @@ function DiagramChat({ initialDiagramUrl, sessionId, onDiagramUpdate }: DiagramC
         onDiagramUpdate(getDiagramUrl(data.diagram_url.split('/').pop() || ''))
       }
     } catch (error) {
-      console.error('Undo failed:', error)
+      // Log error for debugging (in production, this would go to error tracking service)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Undo failed:', error)
+      }
+      // Show error to user
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to undo'}`,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsProcessing(false)
     }

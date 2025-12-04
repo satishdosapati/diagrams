@@ -4,11 +4,15 @@ DiagramsEngine - Generates diagrams using Diagrams library with multi-provider s
 import tempfile
 import subprocess
 import os
+import time
+import logging
 from pathlib import Path
 from typing import Optional, Union, List
 
 from ..models.spec import ArchitectureSpec
 from ..resolvers.component_resolver import ComponentResolver
+
+logger = logging.getLogger(__name__)
 
 
 class DiagramsEngine:
@@ -20,6 +24,9 @@ class DiagramsEngine:
             output_dir = os.getenv("OUTPUT_DIR", "./output")
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
+        
+        # Cleanup old files on initialization
+        self._cleanup_old_files()
     
     def render(self, spec: ArchitectureSpec) -> str:
         """
@@ -441,7 +448,31 @@ class DiagramsEngine:
             raise RuntimeError(error_msg)
             
         finally:
-            # Cleanup
+            # Cleanup temporary Python file
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
+            
+            # Periodically cleanup old diagram files (older than 24 hours)
+            self._cleanup_old_files()
+    
+    def _cleanup_old_files(self):
+        """Remove diagram files older than 24 hours."""
+        try:
+            current_time = time.time()
+            max_age = 24 * 3600  # 24 hours in seconds
+            
+            # Supported diagram file extensions
+            extensions = ['.png', '.svg', '.pdf', '.jpg', '.jpeg', '.dot', '.gif']
+            
+            for file_path in self.output_dir.iterdir():
+                if file_path.is_file() and file_path.suffix.lower() in extensions:
+                    file_age = current_time - file_path.stat().st_mtime
+                    if file_age > max_age:
+                        try:
+                            file_path.unlink()
+                            logger.debug(f"Cleaned up old diagram file: {file_path.name}")
+                        except OSError as e:
+                            logger.warning(f"Failed to delete old file {file_path.name}: {e}")
+        except Exception as e:
+            logger.warning(f"Error during file cleanup: {e}")
 

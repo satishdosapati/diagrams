@@ -223,7 +223,7 @@ class NodeType(str, Enum):
     CLOUD_MONITORING = "cloud_monitoring"
     CLOUD_LOGGING = "cloud_logging"
     CLOUD_TRACE = "cloud_trace"
-    CLOUD_DEBUGGER = "cloud_debugger"
+    # CLOUD_DEBUGGER = "cloud_debugger"  # Removed - unused
     CLOUD_PROFILER = "cloud_profiler"
     DEPLOYMENT_MANAGER = "deployment_manager"
     

@@ -45,11 +45,28 @@ export interface ModifyDiagramRequest {
   modification: string;
 }
 
+export interface ArchitectureSpec {
+  title: string;
+  provider: string;
+  components: Array<{
+    id: string;
+    node_id: string;
+    label?: string;
+    [key: string]: unknown;
+  }>;
+  connections: Array<{
+    from_id: string;
+    to_id: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
 export interface ModifyDiagramResponse {
   diagram_url: string;
   message: string;
   changes: string[];
-  updated_spec: any;
+  updated_spec: ArchitectureSpec;
 }
 
 export async function generateDiagram(
