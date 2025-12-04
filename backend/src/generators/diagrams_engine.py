@@ -5,6 +5,7 @@ import tempfile
 import subprocess
 import os
 from pathlib import Path
+from typing import Optional, Union, List
 
 from ..models.spec import ArchitectureSpec
 from ..resolvers.component_resolver import ComponentResolver
@@ -28,7 +29,7 @@ class DiagramsEngine:
             spec: Architecture specification
             
         Returns:
-            Path to generated diagram file
+            Path to generated diagram file (primary format, typically PNG)
         """
         # Create resolver
         resolver = ComponentResolver(primary_provider=spec.provider)
@@ -36,8 +37,8 @@ class DiagramsEngine:
         # Generate Python code
         code = self._generate_code(spec, resolver)
         
-        # Execute code and generate diagram
-        output_path = self._execute_code(code, spec.title)
+        # Execute code and generate diagram(s)
+        output_path = self._execute_code(code, spec.title, spec.outformat)
         
         return output_path
     
@@ -50,44 +51,308 @@ class DiagramsEngine:
         lines.extend(imports)
         lines.append("")
         
-        # Diagram context
-        # diagrams library filename parameter should be just the base name (no path, no extension)
+        # Build Diagram constructor parameters
         filename = spec.title.lower().replace(" ", "_")
-        lines.append(f'with Diagram("{spec.title}", show=False, filename="{filename}"):')
+        diagram_params = [
+            f'"{spec.title}"',
+            'show=False',
+            f'filename="{filename}"'
+        ]
         
-        # Generate component variables
+        # Add direction parameter if specified
+        if spec.direction:
+            diagram_params.append(f'direction="{spec.direction}"')
+        
+        # Add outformat parameter if specified
+        if spec.outformat:
+            if isinstance(spec.outformat, list):
+                outformat_str = str(spec.outformat).replace("'", '"')
+                diagram_params.append(f'outformat={outformat_str}')
+            else:
+                diagram_params.append(f'outformat="{spec.outformat}"')
+        
+        # Add Graphviz attributes if provided
+        if spec.graphviz_attrs:
+            if spec.graphviz_attrs.graph_attr:
+                graph_attr_str = self._format_attr_dict(spec.graphviz_attrs.graph_attr)
+                diagram_params.append(f'graph_attr={graph_attr_str}')
+            if spec.graphviz_attrs.node_attr:
+                node_attr_str = self._format_attr_dict(spec.graphviz_attrs.node_attr)
+                diagram_params.append(f'node_attr={node_attr_str}')
+            if spec.graphviz_attrs.edge_attr:
+                edge_attr_str = self._format_attr_dict(spec.graphviz_attrs.edge_attr)
+                diagram_params.append(f'edge_attr={edge_attr_str}')
+        
+        lines.append(f'with Diagram({", ".join(diagram_params)}):')
+        
+        # Generate component variables and clusters
         component_vars = {}
+        cluster_vars = {}
         indent = "    "
         
-        for comp in spec.components:
-            var_name = comp.id.replace("-", "_")
-            node_class = resolver.resolve_component_class(comp)
-            
-            module = node_class.__module__
-            class_name = node_class.__name__
-            
-            lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
-            component_vars[comp.id] = var_name
+        # Build component ID to cluster mapping
+        component_to_cluster = {}
+        for cluster in spec.clusters:
+            for comp_id in cluster.component_ids:
+                component_to_cluster[comp_id] = cluster.id
         
-        # Generate connections
-        # Note: The diagrams library doesn't support labeled edges via >> operator
-        # Labels are ignored and simple connections are created
+        # Generate components (those not in clusters first)
+        components_in_clusters = set()
+        for cluster in spec.clusters:
+            components_in_clusters.update(cluster.component_ids)
+        
+        # Generate standalone components (not in any cluster)
+        for comp in spec.components:
+            if comp.id not in components_in_clusters:
+                var_name = comp.id.replace("-", "_")
+                node_class = resolver.resolve_component_class(comp)
+                
+                module = node_class.__module__
+                class_name = node_class.__name__
+                
+                # Check if component has custom Graphviz attributes
+                if comp.graphviz_attrs:
+                    attrs_str = self._format_attr_dict(comp.graphviz_attrs)
+                    lines.append(f'{indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                else:
+                    lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
+                component_vars[comp.id] = var_name
+        
+        # Generate clusters (with nested support)
+        if spec.clusters:
+            lines.append("")
+            for cluster in spec.clusters:
+                self._generate_cluster(
+                    cluster, spec.components, resolver, 
+                    lines, component_vars, cluster_vars, indent
+                )
+        
+        # Generate connections with group data flow support
         if spec.connections:
             lines.append("")
-            for conn in spec.connections:
-                from_var = component_vars.get(conn.from_id)
-                to_var = component_vars.get(conn.to_id)
-                
-                if from_var and to_var:
-                    # Create simple connection (labels not supported by diagrams library)
-                    lines.append(f'{indent}{from_var} >> {to_var}')
+            self._generate_connections(spec.connections, component_vars, lines, indent)
         
         return "\n".join(lines)
+    
+    def _generate_cluster(
+        self, 
+        cluster, 
+        all_components: list, 
+        resolver: ComponentResolver,
+        lines: list, 
+        component_vars: dict, 
+        cluster_vars: dict,
+        indent: str
+    ):
+        """Generate cluster code block with nested support."""
+        from ..models.spec import Cluster
+        
+        cluster_var = cluster.id.replace("-", "_")
+        cluster_vars[cluster.id] = cluster_var
+        
+        # Build Cluster constructor parameters
+        cluster_params = [f'"{cluster.name}"']
+        
+        # Add cluster Graphviz attributes if provided
+        if cluster.graphviz_attrs:
+            cluster_attr_str = self._format_attr_dict(cluster.graphviz_attrs)
+            cluster_params.append(f'graph_attr={cluster_attr_str}')
+        
+        lines.append(f'{indent}with Cluster({", ".join(cluster_params)}):')
+        cluster_indent = indent + "    "
+        
+        # Generate components in this cluster
+        cluster_component_map = {comp.id: comp for comp in all_components}
+        for comp_id in cluster.component_ids:
+            comp = cluster_component_map.get(comp_id)
+            if comp:
+                var_name = comp.id.replace("-", "_")
+                node_class = resolver.resolve_component_class(comp)
+                
+                module = node_class.__module__
+                class_name = node_class.__name__
+                
+                # Check if component has custom Graphviz attributes
+                if comp.graphviz_attrs:
+                    attrs_str = self._format_attr_dict(comp.graphviz_attrs)
+                    lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                else:
+                    lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}")')
+                component_vars[comp.id] = var_name
+        
+        # Generate nested clusters
+        if cluster.clusters:
+            lines.append("")
+            for nested_cluster in cluster.clusters:
+                self._generate_cluster(
+                    nested_cluster, all_components, resolver,
+                    lines, component_vars, cluster_vars, cluster_indent
+                )
+    
+    def _generate_connections(
+        self, 
+        connections: list, 
+        component_vars: dict,
+        lines: list,
+        indent: str
+    ):
+        """Generate connection code with group data flow and direction support."""
+        from collections import defaultdict
+        
+        # Group connections by target for group data flow
+        source_groups = defaultdict(list)
+        
+        for conn in connections:
+            from_var = component_vars.get(conn.from_id)
+            to_var = component_vars.get(conn.to_id)
+            
+            if from_var and to_var:
+                source_groups[to_var].append((from_var, conn))
+        
+        # Generate connections with group data flow optimization
+        processed_connections = set()
+        
+        for conn in connections:
+            from_var = component_vars.get(conn.from_id)
+            to_var = component_vars.get(conn.to_id)
+            
+            if not (from_var and to_var):
+                continue
+            
+            conn_key = (from_var, to_var)
+            if conn_key in processed_connections:
+                continue
+            
+            # Check if we can group multiple sources to same target
+            if len(source_groups[to_var]) > 1:
+                # Group multiple sources to same target
+                sources_with_same_target = [src for src, c in source_groups[to_var] if c.to_id == conn.to_id]
+                if len(sources_with_same_target) > 1:
+                    # Use list-based connection
+                    sources_list = f"[{', '.join(sources_with_same_target)}]"
+                    self._generate_single_connection(
+                        sources_list, to_var, conn, lines, indent, is_group=True
+                    )
+                    # Mark all grouped connections as processed
+                    for src in sources_with_same_target:
+                        processed_connections.add((src, to_var))
+                    continue
+            
+            # Generate individual connection
+            self._generate_single_connection(from_var, to_var, conn, lines, indent)
+            processed_connections.add(conn_key)
+    
+    def _generate_single_connection(
+        self, 
+        from_var: str, 
+        to_var: str, 
+        conn, 
+        lines: list,
+        indent: str,
+        is_group: bool = False
+    ):
+        """Generate a single connection with optional label, attributes, and direction."""
+        # Determine connection operator based on direction
+        if conn.direction == "backward":
+            operator = "<<"
+        elif conn.direction == "bidirectional":
+            operator = "-"
+        else:
+            operator = ">>"  # default forward
+        
+        # Create connection with optional label and custom attributes
+        if conn.label or conn.graphviz_attrs:
+            # Build Edge constructor arguments
+            edge_args = []
+            if conn.label:
+                edge_args.append(f'label="{conn.label}"')
+            if conn.graphviz_attrs:
+                # Add graphviz attributes as kwargs
+                for key, value in conn.graphviz_attrs.items():
+                    if isinstance(value, str):
+                        escaped_value = value.replace('"', '\\"')
+                        edge_args.append(f'{key}="{escaped_value}"')
+                    elif isinstance(value, (int, float)):
+                        edge_args.append(f'{key}={value}')
+                    elif isinstance(value, bool):
+                        edge_args.append(f'{key}={str(value).lower()}')
+                    else:
+                        escaped_value = str(value).replace('"', '\\"')
+                        edge_args.append(f'{key}="{escaped_value}"')
+            edge_params = ", ".join(edge_args)
+            
+            if operator == "-":
+                # Bidirectional with Edge
+                lines.append(f'{indent}{from_var} - Edge({edge_params}) - {to_var}')
+            elif operator == "<<":
+                # Backward with Edge
+                lines.append(f'{indent}{to_var} << Edge({edge_params}) << {from_var}')
+            else:
+                # Forward with Edge
+                lines.append(f'{indent}{from_var} >> Edge({edge_params}) >> {to_var}')
+        else:
+            # Simple connection
+            if operator == "-":
+                lines.append(f'{indent}{from_var} - {to_var}')
+            elif operator == "<<":
+                lines.append(f'{indent}{to_var} << {from_var}')
+            else:
+                lines.append(f'{indent}{from_var} >> {to_var}')
+    
+    def _format_attr_dict(self, attrs: dict) -> str:
+        """
+        Format attribute dictionary for Python code generation.
+        
+        Args:
+            attrs: Dictionary of Graphviz attributes
+            
+        Returns:
+            Formatted string representation of the dictionary
+        """
+        if not attrs:
+            return "{}"
+        
+        formatted_items = []
+        for key, value in attrs.items():
+            # Handle different value types
+            if isinstance(value, str):
+                # Escape quotes in strings
+                escaped_value = value.replace('"', '\\"')
+                formatted_items.append(f'"{key}": "{escaped_value}"')
+            elif isinstance(value, (int, float)):
+                formatted_items.append(f'"{key}": {value}')
+            elif isinstance(value, bool):
+                formatted_items.append(f'"{key}": {str(value).lower()}')
+            elif isinstance(value, list):
+                # Handle lists (e.g., style="filled,rounded")
+                if all(isinstance(item, str) for item in value):
+                    list_str = ",".join(str(item) for item in value)
+                    formatted_items.append(f'"{key}": "{list_str}"')
+                else:
+                    formatted_items.append(f'"{key}": {value}')
+            else:
+                # Fallback: convert to string
+                escaped_value = str(value).replace('"', '\\"')
+                formatted_items.append(f'"{key}": "{escaped_value}"')
+        
+        return "{" + ", ".join(formatted_items) + "}"
     
     def _generate_imports(self, spec: ArchitectureSpec, resolver: ComponentResolver) -> list[str]:
         """Generate import statements based on components used."""
         imports_set = set()
         imports_set.add("from diagrams import Diagram")
+        
+        # Check if Cluster import is needed
+        if spec.clusters:
+            imports_set.add("from diagrams import Cluster")
+        
+        # Check if Edge import is needed for labeled/custom connections
+        needs_edge = any(
+            conn.label or conn.graphviz_attrs 
+            for conn in spec.connections
+        )
+        if needs_edge:
+            imports_set.add("from diagrams import Edge")
         
         for comp in spec.components:
             node_class = resolver.resolve_component_class(comp)
@@ -97,8 +362,8 @@ class DiagramsEngine:
         
         return sorted(imports_set)
     
-    def _execute_code(self, code: str, title: str) -> str:
-        """Execute generated code safely."""
+    def _execute_code(self, code: str, title: str, outformat: Optional[Union[str, List[str]]] = None) -> str:
+        """Execute generated code safely and return primary output file path."""
         # Create temporary Python file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             f.write(code)
@@ -118,36 +383,52 @@ class DiagramsEngine:
                 error_msg = f"Diagram generation failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
                 raise RuntimeError(error_msg)
             
+            # Determine primary format (first in list, or default to PNG)
+            if isinstance(outformat, list) and outformat:
+                primary_format = outformat[0]
+            elif isinstance(outformat, str):
+                primary_format = outformat
+            else:
+                primary_format = "png"
+            
             # Find generated file - diagrams library generates files based on filename parameter
-            # List all PNG files in output directory to find the generated one
             filename_base = title.lower().replace(" ", "_")
-            expected_path = self.output_dir / f"{filename_base}.png"
+            expected_path = self.output_dir / f"{filename_base}.{primary_format}"
             
             # Check if expected file exists
             if expected_path.exists():
                 return str(expected_path)
             
-            # If not found, search for PNG files created recently (within last 5 seconds)
-            # This handles cases where the filename might differ slightly
+            # If not found, search for files with primary format created recently (within last 5 seconds)
             import time
             current_time = time.time()
-            png_files = list(self.output_dir.glob("*.png"))
+            format_files = list(self.output_dir.glob(f"*.{primary_format}"))
             
-            # Find most recently created PNG file
-            if png_files:
+            # Find most recently created file
+            if format_files:
                 # Sort by modification time, most recent first
-                png_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-                most_recent = png_files[0]
+                format_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                most_recent = format_files[0]
                 # Check if it was created recently (within last 5 seconds)
                 file_time = most_recent.stat().st_mtime
                 if current_time - file_time < 5:
                     return str(most_recent)
             
+            # Fallback: search for PNG files if primary format not found
+            if primary_format != "png":
+                png_files = list(self.output_dir.glob("*.png"))
+                if png_files:
+                    png_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                    most_recent = png_files[0]
+                    file_time = most_recent.stat().st_mtime
+                    if current_time - file_time < 5:
+                        return str(most_recent)
+            
             # If still not found, provide detailed error
-            available_files = [f.name for f in self.output_dir.glob("*.png")]
+            available_files = [f.name for f in self.output_dir.glob("*.*")]
             error_msg = (
                 f"Diagram file not found: {expected_path}\n"
-                f"Available PNG files: {available_files}\n"
+                f"Available files: {available_files}\n"
                 f"STDOUT: {result.stdout}\n"
                 f"STDERR: {result.stderr}"
             )

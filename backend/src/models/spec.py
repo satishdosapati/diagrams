@@ -249,6 +249,13 @@ class NodeType(str, Enum):
     VISION_API = "vision_api"
 
 
+class GraphvizAttributes(BaseModel):
+    """Graphviz attribute configuration for diagram styling."""
+    graph_attr: dict = Field(default_factory=dict, description="Graph-level attributes (e.g., rankdir, bgcolor)")
+    node_attr: dict = Field(default_factory=dict, description="Default node attributes (e.g., shape, style, fillcolor)")
+    edge_attr: dict = Field(default_factory=dict, description="Default edge attributes (e.g., color, style, arrowsize)")
+
+
 class Component(BaseModel):
     """
     Represents a component in the architecture.
@@ -261,6 +268,7 @@ class Component(BaseModel):
     type: Union[NodeType, str] = Field(..., description="Component type (enum or node_id string)")
     provider: Optional[str] = Field(None, description="Cloud provider (inherits from spec if not set)")
     metadata: dict = Field(default_factory=dict, description="Additional properties")
+    graphviz_attrs: Optional[dict] = Field(None, description="Component-specific Graphviz node attributes")
     
     @field_validator('type')
     @classmethod
@@ -285,6 +293,20 @@ class Connection(BaseModel):
     from_id: str = Field(..., description="Source component ID")
     to_id: str = Field(..., description="Target component ID")
     label: Optional[str] = Field(None, description="Connection label")
+    graphviz_attrs: Optional[dict] = Field(None, description="Connection-specific Graphviz edge attributes")
+    direction: Optional[Literal["forward", "backward", "bidirectional"]] = Field(
+        None, 
+        description="Connection direction: forward (>>), backward (<<), or bidirectional (-)"
+    )
+
+
+class Cluster(BaseModel):
+    """Represents a cluster/group of components."""
+    id: str = Field(..., description="Unique cluster identifier")
+    name: str = Field(..., description="Cluster display name")
+    component_ids: List[str] = Field(..., description="List of component IDs in this cluster")
+    graphviz_attrs: Optional[dict] = Field(None, description="Cluster-specific Graphviz attributes")
+    clusters: List["Cluster"] = Field(default_factory=list, description="Nested sub-clusters")
 
 
 class ArchitectureSpec(BaseModel):
@@ -294,7 +316,17 @@ class ArchitectureSpec(BaseModel):
     is_multi_cloud: bool = Field(default=False, description="Allow multiple providers")
     components: List[Component] = Field(default_factory=list, description="Architecture components")
     connections: List[Connection] = Field(default_factory=list, description="Component connections")
+    clusters: List[Cluster] = Field(default_factory=list, description="Component clusters/groups")
     metadata: dict = Field(default_factory=dict, description="Additional metadata (diagram_type, etc.)")
+    graphviz_attrs: Optional[GraphvizAttributes] = Field(None, description="Custom Graphviz attributes for diagram styling")
+    direction: Optional[Literal["TB", "BT", "LR", "RL"]] = Field(
+        None,
+        description="Layout direction: TB (top-bottom), BT (bottom-top), LR (left-right), RL (right-left)"
+    )
+    outformat: Optional[Union[str, List[str]]] = Field(
+        None,
+        description="Output format(s): png, svg, pdf, jpg, dot. Can be single format or list."
+    )
     
     @model_validator(mode='after')
     def enforce_provider_consistency(self):

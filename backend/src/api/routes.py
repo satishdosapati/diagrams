@@ -9,10 +9,11 @@ import uuid
 import logging
 import traceback
 
+from typing import Optional, Union, List, Literal
 from ..agents.diagram_agent import DiagramAgent
 from ..agents.modification_agent import ModificationAgent
 from ..generators.universal_generator import UniversalGenerator
-from ..models.spec import ArchitectureSpec
+from ..models.spec import ArchitectureSpec, GraphvizAttributes
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -26,10 +27,20 @@ generator = UniversalGenerator()
 current_specs: dict[str, ArchitectureSpec] = {}
 
 
+class GraphvizAttrsRequest(BaseModel):
+    """Graphviz attributes request model."""
+    graph_attr: Optional[dict] = None
+    node_attr: Optional[dict] = None
+    edge_attr: Optional[dict] = None
+
+
 class GenerateDiagramRequest(BaseModel):
     """Request model for diagram generation."""
     description: str
     provider: str = "aws"  # Default to AWS for backward compatibility
+    graphviz_attrs: Optional[GraphvizAttrsRequest] = None
+    direction: Optional[Literal["TB", "BT", "LR", "RL"]] = None
+    outformat: Optional[Union[str, List[str]]] = None
 
 
 class GenerateDiagramResponse(BaseModel):
@@ -73,6 +84,23 @@ async def generate_diagram(request: GenerateDiagramRequest):
         # Generate spec from description (pass provider from UI)
         # Provider from UI takes precedence - no need to detect or override
         spec = agent.generate_spec(request.description, provider=request.provider)
+        
+        # Apply Graphviz attributes if provided
+        if request.graphviz_attrs:
+            graphviz_attrs = GraphvizAttributes(
+                graph_attr=request.graphviz_attrs.graph_attr or {},
+                node_attr=request.graphviz_attrs.node_attr or {},
+                edge_attr=request.graphviz_attrs.edge_attr or {}
+            )
+            spec.graphviz_attrs = graphviz_attrs
+        
+        # Apply direction override if provided
+        if request.direction:
+            spec.direction = request.direction
+        
+        # Apply outformat override if provided
+        if request.outformat:
+            spec.outformat = request.outformat
         
         # Generate diagram using universal generator
         diagram_path = generator.generate(spec)
