@@ -8,6 +8,7 @@ from strands.models import BedrockModel
 from strands.session.file_session_manager import FileSessionManager
 
 from ..models.spec import ArchitectureSpec
+from ..models.node_registry import get_registry
 
 
 class ModificationAgent:
@@ -24,7 +25,11 @@ class ModificationAgent:
         self.storage_dir = os.path.join(tempfile.gettempdir(), "diagram-generator-sessions")
         os.makedirs(self.storage_dir, exist_ok=True)
         
-        self.system_prompt = """You are an expert at modifying existing architecture diagrams based on user requests.
+        # Load registry for generating node lists
+        self.registry = get_registry()
+        
+        # Base system prompt (will be enhanced with node lists per request)
+        self.base_system_prompt = """You are an expert at modifying existing architecture diagrams based on user requests.
 
 Your task:
 1. Understand the current architecture specification
@@ -67,12 +72,15 @@ Always maintain the same provider as the original spec unless explicitly request
             storage_dir=self.storage_dir
         )
         
+        # Generate system prompt with node lists for the current provider
+        system_prompt = self._generate_system_prompt(current_spec.provider)
+        
         # Create agent instance with session manager for this session
         agent = Agent(
             model=self.model,
             structured_output_model=ArchitectureSpec,
             session_manager=session_manager,
-            system_prompt=self.system_prompt
+            system_prompt=system_prompt
         )
         
         # Build context
@@ -84,6 +92,7 @@ Always maintain the same provider as the original spec unless explicitly request
 User Request: {modification}
 
 Modify the architecture specification according to the user's request.
+Use provider "{current_spec.provider}" and appropriate node types from the lists above.
 Return the updated ArchitectureSpec as JSON.
 """
         
@@ -97,6 +106,27 @@ Return the updated ArchitectureSpec as JSON.
         changes = self._detect_changes(current_spec, updated_spec)
         
         return updated_spec, changes
+    
+    def _generate_system_prompt(self, provider: str) -> str:
+        """Generate system prompt with node lists for the specified provider."""
+        # Get node list for the provider
+        provider_nodes = self.registry.get_node_list(provider)
+        
+        # Format node list (limit to first 50 for readability)
+        def format_node_list(nodes, limit=50):
+            if len(nodes) <= limit:
+                return ", ".join(nodes)
+            return ", ".join(nodes[:limit]) + f", ... (and {len(nodes) - limit} more)"
+        
+        node_list = format_node_list(provider_nodes)
+        
+        return f"""{self.base_system_prompt}
+
+Available node types for provider "{provider}":
+{node_list}
+
+When adding new components, use the exact node_id strings from the list above (e.g., "ec2", "lambda", "vpc").
+"""
     
     def _build_context(self, spec: ArchitectureSpec) -> str:
         """Build context description from spec."""

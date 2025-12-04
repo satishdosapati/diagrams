@@ -167,10 +167,17 @@ async def modify_diagram(request: ModifyDiagramRequest):
             updated_spec=updated_spec.model_dump()
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
+        logger.error(f"Error modifying diagram: {str(e)}", exc_info=True)
+        error_detail = str(e)
+        if os.getenv("DEBUG", "false").lower() == "true":
+            error_detail += f"\n\nTraceback:\n{traceback.format_exc()}"
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to modify diagram: {str(e)}"
+            detail=f"Failed to modify diagram: {error_detail}"
         )
 
 
