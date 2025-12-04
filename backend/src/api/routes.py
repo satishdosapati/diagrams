@@ -1,7 +1,7 @@
 """
 API routes for diagram generation (MVP).
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, field_validator
 import os
@@ -232,9 +232,10 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
         if request.direction:
             spec.direction = request.direction
         
-        # Apply outformat override if provided
+        # Apply outformat override if provided (normalize invalid formats)
         if request.outformat:
-            spec.outformat = request.outformat
+            from ..generators.diagrams_engine import normalize_format_list
+            spec.outformat = normalize_format_list(request.outformat)
         
         # Generate diagram using universal generator
         diagram_path = generator.generate(spec)
@@ -475,10 +476,11 @@ async def regenerate_format(request: RegenerateFormatRequest):
                 detail="Session not found or expired"
             )
         
-        # Create a copy of the spec with new format
+        # Create a copy of the spec with new format (normalize invalid formats)
         from copy import deepcopy
+        from ..generators.diagrams_engine import normalize_format_list
         spec_copy = deepcopy(current_spec)
-        spec_copy.outformat = request.outformat
+        spec_copy.outformat = normalize_format_list(request.outformat)
         
         # Regenerate diagram with new format
         diagram_path = generator.generate(spec_copy)

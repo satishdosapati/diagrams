@@ -14,6 +14,67 @@ from ..resolvers.component_resolver import ComponentResolver
 
 logger = logging.getLogger(__name__)
 
+# Valid Graphviz output formats
+VALID_FORMATS = {
+    "png", "svg", "pdf", "dot", "eps", "ps", "ps2", "webp", 
+    "json", "json0", "svgz", "gv", "canon", "cmap", "cmapx",
+    "cmapx_np", "dot_json", "fig", "imap", "imap_np", "ismap",
+    "mp", "pic", "plain", "plain-ext", "pov", "tk", "vdx",
+    "vml", "vmlz", "x11", "xdot", "xdot1.2", "xdot1.4",
+    "xdot_json", "xlib"
+}
+
+# Format normalization mapping (invalid -> valid)
+FORMAT_NORMALIZATION = {
+    "jpg": "png",
+    "jpeg": "png",
+    "gif": "png",  # GIF not supported, use PNG
+}
+
+
+def normalize_format(format_str: str) -> str:
+    """
+    Normalize output format to a valid Graphviz format.
+    
+    Args:
+        format_str: Format string (e.g., "jpg", "png", "svg")
+        
+    Returns:
+        Normalized format string (valid Graphviz format)
+    """
+    if not format_str:
+        return "png"
+    
+    format_lower = format_str.lower().strip()
+    
+    # Check normalization mapping first
+    if format_lower in FORMAT_NORMALIZATION:
+        normalized = FORMAT_NORMALIZATION[format_lower]
+        logger.warning(f"Format '{format_str}' not supported, using '{normalized}' instead")
+        return normalized
+    
+    # If already valid, return as-is
+    if format_lower in VALID_FORMATS:
+        return format_lower
+    
+    # Default to PNG for unknown formats
+    logger.warning(f"Unknown format '{format_str}', defaulting to 'png'")
+    return "png"
+
+
+def normalize_format_list(formats: Union[str, List[str]]) -> Union[str, List[str]]:
+    """
+    Normalize a single format string or list of formats.
+    
+    Args:
+        formats: Single format string or list of format strings
+        
+    Returns:
+        Normalized format(s)
+    """
+    if isinstance(formats, list):
+        return [normalize_format(f) for f in formats]
+    return normalize_format(formats)
 
 
 class DiagramsEngine:
@@ -39,6 +100,10 @@ class DiagramsEngine:
         Returns:
             Path to generated diagram file (primary format, typically PNG)
         """
+        # Normalize output format if specified
+        if spec.outformat:
+            spec.outformat = normalize_format_list(spec.outformat)
+        
         # Create resolver
         resolver = ComponentResolver(primary_provider=spec.provider)
         
@@ -71,13 +136,14 @@ class DiagramsEngine:
         if spec.direction:
             diagram_params.append(f'direction="{spec.direction}"')
         
-        # Add outformat parameter if specified
+        # Add outformat parameter if specified (normalize first)
         if spec.outformat:
-            if isinstance(spec.outformat, list):
-                outformat_str = str(spec.outformat).replace("'", '"')
+            normalized_format = normalize_format_list(spec.outformat)
+            if isinstance(normalized_format, list):
+                outformat_str = str(normalized_format).replace("'", '"')
                 diagram_params.append(f'outformat={outformat_str}')
             else:
-                diagram_params.append(f'outformat="{spec.outformat}"')
+                diagram_params.append(f'outformat="{normalized_format}"')
         
         # Add Graphviz attributes if provided
         if spec.graphviz_attrs:
@@ -378,6 +444,9 @@ class DiagramsEngine:
     
     def _execute_code(self, code: str, title: str, outformat: Optional[Union[str, List[str]]] = None) -> str:
         """Execute generated code safely and return primary output file path."""
+        # Normalize format before execution
+        normalized_outformat = normalize_format_list(outformat) if outformat else None
+        
         # Create temporary Python file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             f.write(code)
@@ -398,10 +467,10 @@ class DiagramsEngine:
                 raise RuntimeError(error_msg)
             
             # Determine primary format (first in list, or default to PNG)
-            if isinstance(outformat, list) and outformat:
-                primary_format = outformat[0]
-            elif isinstance(outformat, str):
-                primary_format = outformat
+            if isinstance(normalized_outformat, list) and normalized_outformat:
+                primary_format = normalized_outformat[0]
+            elif isinstance(normalized_outformat, str):
+                primary_format = normalized_outformat
             else:
                 primary_format = "png"
             
