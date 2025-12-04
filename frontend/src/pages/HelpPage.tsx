@@ -6,7 +6,7 @@ interface Section {
   content: React.ReactNode
 }
 
-const CodeBlock = ({ code, language = 'python' }: { code: string; language?: string }) => (
+const CodeBlock = ({ code }: { code: string }) => (
   <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
     <code>{code}</code>
   </pre>
