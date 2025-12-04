@@ -356,18 +356,10 @@ class DiagramsEngine:
         """Generate connection code with group data flow and direction support."""
         from collections import defaultdict
         
-        # Group connections by target for group data flow
-        source_groups = defaultdict(list)
-        
-        for conn in connections:
-            from_var = component_vars.get(conn.from_id)
-            to_var = component_vars.get(conn.to_id)
-            
-            if from_var and to_var:
-                source_groups[to_var].append((from_var, conn))
-        
-        # Generate connections with group data flow optimization
-        processed_connections = set()
+        # Group connections by (from_var, to_var) to detect duplicates
+        # Also group by target for potential group data flow optimization
+        connection_map = {}
+        target_groups = defaultdict(list)
         
         for conn in connections:
             from_var = component_vars.get(conn.from_id)
@@ -377,25 +369,49 @@ class DiagramsEngine:
                 continue
             
             conn_key = (from_var, to_var)
+            
+            # Store connection (keep first occurrence if duplicates)
+            if conn_key not in connection_map:
+                connection_map[conn_key] = conn
+                target_groups[to_var].append((from_var, conn))
+        
+        # Generate connections - process grouped targets first, then individual
+        processed_connections = set()
+        
+        # First, handle grouped connections (multiple sources to same target)
+        for to_var, sources_list in target_groups.items():
+            if len(sources_list) > 1:
+                # Check if all connections are simple (no labels/attrs) and same direction
+                # Only group if they're simple forward connections
+                can_group = True
+                first_conn = sources_list[0][1]
+                
+                for from_var, conn in sources_list:
+                    if conn.label or conn.graphviz_attrs or conn.direction not in (None, "forward"):
+                        can_group = False
+                        break
+                    if (from_var, to_var) in processed_connections:
+                        can_group = False
+                        break
+                
+                if can_group:
+                    # Use list-based connection for cleaner grouping
+                    sources_vars = [src for src, _ in sources_list]
+                    sources_list_str = f"[{', '.join(sources_vars)}]"
+                    self._generate_single_connection(
+                        sources_list_str, to_var, first_conn, lines, indent, is_group=True
+                    )
+                    # Mark all grouped connections as processed
+                    for from_var, _ in sources_list:
+                        processed_connections.add((from_var, to_var))
+                    continue
+        
+        # Generate remaining individual connections
+        for conn_key, conn in connection_map.items():
             if conn_key in processed_connections:
                 continue
             
-            # Check if we can group multiple sources to same target
-            if len(source_groups[to_var]) > 1:
-                # Group multiple sources to same target
-                sources_with_same_target = [src for src, c in source_groups[to_var] if c.to_id == conn.to_id]
-                if len(sources_with_same_target) > 1:
-                    # Use list-based connection
-                    sources_list = f"[{', '.join(sources_with_same_target)}]"
-                    self._generate_single_connection(
-                        sources_list, to_var, conn, lines, indent, is_group=True
-                    )
-                    # Mark all grouped connections as processed
-                    for src in sources_with_same_target:
-                        processed_connections.add((src, to_var))
-                    continue
-            
-            # Generate individual connection
+            from_var, to_var = conn_key
             self._generate_single_connection(from_var, to_var, conn, lines, indent)
             processed_connections.add(conn_key)
     
@@ -416,6 +432,31 @@ class DiagramsEngine:
             operator = "-"
         else:
             operator = ">>"  # default forward
+        
+        # Handle group connections (list of sources to single target)
+        if is_group and isinstance(from_var, str) and from_var.startswith("["):
+            # Group connection: [source1, source2, ...] >> target
+            if conn.label or conn.graphviz_attrs:
+                edge_args = []
+                if conn.label:
+                    edge_args.append(f'label="{conn.label}"')
+                if conn.graphviz_attrs:
+                    for key, value in conn.graphviz_attrs.items():
+                        if isinstance(value, str):
+                            escaped_value = value.replace('"', '\\"')
+                            edge_args.append(f'{key}="{escaped_value}"')
+                        elif isinstance(value, (int, float)):
+                            edge_args.append(f'{key}={value}')
+                        elif isinstance(value, bool):
+                            edge_args.append(f'{key}={str(value).lower()}')
+                        else:
+                            escaped_value = str(value).replace('"', '\\"')
+                            edge_args.append(f'{key}="{escaped_value}"')
+                edge_params = ", ".join(edge_args)
+                lines.append(f'{indent}{from_var} >> Edge({edge_params}) >> {to_var}')
+            else:
+                lines.append(f'{indent}{from_var} >> {to_var}')
+            return
         
         # Create connection with optional label and custom attributes
         if conn.label or conn.graphviz_attrs:

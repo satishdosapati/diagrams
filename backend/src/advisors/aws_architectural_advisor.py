@@ -476,15 +476,46 @@ AWS Architectural Best Practices:
                 final_connections = optimized_connections
                 logger.info(f"[ADVISOR] Inserted {len(optimized_components) - len(sorted_components)} blank nodes for cleaner routing")
         
-        # Prepare graphviz attributes for edge merging
+        # Prepare graphviz attributes for better edge routing
         graphviz_attrs = spec.graphviz_attrs
-        if len(final_connections) > 10:
-            logger.info(f"[ADVISOR] Applying edge merging for complex diagram ({len(final_connections)} connections)...")
-            if not graphviz_attrs:
-                graphviz_attrs = GraphvizAttributes()
-            graphviz_attrs.graph_attr["concentrate"] = "true"
-            graphviz_attrs.graph_attr["splines"] = "spline"
-            logger.info(f"[ADVISOR] Edge merging enabled (concentrate=true, splines=spline)")
+        if not graphviz_attrs:
+            graphviz_attrs = GraphvizAttributes()
+        
+        # Always apply edge routing optimizations for cleaner diagrams
+        if len(final_connections) > 5:
+            logger.info(f"[ADVISOR] Applying edge routing optimizations for diagram ({len(final_connections)} connections)...")
+            
+            # Use orthogonal or polyline splines for cleaner edge routing
+            # Orthogonal is cleaner but may not work well for all layouts
+            # Polyline is a good compromise - cleaner than spline but more flexible than ortho
+            if len(final_connections) > 15:
+                graphviz_attrs.graph_attr["splines"] = "polyline"
+                graphviz_attrs.graph_attr["concentrate"] = "true"
+            elif len(final_connections) > 10:
+                graphviz_attrs.graph_attr["splines"] = "ortho"
+            else:
+                graphviz_attrs.graph_attr["splines"] = "polyline"
+        else:
+            # For simpler diagrams, use polyline for cleaner routing
+            if "splines" not in graphviz_attrs.graph_attr:
+                graphviz_attrs.graph_attr["splines"] = "polyline"
+        
+        # Improve spacing for better edge routing (always apply if not set)
+        if "nodesep" not in graphviz_attrs.graph_attr:
+            graphviz_attrs.graph_attr["nodesep"] = "0.8"
+        if "ranksep" not in graphviz_attrs.graph_attr:
+            graphviz_attrs.graph_attr["ranksep"] = "1.2"
+        
+        # Set default edge attributes for cleaner appearance (always apply if not set)
+        if not graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr = {}
+        if "arrowsize" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["arrowsize"] = "0.8"
+        if "penwidth" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["penwidth"] = "1.0"
+        
+        if len(final_connections) > 5:
+            logger.info(f"[ADVISOR] Edge routing: splines={graphviz_attrs.graph_attr.get('splines')}, concentrate={graphviz_attrs.graph_attr.get('concentrate', 'false')}")
         
         # Create enhanced spec
         enhanced_spec = ArchitectureSpec(

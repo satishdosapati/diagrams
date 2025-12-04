@@ -503,11 +503,17 @@ async def regenerate_format(request: RegenerateFormatRequest):
             generated_code=None  # Don't regenerate code, just the diagram
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is (e.g., 404 for session not found)
+        raise
     except Exception as e:
         logger.error(f"Error regenerating format: {str(e)}", exc_info=True)
+        error_detail = str(e)
+        if os.getenv("DEBUG", "false").lower() == "true":
+            error_detail += f"\n\nTraceback:\n{traceback.format_exc()}"
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to regenerate diagram: {str(e)}"
+            detail=f"Failed to regenerate diagram: {error_detail}"
         )
 
 
@@ -538,7 +544,11 @@ async def undo_diagram(request: UndoDiagramRequest):
             updated_spec=current_spec.model_dump()
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is (e.g., 404 for session not found)
+        raise
     except Exception as e:
+        logger.error(f"Error undoing diagram: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to undo: {str(e)}"
