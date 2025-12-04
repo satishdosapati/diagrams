@@ -46,22 +46,41 @@ Also detect the cloud provider if mentioned (AWS, Azure, GCP).
 """
         )
     
-    def classify(self, description: str) -> DiagramClassification:
+    def classify(self, description: str, provider_hint: Optional[str] = None) -> DiagramClassification:
         """
         Classify diagram type from description.
         
         Args:
             description: Natural language description
+            provider_hint: Optional provider hint from UI. If provided, use this instead of detecting.
             
         Returns:
             Diagram classification
         """
-        prompt = f"""Classify this architecture description:
+        if provider_hint:
+            # Provider is explicitly provided from UI, use it
+            prompt = f"""Classify this architecture description:
 
 {description}
 
-Return the diagram type and provider."""
+The user has selected provider: {provider_hint.upper()}
+Use provider: {provider_hint}
+
+Return the diagram type. Set provider to "{provider_hint}"."""
+        else:
+            # No provider hint, detect from description
+            prompt = f"""Classify this architecture description:
+
+{description}
+
+Return the diagram type and provider (if mentioned in description)."""
         
         response = self.agent(prompt)
-        return response.structured_output
+        classification = response.structured_output
+        
+        # Override provider if hint was provided
+        if provider_hint:
+            classification.provider = provider_hint
+        
+        return classification
 

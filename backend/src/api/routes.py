@@ -70,12 +70,9 @@ async def generate_diagram(request: GenerateDiagramRequest):
         Response with diagram URL
     """
     try:
-        # Generate spec from description
-        spec = agent.generate_spec(request.description)
-        
-        # Override provider if specified in request
-        if request.provider:
-            spec.provider = request.provider
+        # Generate spec from description (pass provider from UI)
+        # Provider from UI takes precedence - no need to detect or override
+        spec = agent.generate_spec(request.description, provider=request.provider)
         
         # Generate diagram using universal generator
         diagram_path = generator.generate(spec)

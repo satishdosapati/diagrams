@@ -2,6 +2,7 @@
 Diagram generation agent using Strands Agents for MVP.
 """
 import os
+from typing import Optional
 from strands import Agent
 from strands.models import BedrockModel
 
@@ -93,25 +94,32 @@ Output:
 }}
 """
     
-    def generate_spec(self, description: str) -> ArchitectureSpec:
+    def generate_spec(self, description: str, provider: Optional[str] = None) -> ArchitectureSpec:
         """
         Generate ArchitectureSpec from natural language description.
         
         Args:
             description: Natural language architecture description
+            provider: Optional provider hint from UI (aws, azure, gcp). 
+                     If provided, this takes precedence over detection.
             
         Returns:
             ArchitectureSpec object
         """
-        # Classify diagram type
-        classification = self.classifier.classify(description)
+        # Classify diagram type (pass provider if available)
+        classification = self.classifier.classify(description, provider_hint=provider)
+        
+        # Use provider from UI if provided, otherwise use classification result
+        final_provider = provider or classification.provider or "aws"
         
         prompt = f"""Parse this architecture description into an ArchitectureSpec:
 
 {description}
 
 Diagram Type: {classification.diagram_type}
-Provider: {classification.provider or "detect from description"}
+Provider: {final_provider}
+
+IMPORTANT: Use provider "{final_provider}" for all components. Use {final_provider.upper()} node types from the lists above.
 
 Return a valid ArchitectureSpec JSON with components and connections."""
         
@@ -123,9 +131,8 @@ Return a valid ArchitectureSpec JSON with components and connections."""
         # Set diagram type in metadata
         spec.metadata["diagram_type"] = classification.diagram_type
         
-        # Set provider from classification if detected
-        if classification.provider:
-            spec.provider = classification.provider
+        # Set provider (UI selection takes precedence)
+        spec.provider = final_provider
         
         return spec
 
