@@ -51,9 +51,9 @@ class DiagramsEngine:
         lines.append("")
         
         # Diagram context
+        # diagrams library filename parameter should be just the base name (no path, no extension)
         filename = spec.title.lower().replace(" ", "_")
-        output_path = str(self.output_dir / filename)
-        lines.append(f'with Diagram("{spec.title}", show=False, filename="{output_path}"):')
+        lines.append(f'with Diagram("{spec.title}", show=False, filename="{filename}"):')
         
         # Generate component variables
         component_vars = {}
@@ -115,16 +115,43 @@ class DiagramsEngine:
             )
             
             if result.returncode != 0:
-                raise RuntimeError(f"Diagram generation failed: {result.stderr}")
+                error_msg = f"Diagram generation failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+                raise RuntimeError(error_msg)
             
-            # Find generated file
-            filename = title.lower().replace(" ", "_")
-            output_path = self.output_dir / f"{filename}.png"
+            # Find generated file - diagrams library generates files based on filename parameter
+            # List all PNG files in output directory to find the generated one
+            filename_base = title.lower().replace(" ", "_")
+            expected_path = self.output_dir / f"{filename_base}.png"
             
-            if not output_path.exists():
-                raise RuntimeError(f"Diagram file not found: {output_path}")
+            # Check if expected file exists
+            if expected_path.exists():
+                return str(expected_path)
             
-            return str(output_path)
+            # If not found, search for PNG files created recently (within last 5 seconds)
+            # This handles cases where the filename might differ slightly
+            import time
+            current_time = time.time()
+            png_files = list(self.output_dir.glob("*.png"))
+            
+            # Find most recently created PNG file
+            if png_files:
+                # Sort by modification time, most recent first
+                png_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                most_recent = png_files[0]
+                # Check if it was created recently (within last 5 seconds)
+                file_time = most_recent.stat().st_mtime
+                if current_time - file_time < 5:
+                    return str(most_recent)
+            
+            # If still not found, provide detailed error
+            available_files = [f.name for f in self.output_dir.glob("*.png")]
+            error_msg = (
+                f"Diagram file not found: {expected_path}\n"
+                f"Available PNG files: {available_files}\n"
+                f"STDOUT: {result.stdout}\n"
+                f"STDERR: {result.stderr}"
+            )
+            raise RuntimeError(error_msg)
             
         finally:
             # Cleanup
