@@ -83,13 +83,18 @@ class TestDiagramGeneration:
             assert "diagram_url" in data
     
     def test_generate_diagram_all_providers(self):
-        """Test diagram generation for all providers."""
-        providers = ["aws", "azure", "gcp"]
-        for provider in providers:
+        """Test diagram generation for all providers with provider-specific services."""
+        provider_tests = {
+            "aws": "EC2 instance",
+            "azure": "Azure VM virtual machine",
+            "gcp": "Compute Engine instance"
+        }
+        
+        for provider, description in provider_tests.items():
             response = client.post(
                 "/api/generate-diagram",
                 json={
-                    "description": f"Simple compute instance",
+                    "description": description,
                     "provider": provider,
                     "outformat": "png"
                 }
@@ -97,9 +102,19 @@ class TestDiagramGeneration:
             assert response.status_code == 200, f"Failed for provider: {provider}"
             data = response.json()
             assert "diagram_url" in data
+            assert "generated_code" in data
+            
+            # Verify generated code uses correct provider module
+            generated_code = data["generated_code"]
+            if provider == "aws":
+                assert "diagrams.aws" in generated_code or "from diagrams.aws" in generated_code
+            elif provider == "azure":
+                assert "diagrams.azure" in generated_code or "from diagrams.azure" in generated_code
+            elif provider == "gcp":
+                assert "diagrams.gcp" in generated_code or "from diagrams.gcp" in generated_code
     
     def test_generate_diagram_with_direction(self):
-        """Test diagram generation with direction parameter."""
+        """Test diagram generation with direction parameter for AWS."""
         response = client.post(
             "/api/generate-diagram",
             json={
@@ -112,6 +127,44 @@ class TestDiagramGeneration:
         assert response.status_code == 200
         data = response.json()
         assert "diagram_url" in data
+    
+    def test_generate_diagram_provider_specific_services(self):
+        """Test diagram generation with provider-specific services."""
+        provider_tests = {
+            "aws": {
+                "description": "VPC with EC2 instance and RDS database",
+                "expected_modules": ["diagrams.aws.compute", "diagrams.aws.database", "diagrams.aws.network"]
+            },
+            "azure": {
+                "description": "Virtual Network with Azure VM and Azure SQL Database",
+                "expected_modules": ["diagrams.azure.compute", "diagrams.azure.database", "diagrams.azure.network"]
+            },
+            "gcp": {
+                "description": "VPC with Compute Engine and Cloud SQL",
+                "expected_modules": ["diagrams.gcp.compute", "diagrams.gcp.database", "diagrams.gcp.network"]
+            }
+        }
+        
+        for provider, test_config in provider_tests.items():
+            response = client.post(
+                "/api/generate-diagram",
+                json={
+                    "description": test_config["description"],
+                    "provider": provider,
+                    "outformat": "png"
+                }
+            )
+            assert response.status_code == 200, f"Failed for provider: {provider}"
+            data = response.json()
+            assert "diagram_url" in data
+            assert "generated_code" in data
+            
+            # Verify generated code uses correct provider modules
+            generated_code = data["generated_code"]
+            for expected_module in test_config["expected_modules"]:
+                # Check if module is imported or used in code
+                assert expected_module in generated_code or expected_module.replace("diagrams.", "") in generated_code, \
+                    f"Expected module {expected_module} not found in generated code for {provider}"
     
     def test_generate_diagram_invalid_provider(self):
         """Test diagram generation with invalid provider."""
@@ -142,7 +195,7 @@ class TestDiagramModification:
     """Test diagram modification endpoints."""
     
     def test_modify_diagram(self):
-        """Test modifying an existing diagram."""
+        """Test modifying an existing AWS diagram."""
         # First generate a diagram
         gen_response = client.post(
             "/api/generate-diagram",
@@ -168,6 +221,49 @@ class TestDiagramModification:
         assert "diagram_url" in data
         assert "changes" in data
         assert "updated_spec" in data
+    
+    def test_modify_diagram_provider_specific(self):
+        """Test modifying diagrams for different providers with provider-specific modifications."""
+        provider_tests = {
+            "aws": {
+                "description": "EC2 instance",
+                "modification": "Add S3 bucket storage"
+            },
+            "azure": {
+                "description": "Azure VM",
+                "modification": "Add Azure Blob Storage"
+            },
+            "gcp": {
+                "description": "Compute Engine instance",
+                "modification": "Add Cloud Storage bucket"
+            }
+        }
+        
+        for provider, test_config in provider_tests.items():
+            # Generate diagram
+            gen_response = client.post(
+                "/api/generate-diagram",
+                json={
+                    "description": test_config["description"],
+                    "provider": provider,
+                    "outformat": "png"
+                }
+            )
+            assert gen_response.status_code == 200, f"Failed to generate diagram for {provider}"
+            session_id = gen_response.json()["session_id"]
+            
+            # Modify diagram
+            mod_response = client.post(
+                "/api/modify-diagram",
+                json={
+                    "session_id": session_id,
+                    "modification": test_config["modification"]
+                }
+            )
+            assert mod_response.status_code == 200, f"Failed to modify diagram for {provider}"
+            mod_data = mod_response.json()
+            assert "diagram_url" in mod_data
+            assert "changes" in mod_data
     
     def test_modify_diagram_invalid_session(self):
         """Test modifying with invalid session ID."""
