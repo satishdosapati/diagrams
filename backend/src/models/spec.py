@@ -306,8 +306,9 @@ class Cluster(BaseModel):
     name: str = Field(..., description="Cluster display name")
     component_ids: List[str] = Field(..., description="List of component IDs in this cluster")
     graphviz_attrs: Optional[dict] = Field(None, description="Cluster-specific Graphviz attributes")
-    # Note: Nested clusters are supported but optional to avoid schema recursion issues
-    clusters: Optional[List["Cluster"]] = Field(default=None, description="Nested sub-clusters (optional)")
+    # Note: Nested clusters removed to avoid recursion issues with Strands structured output
+    # For nesting, use parent_id to reference parent cluster
+    parent_id: Optional[str] = Field(None, description="Parent cluster ID for nested clusters")
     
     model_config = {"arbitrary_types_allowed": True}
 
@@ -367,8 +368,7 @@ class ArchitectureSpec(BaseModel):
         }
 
 
-# Resolve forward references for recursive models
-# This is needed for Strands structured output to work correctly
+# Resolve forward references (no longer needed but kept for safety)
 Cluster.model_rebuild()
 ArchitectureSpec.model_rebuild()
 

@@ -118,13 +118,18 @@ class DiagramsEngine:
                     lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
                 component_vars[comp.id] = var_name
         
-        # Generate clusters (with nested support)
+        # Generate clusters (with parent_id-based nesting support)
         if spec.clusters:
             lines.append("")
-            for cluster in spec.clusters:
-                self._generate_cluster(
-                    cluster, spec.components, resolver, 
-                    lines, component_vars, cluster_vars, indent
+            # Build cluster hierarchy from parent_id references
+            cluster_map = {cluster.id: cluster for cluster in spec.clusters}
+            root_clusters = [c for c in spec.clusters if not c.parent_id]
+            
+            # Generate root clusters first, then nested ones
+            for cluster in root_clusters:
+                self._generate_cluster_with_nesting(
+                    cluster, spec.clusters, spec.components, resolver,
+                    lines, component_vars, cluster_vars, indent, cluster_map
                 )
         
         # Generate connections with group data flow support
@@ -134,19 +139,19 @@ class DiagramsEngine:
         
         return "\n".join(lines)
     
-    def _generate_cluster(
-        self, 
-        cluster, 
-        all_components: list, 
+    def _generate_cluster_with_nesting(
+        self,
+        cluster,
+        all_clusters: list,
+        all_components: list,
         resolver: ComponentResolver,
-        lines: list, 
-        component_vars: dict, 
+        lines: list,
+        component_vars: dict,
         cluster_vars: dict,
-        indent: str
+        indent: str,
+        cluster_map: dict
     ):
-        """Generate cluster code block with nested support."""
-        from ..models.spec import Cluster
-        
+        """Generate cluster code block with parent_id-based nesting support."""
         cluster_var = cluster.id.replace("-", "_")
         cluster_vars[cluster.id] = cluster_var
         
@@ -180,13 +185,14 @@ class DiagramsEngine:
                     lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}")')
                 component_vars[comp.id] = var_name
         
-        # Generate nested clusters (if present)
-        if cluster.clusters:
+        # Generate nested clusters (children with this cluster as parent)
+        child_clusters = [c for c in all_clusters if c.parent_id == cluster.id]
+        if child_clusters:
             lines.append("")
-            for nested_cluster in cluster.clusters:
-                self._generate_cluster(
-                    nested_cluster, all_components, resolver,
-                    lines, component_vars, cluster_vars, cluster_indent
+            for child_cluster in child_clusters:
+                self._generate_cluster_with_nesting(
+                    child_cluster, all_clusters, all_components, resolver,
+                    lines, component_vars, cluster_vars, cluster_indent, cluster_map
                 )
     
     def _generate_connections(
