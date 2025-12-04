@@ -123,3 +123,80 @@ export async function undoDiagram(sessionId: string): Promise<ModifyDiagramRespo
 
   return response.json();
 }
+
+export interface ExecuteCodeRequest {
+  code: string;
+  provider?: string;
+  title?: string;
+  outformat?: string;
+}
+
+export interface ExecuteCodeResponse {
+  diagram_url: string;
+  message: string;
+  errors: string[];
+  warnings: string[];
+}
+
+export async function executeCode(request: ExecuteCodeRequest): Promise<ExecuteCodeResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/execute-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: request.code,
+      provider: request.provider || 'aws',
+      title: request.title || 'Diagram',
+      outformat: request.outformat || 'png'
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to execute code');
+  }
+
+  return response.json();
+}
+
+export interface CompletionsResponse {
+  classes: Record<string, string[]>;
+  imports: Record<string, string>;
+  keywords: string[];
+  operators: string[];
+}
+
+export async function getCompletions(provider: string): Promise<CompletionsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/completions/${provider}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to get completions');
+  }
+
+  return response.json();
+}
+
+export interface ValidateCodeRequest {
+  code: string;
+}
+
+export interface ValidateCodeResponse {
+  valid: boolean;
+  errors: string[];
+  suggestions: string[];
+}
+
+export async function validateCode(code: string): Promise<ValidateCodeResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/validate-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to validate code');
+  }
+
+  return response.json();
+}

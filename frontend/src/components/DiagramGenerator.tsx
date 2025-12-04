@@ -2,10 +2,14 @@ import { useState } from 'react'
 import { generateDiagram, getDiagramUrl } from '../services/api'
 import ProviderSelector from './ProviderSelector'
 import DiagramChat from './DiagramChat'
+import ExamplesPanel from './ExamplesPanel'
+import AdvancedCodeMode from './AdvancedCodeMode'
 
 type Provider = 'aws' | 'azure' | 'gcp'
+type Mode = 'natural-language' | 'advanced-code'
 
 function DiagramGenerator() {
+  const [mode, setMode] = useState<Mode>('natural-language')
   const [description, setDescription] = useState('')
   const [selectedProvider, setSelectedProvider] = useState<Provider>('aws')
   const [diagramUrl, setDiagramUrl] = useState<string | null>(null)
@@ -14,8 +18,14 @@ function DiagramGenerator() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showChat, setShowChat] = useState(false)
+  const [showExamples, setShowExamples] = useState(true)
 
   const handleGenerate = async () => {
+    if (mode === 'advanced-code') {
+      // Advanced code mode handles its own generation
+      return
+    }
+
     if (!description.trim()) {
       setError('Please enter an architecture description')
       return
@@ -45,40 +55,108 @@ function DiagramGenerator() {
     }
   }
 
+  const handleExampleSelect = (prompt: string) => {
+    setDescription(prompt)
+    setShowExamples(false)
+  }
+
+  const handleDiagramGenerated = (url: string) => {
+    setDiagramUrl(url)
+    setShowChat(true)
+  }
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Generate Architecture Diagram</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Generate Architecture Diagram</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowExamples(!showExamples)}
+            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50"
+          >
+            {showExamples ? 'Hide' : 'Show'} Examples
+          </button>
+        </div>
+      </div>
+
+      {/* Mode Toggle */}
+      <div className="mb-4">
+        <div className="flex border rounded-md p-1 bg-gray-50">
+          <button
+            onClick={() => setMode('natural-language')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              mode === 'natural-language'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Natural Language
+          </button>
+          <button
+            onClick={() => setMode('advanced-code')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              mode === 'advanced-code'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Advanced Code
+          </button>
+        </div>
+      </div>
       
       <div className="space-y-4">
         <ProviderSelector
           selectedProvider={selectedProvider}
           onSelectionChange={setSelectedProvider}
         />
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Describe your AWS architecture
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            disabled={isGenerating}
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            Describe the AWS architecture you want to visualize
-          </p>
-        </div>
 
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating || !description.trim()}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? 'Generating...' : 'Generate Diagram'}
-        </button>
+        {/* Examples Panel */}
+        {showExamples && mode === 'natural-language' && (
+          <ExamplesPanel
+            provider={selectedProvider}
+            onSelectExample={handleExampleSelect}
+          />
+        )}
+
+        {/* Natural Language Mode */}
+        {mode === 'natural-language' && (
+          <>
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Describe your {selectedProvider.toUpperCase()} architecture
+              </label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={isGenerating}
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
+              </p>
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !description.trim()}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? 'Generating...' : 'Generate Diagram'}
+            </button>
+          </>
+        )}
+
+        {/* Advanced Code Mode */}
+        {mode === 'advanced-code' && (
+          <AdvancedCodeMode
+            provider={selectedProvider}
+            onDiagramGenerated={handleDiagramGenerated}
+          />
+        )}
 
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-md">
