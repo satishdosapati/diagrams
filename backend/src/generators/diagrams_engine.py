@@ -180,7 +180,7 @@ class DiagramsEngine:
                     lines.append(f'{cluster_indent}{var_name} = {class_name}("{comp.name}")')
                 component_vars[comp.id] = var_name
         
-        # Generate nested clusters
+        # Generate nested clusters (if present)
         if cluster.clusters:
             lines.append("")
             for nested_cluster in cluster.clusters:
