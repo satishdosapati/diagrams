@@ -261,6 +261,14 @@ class IntelligentNodeResolver:
                 
                 # Default mappings for common patterns (less specific)
                 if pattern == "subnet":
+                    # Provider-specific handling: GCP doesn't have subnet nodes (subnets are part of VPC)
+                    if self.provider == "gcp":
+                        if "vpc" in self.node_index:
+                            logger.debug("Mapping subnet to VPC for GCP (subnets are part of VPC)")
+                            return "vpc"
+                        return None
+                    
+                    # AWS/Azure subnet resolution
                     # Check component name for public/private indicators
                     if component_name:
                         name_lower = component_name.lower()
@@ -275,7 +283,7 @@ class IntelligentNodeResolver:
                                 logger.debug("Private subnet detected from component name")
                                 return "private_subnet"
                     
-                    # Default to private subnet if no clear indicator
+                    # Default to private subnet if no clear indicator (AWS only)
                     if "private_subnet" in self.node_index:
                         logger.debug("Defaulting to private_subnet")
                         return "private_subnet"

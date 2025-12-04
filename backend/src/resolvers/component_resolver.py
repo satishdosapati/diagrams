@@ -101,6 +101,12 @@ class ComponentResolver:
         # Get node type as string (NodeType enum value or direct string)
         node_id = component.get_node_id()
         
+        # Provider-specific fallbacks for components that don't exist in certain providers
+        # GCP doesn't have separate subnet components (subnets are part of VPC)
+        if provider == "gcp" and node_id.lower() in ["subnet", "subnets", "public_subnet", "private_subnet"]:
+            logger.info(f"Mapping '{node_id}' to 'vpc' for GCP (subnets are part of VPC)")
+            node_id = "vpc"
+        
         # STEP 1: Try library discovery first (source of truth)
         # Get category hint from registry if available
         category_hint = None
