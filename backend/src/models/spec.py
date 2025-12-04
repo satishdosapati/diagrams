@@ -329,7 +329,7 @@ class ArchitectureSpec(BaseModel):
     )
     outformat: Optional[Union[str, List[str]]] = Field(
         None,
-        description="Output format(s): png, svg, pdf, jpg, dot. Can be single format or list."
+        description="Output format(s): png, svg, pdf, dot. Can be single format or list."
     )
     
     @model_validator(mode='after')

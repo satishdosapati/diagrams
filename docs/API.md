@@ -49,7 +49,7 @@ Generate an architecture diagram from natural language description.
 **Parameters:**
 - `description` (required): Natural language description of the architecture
 - `provider` (optional, default: "aws"): Cloud provider - "aws", "azure", or "gcp"
-- `outformat` (optional, default: "png"): Output format - "png", "svg", "pdf", "dot", "jpg"
+- `outformat` (optional, default: "png"): Output format - "png", "svg", "pdf", "dot"
 - `direction` (optional): Diagram direction - "LR", "TB", "BT", "RL"
 - `graphviz_attrs` (optional): Graphviz styling attributes
 
@@ -125,7 +125,7 @@ Regenerate an existing diagram in a different output format.
 
 **Parameters:**
 - `session_id` (required): Session ID from previous diagram generation
-- `outformat` (required): Desired output format - "png", "svg", "pdf", "dot", "jpg"
+- `outformat` (required): Desired output format - "png", "svg", "pdf", "dot"
 
 **Response:**
 ```json
@@ -230,7 +230,7 @@ Retrieve a generated diagram file.
 - `filename` (path parameter): Diagram filename (e.g., "my_diagram.png")
 
 **Response:** 
-- Image file (PNG, SVG, JPG) or DOT source code
+- Image file (PNG, SVG) or DOT source code
 
 **Status Codes:**
 - `200`: Success
@@ -266,4 +266,3 @@ Supported output formats:
 - **svg**: Scalable Vector Graphics (vector, editable)
 - **pdf**: PDF document (vector)
 - **dot**: Graphviz DOT source code (text, editable)
-- **jpg**: JPEG image (raster)

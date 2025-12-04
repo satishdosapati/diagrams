@@ -22,7 +22,7 @@ app = FastAPI(
     
     * **Natural Language Processing**: Convert text descriptions into architecture diagrams
     * **Multi-Cloud Support**: AWS, Azure, and GCP
-    * **Multiple Output Formats**: PNG, SVG, PDF, DOT, JPG
+    * **Multiple Output Formats**: PNG, SVG, PDF, DOT
     * **Interactive Modifications**: Chat-based diagram modifications
     * **Advanced Code Mode**: Direct Python code editing
     

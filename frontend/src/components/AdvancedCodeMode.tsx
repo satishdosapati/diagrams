@@ -3,7 +3,7 @@ import Editor from '@monaco-editor/react'
 import { executeCode, getCompletions, validateCode, getDiagramUrl } from '../services/api'
 import type { editor } from 'monaco-editor'
 
-type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot' | 'jpg'
+type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot'
 
 interface CompletionData {
   completions?: string[]
@@ -241,13 +241,12 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
           <option value="svg">SVG (Editable Vector)</option>
           <option value="pdf">PDF (Document)</option>
           <option value="dot">DOT (Source Code)</option>
-          <option value="jpg">JPG (Image)</option>
         </select>
         <p className="mt-1 text-xs text-gray-500">
           {outputFormat === 'svg' && 'SVG can be edited in Draw.io, Figma, or Inkscape'}
           {outputFormat === 'dot' && 'DOT is the Graphviz source code - edit and regenerate'}
           {outputFormat === 'pdf' && 'PDF format for documents and presentations'}
-          {(outputFormat === 'png' || outputFormat === 'jpg') && 'Raster image format'}
+          {outputFormat === 'png' && 'Raster image format'}
         </p>
       </div>
 

@@ -7,7 +7,7 @@ import AdvancedCodeMode from './AdvancedCodeMode'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
-type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot' | 'jpg'
+type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot'
 
 function DiagramGenerator() {
   const [mode, setMode] = useState<Mode>('natural-language')
@@ -162,13 +162,12 @@ function DiagramGenerator() {
               <option value="svg">SVG (Editable Vector)</option>
               <option value="pdf">PDF (Document)</option>
               <option value="dot">DOT (Source Code)</option>
-              <option value="jpg">JPG (Image)</option>
             </select>
             <p className="mt-1 text-xs text-gray-500">
               {outputFormat === 'svg' && 'SVG can be edited in Draw.io, Figma, or Inkscape'}
               {outputFormat === 'dot' && 'DOT is the Graphviz source code - edit and regenerate'}
               {outputFormat === 'pdf' && 'PDF format for documents and presentations'}
-              {(outputFormat === 'png' || outputFormat === 'jpg') && 'Raster image format'}
+              {outputFormat === 'png' && 'Raster image format'}
             </p>
           </div>
 
@@ -263,7 +262,6 @@ function DiagramGenerator() {
                     <option value="svg">SVG</option>
                     <option value="pdf">PDF</option>
                     <option value="dot">DOT</option>
-                    <option value="jpg">JPG</option>
                   </select>
                   {isRegenerating && (
                     <span className="text-sm text-gray-500">Regenerating...</span>

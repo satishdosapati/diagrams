@@ -15,6 +15,7 @@ from ..resolvers.component_resolver import ComponentResolver
 logger = logging.getLogger(__name__)
 
 
+
 class DiagramsEngine:
     """Generates architecture diagrams using the Diagrams library."""
     
@@ -462,7 +463,7 @@ class DiagramsEngine:
             max_age = 24 * 3600  # 24 hours in seconds
             
             # Supported diagram file extensions
-            extensions = ['.png', '.svg', '.pdf', '.jpg', '.jpeg', '.dot', '.gif']
+            extensions = ['.png', '.svg', '.pdf', '.dot', '.gif']
             
             for file_path in self.output_dir.iterdir():
                 if file_path.is_file() and file_path.suffix.lower() in extensions:

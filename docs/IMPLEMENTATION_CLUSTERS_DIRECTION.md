@@ -61,7 +61,7 @@ with Diagram("Data Pipeline", direction="LR"):
 
 **Added:**
 - `outformat` parameter supporting:
-  - Single format: `"png"`, `"svg"`, `"pdf"`, `"jpg"`, `"dot"`
+  - Single format: `"png"`, `"svg"`, `"pdf"`, `"dot"`
   - Multiple formats: `["png", "svg", "pdf"]`
 - API accepts optional `outformat` override
 

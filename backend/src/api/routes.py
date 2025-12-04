@@ -195,7 +195,7 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
         request: Diagram generation request containing:
             - description: Natural language description of the architecture
             - provider: Cloud provider (aws, azure, gcp)
-            - outformat: Output format (png, svg, pdf, dot, jpg)
+            - outformat: Output format (png, svg, pdf, dot)
             - graphviz_attrs: Optional Graphviz styling attributes
             - direction: Optional diagram direction (LR, TB, etc.)
         http_request: FastAPI request object (for request ID tracking)
@@ -453,7 +453,6 @@ async def regenerate_format(request: RegenerateFormatRequest):
     - svg: Scalable Vector Graphics
     - pdf: PDF document
     - dot: Graphviz DOT source code
-    - jpg: JPEG image
     
     Args:
         request: Regeneration request containing:

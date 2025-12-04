@@ -6,7 +6,7 @@ AI-powered architecture diagram generator that converts natural language descrip
 
 - ✅ **Natural Language Processing**: Convert text descriptions to diagrams using Strands Agents
 - ✅ **Multi-Cloud Support**: AWS, Azure, and GCP with provider consistency enforcement
-- ✅ **Multiple Output Formats**: PNG, SVG, PDF, DOT, JPG
+- ✅ **Multiple Output Formats**: PNG, SVG, PDF, DOT
 - ✅ **Chat-Based Modifications**: Iterative refinement through conversation
 - ✅ **Advanced Code Mode**: Direct Python code editing with autocomplete
 - ✅ **Examples Panel**: Pre-built architecture examples for each provider
@@ -107,7 +107,7 @@ See [DEPLOYMENT_INSTRUCTIONS.md](DEPLOYMENT_INSTRUCTIONS.md) or [docs/DEPLOYMENT
 
 ## Recent Improvements
 
-- ✅ Output format selection (PNG, SVG, PDF, DOT, JPG)
+- ✅ Output format selection (PNG, SVG, PDF, DOT)
 - ✅ Download format dropdown with regeneration
 - ✅ Instance caching for performance optimization
 - ✅ Comprehensive API documentation with Swagger UI

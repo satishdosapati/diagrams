@@ -25,7 +25,7 @@ Production-ready system with testing, optimization, and complete documentation.
 - ✅ Request ID tracking middleware
 - ✅ Instance caching for performance
 - ✅ File cleanup automation
-- ✅ Multiple output formats (PNG, SVG, PDF, DOT, JPG)
+- ✅ Multiple output formats (PNG, SVG, PDF, DOT)
 - ✅ Download format regeneration
 - ✅ Advanced Code Mode with autocomplete
 - ✅ Examples panel with provider filtering
