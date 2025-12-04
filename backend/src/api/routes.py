@@ -6,6 +6,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 import uuid
+import logging
+import traceback
 
 from ..agents.diagram_agent import DiagramAgent
 from ..agents.modification_agent import ModificationAgent
@@ -13,6 +15,7 @@ from ..generators.universal_generator import UniversalGenerator
 from ..models.spec import ArchitectureSpec
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Initialize agents and generator
 agent = DiagramAgent()
@@ -92,9 +95,14 @@ async def generate_diagram(request: GenerateDiagramRequest):
         )
     
     except Exception as e:
+        logger.error(f"Error generating diagram: {str(e)}", exc_info=True)
+        error_detail = str(e)
+        # Include traceback in detail for debugging (can be removed in production)
+        if os.getenv("DEBUG", "false").lower() == "true":
+            error_detail += f"\n\nTraceback:\n{traceback.format_exc()}"
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate diagram: {str(e)}"
+            detail=f"Failed to generate diagram: {error_detail}"
         )
 
 

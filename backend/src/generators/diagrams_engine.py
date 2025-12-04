@@ -13,14 +13,16 @@ from ..resolvers.component_resolver import ComponentResolver
 class DiagramsEngine:
     """Generates architecture diagrams using the Diagrams library."""
     
-    def __init__(self, output_dir: str = "./output"):
+    def __init__(self, output_dir: str = None):
         """Initialize the engine with output directory."""
+        if output_dir is None:
+            output_dir = os.getenv("OUTPUT_DIR", "./output")
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
     
-    def generate(self, spec: ArchitectureSpec) -> str:
+    def render(self, spec: ArchitectureSpec) -> str:
         """
-        Generate diagram from ArchitectureSpec.
+        Render diagram from ArchitectureSpec.
         
         Args:
             spec: Architecture specification
