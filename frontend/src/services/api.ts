@@ -30,12 +30,14 @@ const API_BASE_URL = getApiBaseUrl();
 export interface GenerateDiagramRequest {
   description: string;
   provider?: string;
+  outformat?: string;
 }
 
 export interface GenerateDiagramResponse {
   diagram_url: string;
   message: string;
   session_id: string;
+  generated_code?: string;
 }
 
 export interface ModifyDiagramRequest {
@@ -52,14 +54,15 @@ export interface ModifyDiagramResponse {
 
 export async function generateDiagram(
   description: string,
-  provider: string = 'aws'
+  provider: string = 'aws',
+  outformat: string = 'png'
 ): Promise<GenerateDiagramResponse> {
   const response = await fetch(`${API_BASE_URL}/api/generate-diagram`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ description, provider }),
+    body: JSON.stringify({ description, provider, outformat }),
   });
 
   if (!response.ok) {

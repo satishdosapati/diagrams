@@ -7,13 +7,16 @@ import AdvancedCodeMode from './AdvancedCodeMode'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
+type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot' | 'jpg'
 
 function DiagramGenerator() {
   const [mode, setMode] = useState<Mode>('natural-language')
   const [description, setDescription] = useState('')
   const [selectedProvider, setSelectedProvider] = useState<Provider>('aws')
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('png')
   const [diagramUrl, setDiagramUrl] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -37,9 +40,14 @@ function DiagramGenerator() {
     setDiagramUrl(null)
 
     try {
-      const response = await generateDiagram(description, selectedProvider)
+      const response = await generateDiagram(description, selectedProvider, outputFormat)
       setMessage(response.message)
       setSessionId(response.session_id)
+      
+      // Store generated code for Advanced Code Mode
+      if (response.generated_code) {
+        setGeneratedCode(response.generated_code)
+      }
       
       // Extract filename from URL
       const filename = response.diagram_url.split('/').pop()
@@ -113,6 +121,32 @@ function DiagramGenerator() {
             onSelectionChange={setSelectedProvider}
           />
 
+          {/* Output Format Selector */}
+          <div>
+            <label htmlFor="outputFormat" className="block text-sm font-medium text-gray-700 mb-2">
+              Output Format
+            </label>
+            <select
+              id="outputFormat"
+              value={outputFormat}
+              onChange={(e) => setOutputFormat(e.target.value as OutputFormat)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+              disabled={isGenerating}
+            >
+              <option value="png">PNG (Image)</option>
+              <option value="svg">SVG (Editable Vector)</option>
+              <option value="pdf">PDF (Document)</option>
+              <option value="dot">DOT (Source Code)</option>
+              <option value="jpg">JPG (Image)</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              {outputFormat === 'svg' && 'SVG can be edited in Draw.io, Figma, or Inkscape'}
+              {outputFormat === 'dot' && 'DOT is the Graphviz source code - edit and regenerate'}
+              {outputFormat === 'pdf' && 'PDF format for documents and presentations'}
+              {(outputFormat === 'png' || outputFormat === 'jpg') && 'Raster image format'}
+            </p>
+          </div>
+
           {/* Natural Language Mode */}
           {mode === 'natural-language' && (
             <>
@@ -148,6 +182,7 @@ function DiagramGenerator() {
           {mode === 'advanced-code' && (
             <AdvancedCodeMode
               provider={selectedProvider}
+              initialCode={generatedCode || undefined}
               onDiagramGenerated={handleDiagramGenerated}
             />
           )}
@@ -168,11 +203,24 @@ function DiagramGenerator() {
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Generated Diagram</h3>
               <div className="border rounded-lg p-4 bg-gray-50">
-                <img
-                  src={diagramUrl}
-                  alt="Generated architecture diagram"
-                  className="w-full max-w-4xl mx-auto"
-                />
+                {outputFormat === 'dot' ? (
+                  <div className="w-full max-w-4xl mx-auto">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800 mb-2">
+                        <strong>DOT Format:</strong> Download the file to view/edit the Graphviz source code.
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        You can edit DOT files in text editors or use online tools like <a href="https://edotor.net/" target="_blank" rel="noopener noreferrer" className="underline">Edotor</a> or <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank" rel="noopener noreferrer" className="underline">Graphviz Online</a>.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={diagramUrl}
+                    alt="Generated architecture diagram"
+                    className="w-full max-w-4xl mx-auto"
+                  />
+                )}
               </div>
               <div className="mt-4 flex gap-2">
                 <a
@@ -180,8 +228,28 @@ function DiagramGenerator() {
                   download
                   className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                 >
-                  Download PNG
+                  Download {outputFormat.toUpperCase()}
                 </a>
+                {outputFormat === 'svg' && (
+                  <a
+                    href="https://app.diagrams.net/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Open in Draw.io
+                  </a>
+                )}
+                {outputFormat === 'dot' && (
+                  <a
+                    href="https://edotor.net/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Open in Edotor
+                  </a>
+                )}
               </div>
             </div>
           )}

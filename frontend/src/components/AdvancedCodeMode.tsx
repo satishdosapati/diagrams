@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { executeCode, getCompletions, validateCode, getDiagramUrl } from '../services/api'
 
+type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot' | 'jpg'
+
 interface AdvancedCodeModeProps {
   provider: 'aws' | 'azure' | 'gcp'
   initialCode?: string
@@ -10,6 +12,7 @@ interface AdvancedCodeModeProps {
 
 function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: AdvancedCodeModeProps) {
   const [code, setCode] = useState(initialCode || getDefaultCode(provider))
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('png')
   const [diagramUrl, setDiagramUrl] = useState<string | null>(null)
   const [isExecuting, setIsExecuting] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
@@ -21,6 +24,13 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
   useEffect(() => {
     loadCompletions()
   }, [provider])
+
+  // Update code when initialCode changes (e.g., when switching from Natural Language mode)
+  useEffect(() => {
+    if (initialCode) {
+      setCode(initialCode)
+    }
+  }, [initialCode])
 
   const loadCompletions = async () => {
     try {
@@ -136,7 +146,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
         code,
         provider,
         title: 'Diagram',
-        outformat: 'png'
+        outformat: outputFormat
       })
 
       if (result.errors && result.errors.length > 0) {
@@ -204,6 +214,32 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
         </div>
       </div>
 
+      {/* Output Format Selector */}
+      <div>
+        <label htmlFor="outputFormat" className="block text-sm font-medium text-gray-700 mb-2">
+          Output Format
+        </label>
+        <select
+          id="outputFormat"
+          value={outputFormat}
+          onChange={(e) => setOutputFormat(e.target.value as OutputFormat)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+          disabled={isExecuting}
+        >
+          <option value="png">PNG (Image)</option>
+          <option value="svg">SVG (Editable Vector)</option>
+          <option value="pdf">PDF (Document)</option>
+          <option value="dot">DOT (Source Code)</option>
+          <option value="jpg">JPG (Image)</option>
+        </select>
+        <p className="mt-1 text-xs text-gray-500">
+          {outputFormat === 'svg' && 'SVG can be edited in Draw.io, Figma, or Inkscape'}
+          {outputFormat === 'dot' && 'DOT is the Graphviz source code - edit and regenerate'}
+          {outputFormat === 'pdf' && 'PDF format for documents and presentations'}
+          {(outputFormat === 'png' || outputFormat === 'jpg') && 'Raster image format'}
+        </p>
+      </div>
+
       {/* Code Editor */}
       <div className="border rounded-lg overflow-hidden" style={{ height: '500px' }}>
         <Editor
@@ -254,11 +290,53 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
         <div className="mt-4">
           <h4 className="font-semibold mb-2">Generated Diagram:</h4>
           <div className="border rounded-lg p-4 bg-gray-50">
-            <img
-              src={diagramUrl}
-              alt="Generated diagram"
-              className="w-full max-w-4xl mx-auto"
-            />
+            {outputFormat === 'dot' ? (
+              <div className="w-full max-w-4xl mx-auto">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 mb-2">
+                    <strong>DOT Format:</strong> Download the file to view/edit the Graphviz source code.
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    You can edit DOT files in text editors or use online tools like <a href="https://edotor.net/" target="_blank" rel="noopener noreferrer" className="underline">Edotor</a> or <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank" rel="noopener noreferrer" className="underline">Graphviz Online</a>.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={diagramUrl}
+                alt="Generated diagram"
+                className="w-full max-w-4xl mx-auto"
+              />
+            )}
+          </div>
+          <div className="mt-4 flex gap-2">
+            <a
+              href={diagramUrl}
+              download
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            >
+              Download {outputFormat.toUpperCase()}
+            </a>
+            {outputFormat === 'svg' && (
+              <a
+                href="https://app.diagrams.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Open in Draw.io
+              </a>
+            )}
+            {outputFormat === 'dot' && (
+              <a
+                href="https://edotor.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Open in Edotor
+              </a>
+            )}
           </div>
         </div>
       )}

@@ -48,6 +48,7 @@ class GenerateDiagramResponse(BaseModel):
     diagram_url: str
     message: str
     session_id: str
+    generated_code: Optional[str] = None
 
 
 class ModifyDiagramRequest(BaseModel):
@@ -133,6 +134,13 @@ async def generate_diagram(request: GenerateDiagramRequest):
         # Generate diagram using universal generator
         diagram_path = generator.generate(spec)
         
+        # Generate Python code for Advanced Code Mode
+        from ..generators.diagrams_engine import DiagramsEngine
+        from ..resolvers.component_resolver import ComponentResolver
+        engine = DiagramsEngine()
+        resolver = ComponentResolver(primary_provider=spec.provider)
+        generated_code = engine._generate_code(spec, resolver)
+        
         # Create session and store spec
         session_id = str(uuid.uuid4())
         current_specs[session_id] = spec
@@ -144,7 +152,8 @@ async def generate_diagram(request: GenerateDiagramRequest):
         return GenerateDiagramResponse(
             diagram_url=diagram_url,
             message=f"Successfully generated diagram: {spec.title}",
-            session_id=session_id
+            session_id=session_id,
+            generated_code=generated_code
         )
     
     except Exception as e:
