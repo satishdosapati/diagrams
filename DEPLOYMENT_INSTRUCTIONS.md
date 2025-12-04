@@ -1,10 +1,11 @@
-# EC2 Deployment Instructions
+# EC2 Deployment Instructions - Git Pull Method
 
 ## Prerequisites
 
-- AWS EC2 instance running (you have: Amazon Linux 2023)
+- AWS EC2 instance running (Amazon Linux 2023)
 - Public IP address (your IP: 100.31.143.57)
 - SSH access with PEM key
+- Git repository with your code (GitHub, GitLab, etc.)
 - Security group configured:
   - Port 22 (SSH)
   - Port 3000 (Frontend)
@@ -13,97 +14,63 @@
 
 ## Step-by-Step Deployment
 
-### Step 1: Prepare EC2 Instance
-
-SSH into your EC2 instance:
+### Step 1: SSH into EC2 Instance
 
 ```bash
 ssh -i satishmcp.pem ec2-user@100.31.143.57
 ```
 
-### Step 2: Install Dependencies on EC2
-
-**For Amazon Linux 2023** (your instance):
+### Step 2: Install System Dependencies
 
 ```bash
 # Update system
 sudo yum update -y
 
-# Install Python 3.11
-sudo yum install -y python3.11 python3.11-pip python3.11-devel
+# Install Python 3 (or python3.11 if available)
+sudo yum install -y python3 python3-pip python3-devel
 
-# Install Node.js 20
+# Install Node.js 20+
 curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
 sudo yum install -y nodejs
 
 # Install Graphviz (required for diagrams library)
 sudo yum install -y graphviz
 
-# Install other dependencies
-sudo yum install -y git curl gcc gcc-c++ make
+# Install Git and build tools
+#sudo yum install -y git curl gcc gcc-c++ make
+sudo dnf install git -y
 
+# Verify installations
+python3 --version
+node --version
+git --version
+dot -V  # Graphviz
+```
+
+### Step 3: Clone Repository
+
+```bash
 # Create application directory
 sudo mkdir -p /opt/diagram-generator
-sudo mkdir -p /opt/diagram-generator/output
 sudo chown -R ec2-user:ec2-user /opt/diagram-generator
+
+# Clone your repository
+cd /opt/diagram-generator
+git clone <your-repo-url> .
+
+# Or if repository already exists, pull latest:
+# cd /opt/diagram-generator
+# git pull origin main
 ```
 
-### Step 3: Configure AWS Credentials
+**Note:** Replace `<your-repo-url>` with your actual Git repository URL.
 
-On EC2, configure AWS credentials for Bedrock access:
+### Step 4: Setup Backend
 
 ```bash
-# Option 1: Using AWS CLI
-aws configure
+cd /opt/diagram-generator/diagrams/backend
 
-# Option 2: Set environment variables (in .env file)
-# We'll create this in Step 5
-```
-
-### Step 4: Deploy Application from Local Machine
-
-From your **local machine** (Windows PowerShell), run:
-
-```powershell
-# Set environment variables
-$env:EC2_HOST="100.31.143.57"
-$env:EC2_USER="ec2-user"
-
-# Navigate to project root
-cd C:\Users\usdoss02\Satish-Playground\diagrams
-
-# Build frontend first
-cd frontend
-npm install
-npm run build
-cd ..
-
-# Copy files to EC2 (you'll need rsync or use SCP)
-# If you don't have rsync on Windows, use the manual method below
-```
-
-**Alternative: Manual Deployment (if rsync not available)**
-
-If you don't have rsync on Windows, use SCP or manually copy files:
-
-```powershell
-# Copy backend
-scp -i satishmcp.pem -r backend/* ec2-user@100.31.143.57:/opt/diagram-generator/backend/
-
-# Copy frontend build
-scp -i satishmcp.pem -r frontend/dist/* ec2-user@100.31.143.57:/opt/diagram-generator/frontend/dist/
-
-# Copy deployment scripts
-scp -i satishmcp.pem -r deployment/* ec2-user@100.31.143.57:/opt/diagram-generator/deployment/
-```
-
-### Step 5: Setup Backend on EC2
-
-SSH back into EC2 and run:
-
-```bash
-# Navigate to backend directory
-cd /opt/diagram-generator/backend
+sudo dnf install python3.11-pip -y
 
 # Create virtual environment
 python3.11 -m venv venv
@@ -116,41 +83,45 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # Create .env file
-cat > .env << EOF
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-access-key-here
-AWS_SECRET_ACCESS_KEY=your-secret-key-here
-BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
-API_HOST=0.0.0.0
-API_PORT=8000
-OUTPUT_DIR=/opt/diagram-generator/output
-EOF
+cp .env.example .env
 
-# Edit .env with your actual AWS credentials
-nano .env  # or use vi
+# Edit .env with your AWS credentials
+nano .env
+# Add:
+# AWS_REGION=us-east-1
+# AWS_ACCESS_KEY_ID=your-access-key
+# AWS_SECRET_ACCESS_KEY=your-secret-key
+# BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
+# API_HOST=0.0.0.0
+# API_PORT=8000
+# OUTPUT_DIR=/opt/diagram-generator/output
+
+# Create output directory
+mkdir -p /opt/diagram-generator/output
 
 # Deactivate virtual environment
 deactivate
 ```
 
-### Step 6: Setup Frontend on EC2
+### Step 5: Setup Frontend
 
 ```bash
-cd /opt/diagram-generator/frontend
+cd /opt/diagram-generator/diagrams/frontend
 
 # Install dependencies
 npm install
 
-# Note: Frontend is already built, but if you need to rebuild:
-# npm run build
+# Build frontend for production
+npm run build
+
+# Verify build was created
+ls -la dist/
 ```
 
-### Step 7: Create systemd Service Files
-
-Create the service files manually (since we need to adjust for ec2-user):
+### Step 6: Create systemd Service Files
 
 ```bash
-# Backend service
+# Create backend service
 sudo tee /etc/systemd/system/diagram-api.service > /dev/null << 'EOF'
 [Unit]
 Description=Architecture Diagram Generator API
@@ -165,12 +136,14 @@ EnvironmentFile=/opt/diagram-generator/backend/.env
 ExecStart=/opt/diagram-generator/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Frontend service
+# Create frontend service
 sudo tee /etc/systemd/system/diagram-frontend.service > /dev/null << 'EOF'
 [Unit]
 Description=Architecture Diagram Generator Frontend
@@ -184,15 +157,17 @@ Environment="PATH=/usr/bin:/usr/local/bin"
 ExecStart=/usr/bin/npm run preview -- --host 0.0.0.0 --port 3000
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd
+# Reload systemd daemon
 sudo systemctl daemon-reload
 
-# Enable services
+# Enable services to start on boot
 sudo systemctl enable diagram-api.service
 sudo systemctl enable diagram-frontend.service
 
@@ -201,39 +176,74 @@ sudo systemctl start diagram-api.service
 sudo systemctl start diagram-frontend.service
 ```
 
-### Step 8: Configure Security Group
+### Step 7: Configure Security Group
 
 In AWS Console:
 1. Go to EC2 → Security Groups
 2. Select your instance's security group
 3. Add inbound rules:
-   - Type: Custom TCP, Port: 3000, Source: 0.0.0.0/0 (or your IP)
-   - Type: Custom TCP, Port: 8000, Source: 0.0.0.0/0 (or your IP)
-   - Type: SSH, Port: 22, Source: Your IP
+   - **Type**: Custom TCP, **Port**: 3000, **Source**: 0.0.0.0/0 (or your specific IP)
+   - **Type**: Custom TCP, **Port**: 8000, **Source**: 0.0.0.0/0 (or your specific IP)
+   - **Type**: SSH, **Port**: 22, **Source**: Your IP
 
-### Step 9: Verify Deployment
+### Step 8: Verify Deployment
 
 ```bash
 # Check service status
 sudo systemctl status diagram-api.service
 sudo systemctl status diagram-frontend.service
 
-# Check logs
-sudo journalctl -u diagram-api.service -f
-sudo journalctl -u diagram-frontend.service -f
+# Check if services are running
+sudo systemctl is-active diagram-api diagram-frontend
 
-# Test backend
+# Test backend locally
 curl http://localhost:8000/health
 
-# Test frontend (from EC2)
+# Test frontend locally
 curl http://localhost:3000
+
+# View logs
+sudo journalctl -u diagram-api.service -n 50
+sudo journalctl -u diagram-frontend.service -n 50
 ```
 
-### Step 10: Access Application
+### Step 9: Access Application
 
 From your browser:
 - **Frontend**: http://100.31.143.57:3000
 - **Backend API**: http://100.31.143.57:8000/api/health
+- **API Docs**: http://100.31.143.57:8000/docs
+
+## Updating Deployment (Git Pull Method)
+
+When you make changes to the code:
+
+```bash
+# SSH into EC2
+ssh -i satishmcp.pem ec2-user@100.31.143.57
+
+# Navigate to project directory
+cd /opt/diagram-generator
+
+# Pull latest changes
+git pull origin main  # or your branch name
+
+# Restart backend (if backend code changed)
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt  # Update dependencies if needed
+deactivate
+sudo systemctl restart diagram-api.service
+
+# Rebuild and restart frontend (if frontend code changed)
+cd ../frontend
+npm install  # Update dependencies if needed
+npm run build
+sudo systemctl restart diagram-frontend.service
+
+# Check status
+sudo systemctl status diagram-api diagram-frontend
+```
 
 ## Troubleshooting
 
@@ -243,12 +253,11 @@ From your browser:
 # Check service status
 sudo systemctl status diagram-api.service
 
-# Check logs
-sudo journalctl -u diagram-api.service -n 50
+# View recent logs
+sudo journalctl -u diagram-api.service -n 100 --no-pager
 
-# Check if port is in use
-sudo netstat -tulpn | grep :8000
-sudo netstat -tulpn | grep :3000
+# Check for errors
+sudo journalctl -u diagram-api.service -p err
 ```
 
 ### Permission Issues
@@ -257,8 +266,20 @@ sudo netstat -tulpn | grep :3000
 # Fix ownership
 sudo chown -R ec2-user:ec2-user /opt/diagram-generator
 
-# Check file permissions
+# Check permissions
 ls -la /opt/diagram-generator/backend/
+ls -la /opt/diagram-generator/frontend/
+```
+
+### Port Already in Use
+
+```bash
+# Check what's using the ports
+sudo netstat -tulpn | grep :8000
+sudo netstat -tulpn | grep :3000
+
+# Kill process if needed (replace PID)
+sudo kill -9 <PID>
 ```
 
 ### AWS Credentials Issues
@@ -269,16 +290,36 @@ aws sts get-caller-identity
 
 # Check Bedrock access
 aws bedrock list-foundation-models --region us-east-1
+
+# Verify .env file
+cat /opt/diagram-generator/backend/.env
 ```
 
-### Frontend Can't Connect to Backend
-
-Update frontend API URL:
+### Frontend Build Errors
 
 ```bash
-# On EC2, edit frontend dist files or rebuild with correct API URL
-# Or set environment variable
-export VITE_API_URL=http://100.31.143.57:8000
+cd /opt/diagram-generator/frontend
+
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Try building again
+npm run build
+```
+
+### Backend Import Errors
+
+```bash
+cd /opt/diagram-generator/backend
+source venv/bin/activate
+
+# Reinstall dependencies
+pip install --upgrade pip
+pip install -r requirements.txt --force-reinstall
+
+# Test imports
+python -c "from src.api.routes import router; print('OK')"
 ```
 
 ## Quick Reference Commands
@@ -292,29 +333,54 @@ sudo systemctl restart diagram-frontend.service
 sudo systemctl stop diagram-api.service
 sudo systemctl stop diagram-frontend.service
 
-# View logs
+# Start services
+sudo systemctl start diagram-api.service
+sudo systemctl start diagram-frontend.service
+
+# View live logs
 sudo journalctl -u diagram-api.service -f
 sudo journalctl -u diagram-frontend.service -f
 
-# Check if services are running
-sudo systemctl is-active diagram-api diagram-frontend
+# Check service status
+sudo systemctl status diagram-api diagram-frontend
+
+# Enable/disable services
+sudo systemctl enable diagram-api diagram-frontend
+sudo systemctl disable diagram-api diagram-frontend
 ```
 
 ## Post-Deployment Checklist
 
+- [ ] Git repository cloned successfully
+- [ ] Backend dependencies installed
+- [ ] Frontend dependencies installed and built
+- [ ] Backend .env file configured with AWS credentials
 - [ ] Backend service is running
 - [ ] Frontend service is running
 - [ ] Security group allows ports 3000 and 8000
-- [ ] AWS credentials configured
-- [ ] Bedrock model access enabled
 - [ ] Can access frontend from browser
 - [ ] Can access backend API from browser
 - [ ] Frontend can communicate with backend
+- [ ] Test diagram generation works
+
+## Environment Variables
+
+Make sure `/opt/diagram-generator/backend/.env` contains:
+
+```bash
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key-here
+AWS_SECRET_ACCESS_KEY=your-secret-key-here
+BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
+API_HOST=0.0.0.0
+API_PORT=8000
+OUTPUT_DIR=/opt/diagram-generator/output
+```
 
 ## Notes
 
-- Your EC2 instance uses **Amazon Linux 2023** (not Ubuntu)
-- User is **ec2-user** (not ubuntu)
-- Package manager is **yum** (not apt-get)
-- Python 3.11 may need to be installed from source or use python3.9+ if available
-
+- Your EC2 instance uses **Amazon Linux 2023**
+- User is **ec2-user**
+- Package manager is **yum**
+- All building happens **on EC2** (no local build required)
+- Code is pulled from **Git repository**

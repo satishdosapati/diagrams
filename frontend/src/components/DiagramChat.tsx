@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { generateDiagram, getDiagramUrl } from '../services/api'
+import { getDiagramUrl } from '../services/api'
 
 interface ChatMessage {
   id: string

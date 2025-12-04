@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 type Provider = 'aws' | 'azure' | 'gcp'
 
 interface ProviderOption {
