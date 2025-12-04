@@ -14,11 +14,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
+# CORS middleware - Allow access from public IP and localhost
+# Get allowed origins from environment or allow all for development
+cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+if cors_origins_env == "*":
+    # Allow all origins (useful for development and public APIs)
+    allowed_origins = ["*"]
+else:
+    # Use specific origins from environment variable (comma-separated)
+    allowed_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Frontend ports
-    allow_credentials=True,
+    allow_origins=allowed_origins,  # Allow public IP, localhost, or all origins
+    allow_credentials=True if "*" not in allowed_origins else False,  # Credentials not allowed with "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
