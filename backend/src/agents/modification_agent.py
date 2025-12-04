@@ -94,13 +94,41 @@ User Request: {modification}
 Modify the architecture specification according to the user's request.
 Use provider "{current_spec.provider}" and appropriate node types from the lists above.
 Return the updated ArchitectureSpec as JSON.
+
+IMPORTANT:
+- Preserve all existing components unless explicitly asked to remove them
+- Maintain component IDs for unchanged components
+- Only add/modify/remove components as requested
+- Keep the same provider unless explicitly asked to change
 """
+
+        # Agent maintains state across calls (session_manager handles session_id)
+        import logging
+        logger = logging.getLogger(__name__)
         
-        # Agent maintains state across calls
-        response = agent.invoke(prompt, session_id=session_id)
+        try:
+            response = agent(prompt)
+        except Exception as e:
+            logger.error(f"Agent invocation failed: {str(e)}", exc_info=True)
+            raise ValueError(f"Failed to invoke modification agent: {str(e)}") from e
         
         # Get updated spec
+        if not hasattr(response, 'structured_output'):
+            raise ValueError(f"Agent response missing structured_output. Response type: {type(response)}")
+        
         updated_spec = response.structured_output
+        
+        # Validate that we got a valid spec
+        if not updated_spec:
+            raise ValueError("Agent did not return a valid ArchitectureSpec")
+        
+        # Ensure provider is maintained
+        if updated_spec.provider != current_spec.provider:
+            # Log warning but allow it if user explicitly requested change
+            logger.warning(
+                f"Provider changed from {current_spec.provider} to {updated_spec.provider}. "
+                "This is allowed if explicitly requested by user."
+            )
         
         # Detect changes
         changes = self._detect_changes(current_spec, updated_spec)
@@ -130,8 +158,11 @@ When adding new components, use the exact node_id strings from the list above (e
     
     def _build_context(self, spec: ArchitectureSpec) -> str:
         """Build context description from spec."""
+        import json
+        
+        # Build a detailed context with both human-readable and JSON formats
         lines = [
-            "Current Architecture:",
+            "Current Architecture Specification:",
             f"Title: {spec.title}",
             f"Provider: {spec.provider}",
             "",
@@ -139,7 +170,7 @@ When adding new components, use the exact node_id strings from the list above (e
         ]
         
         for comp in spec.components:
-            lines.append(f"  - {comp.name} ({comp.type})")
+            lines.append(f"  - ID: {comp.id}, Name: {comp.name}, Type: {comp.type}")
         
         lines.append("")
         lines.append("Connections:")
@@ -147,7 +178,15 @@ When adding new components, use the exact node_id strings from the list above (e
             from_comp = next((c for c in spec.components if c.id == conn.from_id), None)
             to_comp = next((c for c in spec.components if c.id == conn.to_id), None)
             if from_comp and to_comp:
-                lines.append(f"  - {from_comp.name} → {to_comp.name}")
+                lines.append(f"  - {from_comp.name} ({from_comp.id}) → {to_comp.name} ({to_comp.id})")
+            else:
+                lines.append(f"  - {conn.from_id} → {conn.to_id}")
+        
+        lines.append("")
+        lines.append("Full ArchitectureSpec JSON:")
+        # Include the full spec as JSON for reference
+        spec_dict = spec.model_dump()
+        lines.append(json.dumps(spec_dict, indent=2))
         
         return "\n".join(lines)
     
