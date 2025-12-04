@@ -111,6 +111,18 @@ nodes:
     category: network
     class_name: VPC
     description: "Virtual Private Cloud"
+  subnet:
+    category: network
+    class_name: PrivateSubnet
+    description: "Subnet (defaults to Private)"
+  private_subnet:
+    category: network
+    class_name: PrivateSubnet
+    description: "Private Subnet"
+  public_subnet:
+    category: network
+    class_name: PublicSubnet
+    description: "Public Subnet"
   api_gateway:
     category: network
     class_name: APIGateway
