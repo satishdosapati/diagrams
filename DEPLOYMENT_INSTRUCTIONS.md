@@ -130,14 +130,12 @@ After=network.target
 [Service]
 Type=simple
 User=ec2-user
-WorkingDirectory=/opt/diagram-generator/backend
-Environment="PATH=/opt/diagram-generator/backend/venv/bin"
-EnvironmentFile=/opt/diagram-generator/backend/.env
-ExecStart=/opt/diagram-generator/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/opt/diagram-generator/diagrams/backend
+Environment="PATH=/opt/diagram-generator/diagrams/backend/venv/bin"
+EnvironmentFile=/opt/diagram-generator/diagrams/backend/.env
+ExecStart=/opt/diagram-generator/diagrams/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=10
-StandardOutput=journal
-StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -152,7 +150,7 @@ After=network.target
 [Service]
 Type=simple
 User=ec2-user
-WorkingDirectory=/opt/diagram-generator/frontend
+WorkingDirectory=/opt/diagram-generator/diagrams/frontend
 Environment="PATH=/usr/bin:/usr/local/bin"
 ExecStart=/usr/bin/npm run preview -- --host 0.0.0.0 --port 3000
 Restart=always
