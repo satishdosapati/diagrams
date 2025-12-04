@@ -26,7 +26,7 @@ modification_agent = ModificationAgent()
 generator = UniversalGenerator()
 
 # Cache for DiagramsEngine and ComponentResolver instances per provider
-# Format: {provider: {"engine": DiagramsEngine, "resolvers": {provider: ComponentResolver}}}
+# Format: {provider: {"engine": DiagramsEngine, "resolver": ComponentResolver}}
 _engine_cache: dict[str, dict] = {}
 
 # In-memory storage for current specs (session-based)
@@ -248,16 +248,23 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
         if spec.provider not in _engine_cache:
             _engine_cache[spec.provider] = {
                 "engine": DiagramsEngine(),
-                "resolvers": {}
+                "resolver": None  # Single resolver per provider
             }
         
         engine = _engine_cache[spec.provider]["engine"]
         
         # ComponentResolver is provider-specific, cache per provider
-        if spec.provider not in _engine_cache[spec.provider]["resolvers"]:
-            _engine_cache[spec.provider]["resolvers"][spec.provider] = ComponentResolver(primary_provider=spec.provider)
+        if _engine_cache[spec.provider]["resolver"] is None:
+            try:
+                _engine_cache[spec.provider]["resolver"] = ComponentResolver(primary_provider=spec.provider)
+            except Exception as e:
+                logger.error(f"Failed to create ComponentResolver for {spec.provider}: {e}", exc_info=True)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to initialize resolver for provider '{spec.provider}': {str(e)}"
+                )
         
-        resolver = _engine_cache[spec.provider]["resolvers"][spec.provider]
+        resolver = _engine_cache[spec.provider]["resolver"]
         generated_code = engine._generate_code(spec, resolver)
         
         # Create session and store spec with timestamp
