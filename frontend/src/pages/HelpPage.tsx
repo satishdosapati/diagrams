@@ -200,11 +200,11 @@ with Diagram("My Architecture", show=False):
           <p className="text-gray-700 mb-3">Use operators to connect components:</p>
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-3">
-              <code className="bg-gray-200 px-2 py-1 rounded font-mono">>></code>
+              <code className="bg-gray-200 px-2 py-1 rounded font-mono">{">>"}</code>
               <span className="text-gray-700">Right arrow: Forward connection (A → B)</span>
             </div>
             <div className="flex items-start gap-3">
-              <code className="bg-gray-200 px-2 py-1 rounded font-mono"><<</code>
+              <code className="bg-gray-200 px-2 py-1 rounded font-mono">{"<<"}</code>
               <span className="text-gray-700">Left arrow: Reverse connection (A ← B)</span>
             </div>
             <div className="flex items-start gap-3">
