@@ -176,10 +176,21 @@ IMPORTANT:
         Returns:
             Architectural guidance string
         """
+        logger = logging.getLogger(__name__)
         guidance_parts = []
         
         # Get provider-specific guidance
         if spec.provider == "aws":
+            logger.info(f"Getting AWS advisor guidance for modification: {modification[:50]}...")
+            
+            # Try to get MCP guidance if enabled
+            if self.aws_advisor.use_mcp:
+                logger.info("MCP enabled - querying AWS Documentation for guidance")
+                mcp_guidance = self.aws_advisor.get_architectural_guidance(modification)
+                if mcp_guidance and mcp_guidance != self.aws_advisor._get_static_guidance():
+                    logger.info("MCP guidance received")
+                    guidance_parts.append(f"MCP Guidance:\n{mcp_guidance}")
+            
             # Analyze modification to provide specific guidance
             modification_lower = modification.lower()
             
@@ -209,9 +220,12 @@ IMPORTANT:
                     "Common patterns: API Gateway → Lambda → DynamoDB, ALB → EC2 → RDS"
                 )
             
-            # Add general AWS guidance
-            if guidance_parts:
-                return "\n\nArchitectural Guidance:\n" + "\n".join(f"- {g}" for g in guidance_parts)
+            # Add general AWS guidance if no specific guidance
+            if not guidance_parts:
+                guidance_parts.append(self.aws_advisor._get_static_guidance())
+            
+            logger.info(f"Generated {len(guidance_parts)} guidance items")
+            return "\n\nArchitectural Guidance:\n" + "\n".join(f"- {g}" for g in guidance_parts)
         
         return ""
     
