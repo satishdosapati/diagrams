@@ -1,5 +1,5 @@
 """
-Simplified ArchitectureSpec model for MVP (AWS only).
+ArchitectureSpec model with multi-provider support (AWS, Azure, GCP).
 """
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List, Literal
@@ -7,7 +7,8 @@ from enum import Enum
 
 
 class NodeType(str, Enum):
-    """AWS node types for MVP."""
+    """Multi-provider node types."""
+    # AWS
     EC2 = "ec2"
     LAMBDA = "lambda"
     S3 = "s3"
@@ -19,6 +20,16 @@ class NodeType(str, Enum):
     CLOUDFRONT = "cloudfront"
     SQS = "sqs"
     SNS = "sns"
+    # Azure
+    AZURE_FUNCTION = "azure_function"
+    AZURE_VM = "azure_vm"
+    BLOB_STORAGE = "blob_storage"
+    COSMOS_DB = "cosmos_db"
+    # GCP
+    CLOUD_FUNCTION = "cloud_function"
+    COMPUTE_ENGINE = "compute_engine"
+    CLOUD_STORAGE = "cloud_storage"
+    FIRESTORE = "firestore"
 
 
 class Component(BaseModel):
