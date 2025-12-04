@@ -3,8 +3,12 @@ ComponentResolver - Maps components to provider-specific Diagrams classes.
 """
 from typing import Dict, Optional
 import importlib
+import logging
 
 from ..models.spec import Component, NodeType
+from ..models.node_registry import get_registry
+
+logger = logging.getLogger(__name__)
 
 
 class ComponentResolver:
@@ -18,40 +22,42 @@ class ComponentResolver:
             primary_provider: Primary provider (aws, azure, gcp)
         """
         self.primary_provider = primary_provider
-        self.provider_modules = {
+        self.registry = get_registry()
+        
+        # Base module paths (fallback if registry doesn't have module info)
+        self.provider_modules_base = {
             "aws": "diagrams.aws",
             "azure": "diagrams.azure",
             "gcp": "diagrams.gcp",
         }
         
-        # Map node types to (category, class_name) for each provider
-        self.node_mappings = {
-            "aws": {
-                NodeType.EC2: ("compute", "EC2"),
-                NodeType.LAMBDA: ("compute", "Lambda"),
-                NodeType.ECS: ("compute", "ECS"),
-                NodeType.S3: ("storage", "S3"),
-                NodeType.DYNAMODB: ("database", "DynamoDB"),
-                NodeType.RDS: ("database", "RDS"),
-                NodeType.APIGATEWAY: ("network", "APIGateway"),
-                NodeType.ELB: ("network", "ELB"),
-                NodeType.CLOUDFRONT: ("network", "CloudFront"),
-                NodeType.SQS: ("integration", "SQS"),
-                NodeType.SNS: ("integration", "SNS"),
-            },
-            "azure": {
-                NodeType.AZURE_FUNCTION: ("compute", "Function"),
-                NodeType.AZURE_VM: ("compute", "VM"),
-                NodeType.BLOB_STORAGE: ("storage", "BlobStorage"),
-                NodeType.COSMOS_DB: ("database", "CosmosDb"),
-            },
-            "gcp": {
-                NodeType.CLOUD_FUNCTION: ("compute", "CloudFunctions"),
-                NodeType.COMPUTE_ENGINE: ("compute", "ComputeEngine"),
-                NodeType.CLOUD_STORAGE: ("storage", "GCS"),
-                NodeType.FIRESTORE: ("database", "Firestore"),
-            },
-        }
+        # Load provider modules from registry
+        try:
+            self.provider_modules = self.registry.get_provider_modules(primary_provider)
+        except Exception as e:
+            logger.warning(f"Failed to load modules from registry: {e}, using defaults")
+            self.provider_modules = {}
+    
+    def _get_module_path(self, provider: str, category: str) -> str:
+        """
+        Get full module path for a provider category.
+        
+        Args:
+            provider: Provider name
+            category: Category name (compute, storage, etc.)
+            
+        Returns:
+            Full module path (e.g., "diagrams.aws.compute")
+        """
+        # Try registry first
+        if provider in self.provider_modules_base:
+            base = self.provider_modules_base[provider]
+            if category in self.provider_modules:
+                return self.provider_modules[category]
+            # Fallback to base.category
+            return f"{base}.{category}"
+        
+        raise ValueError(f"Unknown provider: {provider}")
     
     def resolve_component_class(self, component: Component):
         """
@@ -72,27 +78,36 @@ class ComponentResolver:
                 "Use is_multi_cloud=True for multi-cloud architectures."
             )
         
-        # Get mapping for provider
-        provider_mapping = self.node_mappings.get(provider)
-        if not provider_mapping:
+        # Check if provider is supported
+        if not self.registry.is_provider_supported(provider):
             raise ValueError(f"Unsupported provider: {provider}")
         
-        # Get node mapping
-        node_mapping = provider_mapping.get(component.type)
+        # Get node type as string (NodeType enum value or direct string)
+        node_id = component.get_node_id()
+        
+        # Get mapping from registry
+        node_mapping = self.registry.get_node_mapping(provider, node_id)
         if not node_mapping:
             raise ValueError(
-                f"Node type {component.type} not supported for provider {provider}"
+                f"Node type '{node_id}' not supported for provider '{provider}'. "
+                f"Available nodes: {', '.join(self.registry.get_node_list(provider)[:10])}..."
             )
         
         category, class_name = node_mapping
-        module_path = self.provider_modules[provider]
+        
+        # Get module path
+        module_path = self._get_module_path(provider, category)
         
         # Dynamic import
         try:
-            module = importlib.import_module(f"{module_path}.{category}")
-            return getattr(module, class_name)
+            module = importlib.import_module(module_path)
+            node_class = getattr(module, class_name)
+            logger.debug(
+                f"Resolved {provider}.{node_id} -> {module_path}.{class_name}"
+            )
+            return node_class
         except (ImportError, AttributeError) as e:
             raise ValueError(
-                f"Failed to import {module_path}.{category}.{class_name}: {e}"
+                f"Failed to import {module_path}.{class_name} for {provider}.{node_id}: {e}"
             )
 

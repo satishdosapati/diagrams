@@ -1,0 +1,254 @@
+# Azure Node Registry Configuration
+# Maps Azure node types to their Diagrams library classes and categories
+
+# Azure provider module mappings
+modules:
+  compute: diagrams.azure.compute
+  storage: diagrams.azure.storage
+  database: diagrams.azure.database
+  network: diagrams.azure.network
+  integration: diagrams.azure.integration
+  security: diagrams.azure.security
+  management: diagrams.azure.management
+  analytics: diagrams.azure.analytics
+  iot: diagrams.azure.iot
+  ml: diagrams.azure.ml
+
+# Azure node mappings
+nodes:
+  # Compute
+  azure_function:
+    category: compute
+    class_name: Function
+    description: "Azure Functions"
+  azure_vm:
+    category: compute
+    class_name: VM
+    description: "Azure Virtual Machine"
+  container_instances:
+    category: compute
+    class_name: ContainerInstances
+    description: "Azure Container Instances"
+  kubernetes_services:
+    category: compute
+    class_name: KubernetesServices
+    description: "Azure Kubernetes Service"
+  app_service:
+    category: compute
+    class_name: AppService
+    description: "Azure App Service"
+  batch:
+    category: compute
+    class_name: Batch
+    description: "Azure Batch"
+  cloud_services:
+    category: compute
+    class_name: CloudServices
+    description: "Azure Cloud Services"
+  service_fabric:
+    category: compute
+    class_name: ServiceFabric
+    description: "Azure Service Fabric"
+  
+  # Storage
+  blob_storage:
+    category: storage
+    class_name: BlobStorage
+    description: "Azure Blob Storage"
+  file_storage:
+    category: storage
+    class_name: FileStorage
+    description: "Azure File Storage"
+  data_lake:
+    category: storage
+    class_name: DataLake
+    description: "Azure Data Lake"
+  disk_storage:
+    category: storage
+    class_name: DiskStorage
+    description: "Azure Disk Storage"
+  backup:
+    category: storage
+    class_name: Backup
+    description: "Azure Backup"
+  archive_storage:
+    category: storage
+    class_name: ArchiveStorage
+    description: "Azure Archive Storage"
+  
+  # Database
+  cosmos_db:
+    category: database
+    class_name: CosmosDb
+    description: "Azure Cosmos DB"
+  sql_database:
+    category: database
+    class_name: SQLDatabases
+    description: "Azure SQL Database"
+  database_for_mysql:
+    category: database
+    class_name: DatabaseForMysqlServers
+    description: "Azure Database for MySQL"
+  database_for_postgresql:
+    category: database
+    class_name: DatabaseForPostgresqlServers
+    description: "Azure Database for PostgreSQL"
+  database_for_mariadb:
+    category: database
+    class_name: DatabaseForMariadbServers
+    description: "Azure Database for MariaDB"
+  redis_cache:
+    category: database
+    class_name: RedisCache
+    description: "Azure Cache for Redis"
+  data_factory:
+    category: database
+    class_name: DataFactory
+    description: "Azure Data Factory"
+  sql_datawarehouse:
+    category: database
+    class_name: SQLDatawarehouses
+    description: "Azure SQL Data Warehouse"
+  
+  # Network
+  virtual_network:
+    category: network
+    class_name: VirtualNetwork
+    description: "Azure Virtual Network"
+  load_balancer:
+    category: network
+    class_name: LoadBalancers
+    description: "Azure Load Balancer"
+  application_gateway:
+    category: network
+    class_name: ApplicationGateway
+    description: "Azure Application Gateway"
+  vpn_gateway:
+    category: network
+    class_name: VpnGateway
+    description: "Azure VPN Gateway"
+  expressroute:
+    category: network
+    class_name: Expressroute
+    description: "Azure ExpressRoute"
+  dns:
+    category: network
+    class_name: DNS
+    description: "Azure DNS"
+  cdn:
+    category: network
+    class_name: CDN
+    description: "Azure Content Delivery Network"
+  traffic_manager:
+    category: network
+    class_name: TrafficManager
+    description: "Azure Traffic Manager"
+  firewall:
+    category: network
+    class_name: Firewall
+    description: "Azure Firewall"
+  
+  # Integration
+  service_bus:
+    category: integration
+    class_name: ServiceBus
+    description: "Azure Service Bus"
+  event_grid:
+    category: integration
+    class_name: EventGrid
+    description: "Azure Event Grid"
+  event_hubs:
+    category: integration
+    class_name: EventHubs
+    description: "Azure Event Hubs"
+  logic_apps:
+    category: integration
+    class_name: LogicApps
+    description: "Azure Logic Apps"
+  api_management:
+    category: integration
+    class_name: APIManagement
+    description: "Azure API Management"
+  
+  # Security
+  key_vaults:
+    category: security
+    class_name: KeyVaults
+    description: "Azure Key Vault"
+  active_directory:
+    category: security
+    class_name: ActiveDirectory
+    description: "Azure Active Directory"
+  security_center:
+    category: security
+    class_name: SecurityCenter
+    description: "Azure Security Center"
+  sentinel:
+    category: security
+    class_name: Sentinel
+    description: "Azure Sentinel"
+  application_security_groups:
+    category: security
+    class_name: ApplicationSecurityGroups
+    description: "Application Security Groups"
+  
+  # Management
+  monitor:
+    category: management
+    class_name: Monitor
+    description: "Azure Monitor"
+  resource_manager:
+    category: management
+    class_name: ResourceManager
+    description: "Azure Resource Manager"
+  automation:
+    category: management
+    class_name: Automation
+    description: "Azure Automation"
+  policy:
+    category: management
+    class_name: Policy
+    description: "Azure Policy"
+  
+  # Analytics
+  data_lake_analytics:
+    category: analytics
+    class_name: DataLakeAnalytics
+    description: "Azure Data Lake Analytics"
+  stream_analytics:
+    category: analytics
+    class_name: StreamAnalytics
+    description: "Azure Stream Analytics"
+  hdinsight:
+    category: analytics
+    class_name: HDInsight
+    description: "Azure HDInsight"
+  databricks:
+    category: analytics
+    class_name: Databricks
+    description: "Azure Databricks"
+  synapse_analytics:
+    category: analytics
+    class_name: SynapseAnalytics
+    description: "Azure Synapse Analytics"
+  
+  # IoT
+  iot_hub:
+    category: iot
+    class_name: IotHub
+    description: "Azure IoT Hub"
+  iot_central:
+    category: iot
+    class_name: IotCentral
+    description: "Azure IoT Central"
+  
+  # ML
+  machine_learning:
+    category: ml
+    class_name: MachineLearning
+    description: "Azure Machine Learning"
+  cognitive_services:
+    category: ml
+    class_name: CognitiveServices
+    description: "Azure Cognitive Services"
+

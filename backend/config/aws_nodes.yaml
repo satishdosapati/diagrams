@@ -1,0 +1,306 @@
+# AWS Node Registry Configuration
+# Maps AWS node types to their Diagrams library classes and categories
+
+# AWS provider module mappings
+modules:
+  compute: diagrams.aws.compute
+  storage: diagrams.aws.storage
+  database: diagrams.aws.database
+  network: diagrams.aws.network
+  integration: diagrams.aws.integration
+  analytics: diagrams.aws.analytics
+  security: diagrams.aws.security
+  management: diagrams.aws.management
+  iot: diagrams.aws.iot
+  ml: diagrams.aws.ml
+
+# AWS node mappings: node_id -> (category, class_name)
+nodes:
+  # Compute
+  ec2:
+    category: compute
+    class_name: EC2
+    description: "EC2 Instance"
+  lambda:
+    category: compute
+    class_name: Lambda
+    description: "AWS Lambda Function"
+  ecs:
+    category: compute
+    class_name: ECS
+    description: "Elastic Container Service"
+  eks:
+    category: compute
+    class_name: ElasticKubernetesService
+    description: "Elastic Kubernetes Service"
+  fargate:
+    category: compute
+    class_name: Fargate
+    description: "AWS Fargate"
+  batch:
+    category: compute
+    class_name: Batch
+    description: "AWS Batch"
+  lightsail:
+    category: compute
+    class_name: Lightsail
+    description: "AWS Lightsail"
+  elastic_beanstalk:
+    category: compute
+    class_name: ElasticBeanstalk
+    description: "Elastic Beanstalk"
+  
+  # Storage
+  s3:
+    category: storage
+    class_name: S3
+    description: "Simple Storage Service"
+  ebs:
+    category: storage
+    class_name: ElasticBlockStoreEBS
+    description: "Elastic Block Store"
+  efs:
+    category: storage
+    class_name: ElasticFileSystemEFS
+    description: "Elastic File System"
+  glacier:
+    category: storage
+    class_name: S3Glacier
+    description: "S3 Glacier"
+  fsx:
+    category: storage
+    class_name: Fsx
+    description: "Amazon FSx"
+  backup:
+    category: storage
+    class_name: Backup
+    description: "AWS Backup"
+  
+  # Database
+  dynamodb:
+    category: database
+    class_name: Dynamodb
+    description: "DynamoDB"
+  rds:
+    category: database
+    class_name: RDS
+    description: "Relational Database Service"
+  aurora:
+    category: database
+    class_name: Aurora
+    description: "Amazon Aurora"
+  redshift:
+    category: database
+    class_name: Redshift
+    description: "Amazon Redshift"
+  elasticache:
+    category: database
+    class_name: Elasticache
+    description: "ElastiCache"
+  documentdb:
+    category: database
+    class_name: DocumentdbMongodbCompatibility
+    description: "DocumentDB"
+  neptune:
+    category: database
+    class_name: Neptune
+    description: "Amazon Neptune"
+  
+  # Network
+  vpc:
+    category: network
+    class_name: VPC
+    description: "Virtual Private Cloud"
+  api_gateway:
+    category: network
+    class_name: APIGateway
+    description: "API Gateway"
+  cloudfront:
+    category: network
+    class_name: CloudFront
+    description: "CloudFront CDN"
+  elb:
+    category: network
+    class_name: ELB
+    description: "Elastic Load Balancer"
+  alb:
+    category: network
+    class_name: ApplicationLoadBalancer
+    description: "Application Load Balancer"
+  nlb:
+    category: network
+    class_name: NetworkLoadBalancer
+    description: "Network Load Balancer"
+  route53:
+    category: network
+    class_name: Route53
+    description: "Route 53 DNS"
+  nat_gateway:
+    category: network
+    class_name: NATGateway
+    description: "NAT Gateway"
+  internet_gateway:
+    category: network
+    class_name: InternetGateway
+    description: "Internet Gateway"
+  vpn_gateway:
+    category: network
+    class_name: VpnGateway
+    description: "VPN Gateway"
+  transit_gateway:
+    category: network
+    class_name: TransitGateway
+    description: "Transit Gateway"
+  direct_connect:
+    category: network
+    class_name: DirectConnect
+    description: "AWS Direct Connect"
+  
+  # Integration
+  sqs:
+    category: integration
+    class_name: SQS
+    description: "Simple Queue Service"
+  sns:
+    category: integration
+    class_name: SNS
+    description: "Simple Notification Service"
+  eventbridge:
+    category: integration
+    class_name: Eventbridge
+    description: "Amazon EventBridge"
+  step_functions:
+    category: integration
+    class_name: StepFunctions
+    description: "AWS Step Functions"
+  app_sync:
+    category: integration
+    class_name: AppSync
+    description: "AWS AppSync"
+  
+  # Analytics
+  kinesis:
+    category: analytics
+    class_name: Kinesis
+    description: "Amazon Kinesis"
+  kinesis_data_streams:
+    category: analytics
+    class_name: KinesisDataStreams
+    description: "Kinesis Data Streams"
+  kinesis_data_firehose:
+    category: analytics
+    class_name: KinesisDataFirehose
+    description: "Kinesis Data Firehose"
+  athena:
+    category: analytics
+    class_name: Athena
+    description: "Amazon Athena"
+  emr:
+    category: analytics
+    class_name: EMR
+    description: "Elastic MapReduce"
+  glue:
+    category: analytics
+    class_name: Glue
+    description: "AWS Glue"
+  quicksight:
+    category: analytics
+    class_name: Quicksight
+    description: "Amazon QuickSight"
+  
+  # Security
+  iam:
+    category: security
+    class_name: IdentityAndAccessManagementIam
+    description: "Identity and Access Management"
+  kms:
+    category: security
+    class_name: KeyManagementService
+    description: "Key Management Service"
+  secrets_manager:
+    category: security
+    class_name: SecretsManager
+    description: "AWS Secrets Manager"
+  cognito:
+    category: security
+    class_name: Cognito
+    description: "Amazon Cognito"
+  waf:
+    category: security
+    class_name: WAF
+    description: "Web Application Firewall"
+  shield:
+    category: security
+    class_name: Shield
+    description: "AWS Shield"
+  guardduty:
+    category: security
+    class_name: Guardduty
+    description: "Amazon GuardDuty"
+  security_hub:
+    category: security
+    class_name: SecurityHub
+    description: "AWS Security Hub"
+  certificate_manager:
+    category: security
+    class_name: CertificateManager
+    description: "AWS Certificate Manager"
+  
+  # Management
+  cloudwatch:
+    category: management
+    class_name: Cloudwatch
+    description: "Amazon CloudWatch"
+  cloudformation:
+    category: management
+    class_name: Cloudformation
+    description: "AWS CloudFormation"
+  systems_manager:
+    category: management
+    class_name: SystemsManager
+    description: "AWS Systems Manager"
+  config:
+    category: management
+    class_name: Config
+    description: "AWS Config"
+  trusted_advisor:
+    category: management
+    class_name: TrustedAdvisor
+    description: "AWS Trusted Advisor"
+  
+  # IoT
+  iot_core:
+    category: iot
+    class_name: IotCore
+    description: "AWS IoT Core"
+  iot_greengrass:
+    category: iot
+    class_name: IotGreengrass
+    description: "AWS IoT Greengrass"
+  
+  # ML
+  sagemaker:
+    category: ml
+    class_name: SageMaker
+    description: "Amazon SageMaker"
+  rekognition:
+    category: ml
+    class_name: Rekognition
+    description: "Amazon Rekognition"
+  comprehend:
+    category: ml
+    class_name: Comprehend
+    description: "Amazon Comprehend"
+  polly:
+    category: ml
+    class_name: Polly
+    description: "Amazon Polly"
+  translate:
+    category: ml
+    class_name: Translate
+    description: "Amazon Translate"
+  transcribe:
+    category: ml
+    class_name: Transcribe
+    description: "Amazon Transcribe"
+

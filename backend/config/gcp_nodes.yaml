@@ -1,0 +1,262 @@
+# GCP Node Registry Configuration
+# Maps GCP node types to their Diagrams library classes and categories
+
+# GCP provider module mappings
+modules:
+  compute: diagrams.gcp.compute
+  storage: diagrams.gcp.storage
+  database: diagrams.gcp.database
+  network: diagrams.gcp.network
+  integration: diagrams.gcp.integration
+  security: diagrams.gcp.security
+  management: diagrams.gcp.management
+  analytics: diagrams.gcp.analytics
+  iot: diagrams.gcp.iot
+  ml: diagrams.gcp.ml
+
+# GCP node mappings
+nodes:
+  # Compute
+  cloud_function:
+    category: compute
+    class_name: CloudFunctions
+    description: "Cloud Functions"
+  compute_engine:
+    category: compute
+    class_name: ComputeEngine
+    description: "Compute Engine"
+  app_engine:
+    category: compute
+    class_name: AppEngine
+    description: "App Engine"
+  cloud_run:
+    category: compute
+    class_name: CloudRun
+    description: "Cloud Run"
+  gke:
+    category: compute
+    class_name: GKE
+    description: "Google Kubernetes Engine"
+  cloud_sql:
+    category: compute
+    class_name: CloudSQL
+    description: "Cloud SQL"
+  batch:
+    category: compute
+    class_name: Batch
+    description: "Cloud Batch"
+  
+  # Storage
+  cloud_storage:
+    category: storage
+    class_name: GCS
+    description: "Cloud Storage"
+  filestore:
+    category: storage
+    class_name: Filestore
+    description: "Cloud Filestore"
+  persistent_disk:
+    category: storage
+    class_name: PersistentDisk
+    description: "Persistent Disk"
+  storage_transfer:
+    category: storage
+    class_name: StorageTransfer
+    description: "Storage Transfer Service"
+  
+  # Database
+  firestore:
+    category: database
+    class_name: Firestore
+    description: "Cloud Firestore"
+  bigtable:
+    category: database
+    class_name: Bigtable
+    description: "Cloud Bigtable"
+  spanner:
+    category: database
+    class_name: Spanner
+    description: "Cloud Spanner"
+  memorystore:
+    category: database
+    class_name: Memorystore
+    description: "Memorystore"
+  datastore:
+    category: database
+    class_name: Datastore
+    description: "Cloud Datastore"
+  
+  # Network
+  vpc:
+    category: network
+    class_name: VPC
+    description: "Virtual Private Cloud"
+  load_balancing:
+    category: network
+    class_name: LoadBalancing
+    description: "Cloud Load Balancing"
+  cloud_dns:
+    category: network
+    class_name: CloudDNS
+    description: "Cloud DNS"
+  cloud_cdn:
+    category: network
+    class_name: CloudCDN
+    description: "Cloud CDN"
+  cloud_interconnect:
+    category: network
+    class_name: CloudInterconnect
+    description: "Cloud Interconnect"
+  cloud_vpn:
+    category: network
+    class_name: CloudVPN
+    description: "Cloud VPN"
+  cloud_armor:
+    category: network
+    class_name: CloudArmor
+    description: "Cloud Armor"
+  cloud_nat:
+    category: network
+    class_name: CloudNAT
+    description: "Cloud NAT"
+  
+  # Integration
+  pubsub:
+    category: integration
+    class_name: PubSub
+    description: "Cloud Pub/Sub"
+  cloud_scheduler:
+    category: integration
+    class_name: CloudScheduler
+    description: "Cloud Scheduler"
+  cloud_tasks:
+    category: integration
+    class_name: CloudTasks
+    description: "Cloud Tasks"
+  cloud_endpoints:
+    category: integration
+    class_name: CloudEndpoints
+    description: "Cloud Endpoints"
+  api_gateway:
+    category: integration
+    class_name: APIGateway
+    description: "API Gateway"
+  workflow:
+    category: integration
+    class_name: Workflows
+    description: "Cloud Workflows"
+  
+  # Security
+  iam:
+    category: security
+    class_name: IAM
+    description: "Identity and Access Management"
+  cloud_kms:
+    category: security
+    class_name: CloudKMS
+    description: "Cloud Key Management Service"
+  secret_manager:
+    category: security
+    class_name: SecretManager
+    description: "Secret Manager"
+  security_command_center:
+    category: security
+    class_name: SecurityCommandCenter
+    description: "Security Command Center"
+  cloud_armor_security:
+    category: security
+    class_name: CloudArmorSecurity
+    description: "Cloud Armor Security"
+  
+  # Management
+  cloud_monitoring:
+    category: management
+    class_name: Monitoring
+    description: "Cloud Monitoring"
+  cloud_logging:
+    category: management
+    class_name: Logging
+    description: "Cloud Logging"
+  cloud_trace:
+    category: management
+    class_name: CloudTrace
+    description: "Cloud Trace"
+  cloud_debugger:
+    category: management
+    class_name: CloudDebugger
+    description: "Cloud Debugger"
+  cloud_profiler:
+    category: management
+    class_name: CloudProfiler
+    description: "Cloud Profiler"
+  deployment_manager:
+    category: management
+    class_name: DeploymentManager
+    description: "Deployment Manager"
+  
+  # Analytics
+  bigquery:
+    category: analytics
+    class_name: BigQuery
+    description: "BigQuery"
+  dataflow:
+    category: analytics
+    class_name: Dataflow
+    description: "Cloud Dataflow"
+  dataproc:
+    category: analytics
+    class_name: Dataproc
+    description: "Cloud Dataproc"
+  dataprep:
+    category: analytics
+    class_name: Dataprep
+    description: "Cloud Dataprep"
+  data_fusion:
+    category: analytics
+    class_name: DataFusion
+    description: "Cloud Data Fusion"
+  data_catalog:
+    category: analytics
+    class_name: DataCatalog
+    description: "Data Catalog"
+  
+  # IoT
+  iot_core:
+    category: iot
+    class_name: IoT
+    description: "Cloud IoT Core"
+  
+  # ML
+  ai_platform:
+    category: ml
+    class_name: AIPlatform
+    description: "AI Platform"
+  automl:
+    category: ml
+    class_name: AutoML
+    description: "AutoML"
+  natural_language_api:
+    category: ml
+    class_name: NaturalLanguageAPI
+    description: "Natural Language API"
+  speech_to_text:
+    category: ml
+    class_name: SpeechToText
+    description: "Speech-to-Text API"
+  text_to_speech:
+    category: ml
+    class_name: TextToSpeech
+    description: "Text-to-Speech API"
+  translation_api:
+    category: ml
+    class_name: TranslationAPI
+    description: "Translation API"
+  video_intelligence:
+    category: ml
+    class_name: VideoIntelligence
+    description: "Video Intelligence API"
+  vision_api:
+    category: ml
+    class_name: VisionAPI
+    description: "Vision API"
+
