@@ -14,20 +14,31 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware - Allow access from public IP and localhost
-# Get allowed origins from environment or allow all for development
-cors_origins_env = os.getenv("CORS_ORIGINS", "*")
-if cors_origins_env == "*":
-    # Allow all origins (useful for development and public APIs)
-    allowed_origins = ["*"]
-else:
-    # Use specific origins from environment variable (comma-separated)
-    allowed_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+# CORS middleware
+# Allow all origins for flexibility (works with any EC2 instance IP)
+# Frontend automatically detects the hostname and connects to backend on same hostname
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+]
 
+# Add EC2 public IP if provided via environment variable
+EC2_PUBLIC_IP = os.getenv("EC2_PUBLIC_IP")
+if EC2_PUBLIC_IP:
+    allowed_origins.append(f"http://{EC2_PUBLIC_IP}:3000")
+
+# Add FRONTEND_URL if provided
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+if FRONTEND_URL:
+    allowed_origins.append(FRONTEND_URL)
+
+# Use allow_origin_regex to allow any IP address on port 3000
+# This allows the frontend to work regardless of EC2 IP without hardcoding
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,  # Allow public IP, localhost, or all origins
-    allow_credentials=True if "*" not in allowed_origins else False,  # Credentials not allowed with "*"
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"http://.*:3000",  # Allow any IP/hostname on port 3000
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

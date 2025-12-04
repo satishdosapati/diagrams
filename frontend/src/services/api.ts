@@ -2,7 +2,30 @@
  * API client for diagram generation.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Determine API URL based on environment
+// In production (on EC2), use the EC2 public IP
+// In development, use localhost
+const getApiBaseUrl = (): string => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // If running on EC2 (production), use EC2 public IP
+  // Check if we're accessing from EC2 IP or if window.location suggests production
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1';
+  
+  if (isProduction) {
+    // Use same hostname as frontend, but port 8000 for backend
+    return `${window.location.protocol}//${hostname}:8000`;
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface GenerateDiagramRequest {
   description: string;

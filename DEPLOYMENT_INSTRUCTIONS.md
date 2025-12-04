@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - AWS EC2 instance running (Amazon Linux 2023)
-- Public IP address (your IP: 100.31.143.57)
+- Public IP address (check your EC2 instance's public IP)
 - SSH access with PEM key
 - Git repository with your code (GitHub, GitLab, etc.)
 - Security group configured:
@@ -17,7 +17,8 @@
 ### Step 1: SSH into EC2 Instance
 
 ```bash
-ssh -i satishmcp.pem ec2-user@100.31.143.57
+# Replace <YOUR_EC2_PUBLIC_IP> with your actual EC2 public IP
+ssh -i satishmcp.pem ec2-user@<YOUR_EC2_PUBLIC_IP>
 ```
 
 ### Step 2: Install System Dependencies
@@ -205,20 +206,37 @@ sudo journalctl -u diagram-api.service -n 50
 sudo journalctl -u diagram-frontend.service -n 50
 ```
 
-### Step 9: Access Application
+### Step 9: Configure Firewall (if needed)
 
-From your browser:
-- **Frontend**: http://100.31.143.57:3000
-- **Backend API**: http://100.31.143.57:8000/api/health
-- **API Docs**: http://100.31.143.57:8000/docs
+```bash
+# Check if firewalld is running
+sudo systemctl status firewalld
+
+# If firewalld is active, allow ports 3000 and 8000
+sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=8000/tcp
+sudo firewall-cmd --reload
+
+# Verify ports are open
+sudo firewall-cmd --list-ports
+```
+
+### Step 10: Access Application
+
+From your browser (replace `<YOUR_EC2_PUBLIC_IP>` with your actual EC2 public IP):
+- **Frontend**: http://<YOUR_EC2_PUBLIC_IP>:3000
+- **Backend API**: http://<YOUR_EC2_PUBLIC_IP>:8000/api/health
+- **API Docs**: http://<YOUR_EC2_PUBLIC_IP>:8000/docs
+
+**Note**: The frontend automatically detects it's running on EC2 and connects to the backend on the same hostname (port 8000). No additional configuration needed! The CORS is configured to allow any IP address.
 
 ## Updating Deployment (Git Pull Method)
 
 When you make changes to the code:
 
 ```bash
-# SSH into EC2
-ssh -i satishmcp.pem ec2-user@100.31.143.57
+# SSH into EC2 (replace <YOUR_EC2_PUBLIC_IP> with your actual EC2 public IP)
+ssh -i satishmcp.pem ec2-user@<YOUR_EC2_PUBLIC_IP>
 
 # Navigate to project directory
 cd /opt/diagram-generator
