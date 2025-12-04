@@ -123,4 +123,3 @@ export async function undoDiagram(sessionId: string): Promise<ModifyDiagramRespo
 
   return response.json();
 }
-
