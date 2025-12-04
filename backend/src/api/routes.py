@@ -618,11 +618,22 @@ async def get_completions(provider: str):
         
     Returns:
         Dictionary of available classes organized by category
+        
+    Raises:
+        HTTPException: 400 if provider is invalid
     """
+    # Validate provider
+    valid_providers = {"aws", "azure", "gcp"}
+    if provider.lower() not in valid_providers:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid provider: '{provider}'. Supported providers: {', '.join(sorted(valid_providers))}"
+        )
+    
     try:
         from ..resolvers.library_discovery import LibraryDiscovery
         
-        discovery = LibraryDiscovery(provider)
+        discovery = LibraryDiscovery(provider.lower())
         all_classes = discovery.get_all_available_classes()
         
         # Organize by category
