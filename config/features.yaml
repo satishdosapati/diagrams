@@ -1,0 +1,6 @@
+# Feature flags
+features:
+  provider_selection: false  # Phase 2
+  chat_modifications: false  # Phase 3
+  universal_generator: false  # Phase 4
+
