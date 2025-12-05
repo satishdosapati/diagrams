@@ -200,7 +200,7 @@ class AWSArchitecturalAdvisor:
         subnet_components = [c for c in components if "subnet" in c.get_node_id()]
         ec2_components = [c for c in components if c.get_node_id() == "ec2"]
         
-        # VPC should contain subnets
+        # VPC should contain subnets - use bidirectional connection for containment
         for vpc in vpc_components:
             for subnet in subnet_components:
                 conn_key = (vpc.id, subnet.id)
@@ -208,10 +208,12 @@ class AWSArchitecturalAdvisor:
                     suggested_conns.append(Connection(
                         from_id=vpc.id,
                         to_id=subnet.id,
-                        label="contains"
+                        label="contains",
+                        direction="bidirectional",  # Containment is bidirectional relationship
+                        graphviz_attrs={"style": "dashed", "arrowhead": "none"}  # Dashed, no arrowhead for containment
                     ))
         
-        # Subnets should contain EC2 instances
+        # Subnets should contain EC2 instances - use bidirectional connection for containment
         for subnet in subnet_components:
             for ec2 in ec2_components:
                 conn_key = (subnet.id, ec2.id)
@@ -222,7 +224,9 @@ class AWSArchitecturalAdvisor:
                         suggested_conns.append(Connection(
                             from_id=subnet.id,
                             to_id=ec2.id,
-                            label="contains"
+                            label="contains",
+                            direction="bidirectional",  # Containment is bidirectional relationship
+                            graphviz_attrs={"style": "dashed", "arrowhead": "none"}  # Dashed, no arrowhead for containment
                         ))
         
         # Check for common patterns
@@ -259,6 +263,55 @@ class AWSArchitecturalAdvisor:
                         from_id=alb.id,
                         to_id=ec2.id
                     ))
+        
+        # Check for routing relationships (Internet Gateway → Public Subnet, NAT Gateway → Private Subnet)
+        internet_gateway = next((c for c in components if c.get_node_id() == "internet_gateway"), None)
+        nat_gateway = next((c for c in components if c.get_node_id() == "nat_gateway"), None)
+        public_subnets = [c for c in subnet_components if "public" in c.get_node_id() or "public" in c.name.lower()]
+        private_subnets = [c for c in subnet_components if "private" in c.get_node_id() or "private" in c.name.lower()]
+        
+        # Internet Gateway routes to Public Subnets
+        if internet_gateway and public_subnets:
+            for subnet in public_subnets:
+                conn_key = (internet_gateway.id, subnet.id)
+                if conn_key not in existing_conns:
+                    suggested_conns.append(Connection(
+                        from_id=internet_gateway.id,
+                        to_id=subnet.id,
+                        label="routes to",
+                        direction="forward",
+                        graphviz_attrs={"style": "solid", "color": "blue"}
+                    ))
+        
+        # NAT Gateway provides internet to Private Subnets
+        if nat_gateway and private_subnets:
+            for subnet in private_subnets:
+                conn_key = (nat_gateway.id, subnet.id)
+                if conn_key not in existing_conns:
+                    suggested_conns.append(Connection(
+                        from_id=nat_gateway.id,
+                        to_id=subnet.id,
+                        label="provides internet to",
+                        direction="forward",
+                        graphviz_attrs={"style": "solid", "color": "blue"}
+                    ))
+        
+        # Add warnings for best practices
+        if vpc_components and subnet_components:
+            # Check if subnets are in multiple AZs (best practice)
+            subnet_azs = set()
+            for subnet in subnet_components:
+                # Try to detect AZ from name (e.g., "Public Subnet AZ1", "Private Subnet us-east-1a")
+                name_lower = subnet.name.lower()
+                if "az" in name_lower or "availability zone" in name_lower:
+                    # Extract AZ identifier if present
+                    import re
+                    az_match = re.search(r'(az|availability zone)[\s-]?([a-z0-9]+)', name_lower)
+                    if az_match:
+                        subnet_azs.add(az_match.group(2))
+            
+            if len(subnet_azs) < 2 and len(subnet_components) >= 2:
+                warnings.append("Consider deploying subnets across multiple Availability Zones for high availability (AWS best practice)")
         
         return suggested_conns, warnings
     
@@ -357,9 +410,9 @@ class AWSArchitecturalAdvisor:
     #     return None
     
     def _get_static_guidance(self) -> str:
-        """Get static architectural guidance."""
+        """Get static architectural guidance based on AWS Well-Architected Framework."""
         return """
-AWS Architectural Best Practices:
+AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
 
 1. Component Ordering (Left to Right):
    - Internet/Edge: Route53, CloudFront, WAF
@@ -371,26 +424,45 @@ AWS Architectural Best Practices:
    - Analytics: Kinesis, Athena, EMR
    - Security/Management: IAM, KMS, CloudWatch
 
-2. Connection Patterns:
-   - VPC contains Subnets (VPC → Subnet)
-   - Subnets contain EC2 instances (Subnet → EC2)
-   - API Gateway connects to Lambda (API Gateway → Lambda)
-   - Lambda connects to DynamoDB (Lambda → DynamoDB)
-   - ALB connects to EC2/ECS (ALB → EC2/ECS)
-   - EC2/ECS connects to RDS (EC2/ECS → RDS)
+2. VPC Network Best Practices:
+   - Create subnets in multiple Availability Zones for high availability
+   - Use security groups to control traffic to EC2 instances
+   - Use network ACLs to control traffic at subnet level
+   - Use VPC Flow Logs for monitoring network traffic
+   - Plan IP subnet allocation accounting for expansion
+   - Prefer hub-and-spoke topologies over many-to-many mesh
+   - Ensure non-overlapping private IP address ranges
 
-3. Common Patterns:
+3. Connection Patterns:
+   - VPC contains Subnets (containment relationship, not data flow)
+   - Subnets contain EC2 instances (containment relationship)
+   - Internet Gateway routes to Public Subnets (routing relationship)
+   - NAT Gateway provides internet to Private Subnets (routing relationship)
+   - API Gateway connects to Lambda (data flow)
+   - Lambda connects to DynamoDB (data flow)
+   - ALB connects to EC2/ECS (data flow)
+   - EC2/ECS connects to RDS (data flow)
+
+4. Common Patterns:
    - Serverless: API Gateway → Lambda → DynamoDB
    - Three-Tier: ALB → EC2 → RDS
    - Microservices: ALB → ECS → RDS
    - Data Pipeline: S3 → Glue → Athena → QuickSight
-   - VPC Network: VPC → Internet Gateway → Subnet → NAT Gateway
+   - VPC Network: VPC contains Subnets, Internet Gateway routes to Public Subnets
 
-4. Dependencies:
-   - EC2 requires VPC and Subnet
-   - RDS requires VPC and Subnet
+5. Dependencies:
+   - EC2 requires VPC and Subnet (deploy in multiple AZs)
+   - RDS requires VPC and Subnet (use Multi-AZ for HA)
    - Lambda can use default VPC or custom VPC
    - API Gateway is regional (no VPC required)
+
+6. Security Best Practices:
+   - Use security groups for instance-level traffic control
+   - Use network ACLs for subnet-level traffic control
+   - Enable VPC Flow Logs for network monitoring
+   - Use IAM for access management
+   - Consider AWS Network Firewall for advanced filtering
+   - Use Amazon GuardDuty for threat detection
 """
     
     def _get_component_display_name(self, node_id: str) -> str:
@@ -446,6 +518,9 @@ AWS Architectural Best Practices:
             if conn_key not in existing_conn_keys:
                 new_connections.append(suggested)
                 logger.debug(f"[ADVISOR] Added: {suggested.from_id} → {suggested.to_id}")
+        
+        # Post-process connections to style them based on relationship type
+        new_connections = self._style_connections_by_type(new_connections, sorted_components)
         
         # Auto-create clusters if none exist and we have enough components
         auto_clusters = []
@@ -796,4 +871,59 @@ AWS Architectural Best Practices:
                     blank_node_counter += 1
         
         return new_components, new_connections
+    
+    def _style_connections_by_type(self, connections: List[Connection], components: List[Component]) -> List[Connection]:
+        """
+        Style connections based on their relationship type (containment, routing, data flow).
+        
+        Relationship types detected from labels:
+        - "contains", "hosts" → Containment (bidirectional, dashed, no arrowhead)
+        - "routes to", "provides" → Routing (forward, solid)
+        - "backup to", "stores in" → Data flow (forward, solid)
+        - Default → Data flow (forward, solid)
+        """
+        styled_connections = []
+        component_map = {c.id: c for c in components}
+        
+        for conn in connections:
+            label_lower = (conn.label or "").lower()
+            
+            # Containment relationships
+            if any(keyword in label_lower for keyword in ["contains", "hosts"]):
+                if not conn.direction:
+                    conn.direction = "bidirectional"
+                if not conn.graphviz_attrs:
+                    conn.graphviz_attrs = {}
+                # Use dashed line with dimmed color for containment (no arrowhead via dir="none")
+                conn.graphviz_attrs.setdefault("style", "dashed")
+                conn.graphviz_attrs.setdefault("dir", "none")  # No arrow direction for containment
+                conn.graphviz_attrs.setdefault("color", "gray60")
+                conn.graphviz_attrs.setdefault("penwidth", "1.5")
+            
+            # Routing relationships
+            elif any(keyword in label_lower for keyword in ["routes to", "provides", "routes"]):
+                if not conn.direction:
+                    conn.direction = "forward"
+                if not conn.graphviz_attrs:
+                    conn.graphviz_attrs = {}
+                conn.graphviz_attrs.setdefault("style", "solid")
+                conn.graphviz_attrs.setdefault("color", "blue")
+            
+            # Backup/storage relationships
+            elif any(keyword in label_lower for keyword in ["backup", "stores", "saves"]):
+                if not conn.direction:
+                    conn.direction = "forward"
+                if not conn.graphviz_attrs:
+                    conn.graphviz_attrs = {}
+                conn.graphviz_attrs.setdefault("style", "dotted")
+                conn.graphviz_attrs.setdefault("color", "green")
+            
+            # Default: data flow (forward, solid)
+            else:
+                if not conn.direction:
+                    conn.direction = "forward"
+            
+            styled_connections.append(conn)
+        
+        return styled_connections
 
