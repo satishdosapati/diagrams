@@ -282,7 +282,7 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
 
 
 @router.get("/diagrams/{filename}", tags=["diagrams"])
-async def get_diagram(filename: str):
+async def get_diagram(filename: str, request: Request = None):
     """
     Serve generated diagram file.
     
@@ -311,7 +311,17 @@ async def get_diagram(filename: str):
     if not filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     
-    # Prevent directory traversal attacks - check for dangerous patterns
+    # Check raw request path if available (catches path traversal before normalization)
+    if request:
+        raw_path = str(request.url.path)
+        # Check if path contains traversal patterns in the raw URL
+        if '/../' in raw_path or raw_path.endswith('/..') or raw_path.count('/api/diagrams/') == 0:
+            # Path was normalized or doesn't match expected pattern
+            # Check if it contains dangerous patterns
+            if '..' in raw_path or raw_path.count('/') > 2:  # More than /api/diagrams/{filename}
+                raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+    
+    # Prevent directory traversal attacks - check filename for dangerous patterns
     dangerous_patterns = ['..', '/', '\\']
     if any(pattern in filename for pattern in dangerous_patterns):
         raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")

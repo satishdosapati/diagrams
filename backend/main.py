@@ -74,6 +74,36 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
+# Security middleware: Path traversal protection
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    """Security middleware to prevent path traversal attacks."""
+    path = str(request.url.path)
+    
+    # Check for path traversal patterns in diagrams endpoint
+    if '/api/diagrams/' in path or path.startswith('/api/diagrams/'):
+        # Check for path traversal patterns (including URL-encoded)
+        import urllib.parse
+        decoded_path = urllib.parse.unquote(path)
+        
+        # Check for .. patterns (including URL-encoded %2E%2E)
+        if '..' in path or '..' in decoded_path or '%2E%2E' in path.upper() or '%2e%2e' in path.lower():
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Invalid file path: path traversal detected"}
+            )
+        
+        # Check for excessive path depth (more than /api/diagrams/{filename})
+        if path.count('/') > 3:  # /api/diagrams/{filename} = 3 slashes max
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Invalid file path: path traversal detected"}
+            )
+    
+    return await call_next(request)
+
 # Request ID tracking middleware
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
