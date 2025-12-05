@@ -4,25 +4,28 @@ export const azureExamples: Example[] = [
   {
     id: "azure-web-app",
     title: "Azure Web Application",
-    description: "Azure Functions → Blob Storage → Cosmos DB",
-    prompt: "Create an Azure web application with Azure Functions, Blob Storage, and Cosmos DB",
+    description: "Users accessing Azure Functions → Blob Storage → Cosmos DB",
+    prompt: "Create an Azure web application with users accessing through Azure Functions, Blob Storage, and Cosmos DB",
     codeSnippet: `from diagrams import Diagram
 from diagrams.azure.compute import Function
 from diagrams.azure.database import CosmosDb
 from diagrams.azure.storage import BlobStorage
+from diagrams.onprem.client import Users
 
 with Diagram("Azure Web App", show=False, direction="TB"):
+    users = Users("Users")
     func = Function("Azure Function")
     blob = BlobStorage("Blob Storage")
     cosmos = CosmosDb("Cosmos DB")
-    func >> blob >> cosmos`,
+    users >> func >> blob >> cosmos`,
     category: "serverless",
     complexity: "simple",
-    tags: ["function", "blob", "cosmos", "azure"],
+    tags: ["function", "blob", "cosmos", "azure", "users"],
     recommendedVariations: [
       "Add Azure Front Door for CDN",
       "Use Azure SQL instead of Cosmos DB",
-      "Add Azure Key Vault for secrets"
+      "Add Azure Key Vault for secrets",
+      "Include mobile clients (Android/iOS)"
     ]
   },
   {
@@ -416,6 +419,48 @@ with Diagram("ML Pipeline", show=False, direction="TB"):
       "Add API Management for ML API",
       "Use Cognitive Services for AI",
       "Add Azure Monitor for monitoring"
+    ]
+  },
+  {
+    id: "hybrid-cloud-azure",
+    title: "Hybrid Cloud with Multi-OS",
+    description: "On-premises datacenter with Windows and Linux VMs connecting to Azure Virtual Network via ExpressRoute",
+    prompt: "Create a hybrid cloud architecture with on-premises datacenter containing Windows and Linux virtual machines connecting to Azure Virtual Network through ExpressRoute",
+    codeSnippet: `from diagrams import Cluster, Diagram
+from diagrams.azure.compute import VM
+from diagrams.azure.network import Expressroute, VirtualNetwork
+from diagrams.generic.os import Windows, LinuxGeneral
+from diagrams.generic.place import Datacenter
+from diagrams.generic.virtualization import Vmware
+from diagrams.onprem.client import Users
+
+with Diagram("Hybrid Cloud Architecture", show=False):
+    users = Users("Users")
+    
+    with Cluster("On-Premises"):
+        dc = Datacenter("Data Center")
+        vmware = Vmware("VMware")
+        with Cluster("Virtual Machines"):
+            win_vm = Windows("Windows VM")
+            linux_vm = LinuxGeneral("Linux VM")
+    
+    er = Expressroute("ExpressRoute")
+    
+    with Cluster("Azure"):
+        vnet = VirtualNetwork("Virtual Network")
+        azure_vm = VM("Azure VM")
+    
+    users >> dc
+    dc >> vmware >> [win_vm, linux_vm]
+    [win_vm, linux_vm] >> er >> vnet >> azure_vm`,
+    category: "hybrid",
+    complexity: "complex",
+    tags: ["hybrid", "datacenter", "expressroute", "virtual-network", "windows", "linux", "vmware", "onprem", "azure"],
+    recommendedVariations: [
+      "Add VPN Gateway as backup connection",
+      "Include multiple datacenters",
+      "Use different virtualization platforms",
+      "Add load balancer in Azure"
     ]
   }
 ]

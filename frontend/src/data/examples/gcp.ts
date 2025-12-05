@@ -4,22 +4,27 @@ export const gcpExamples: Example[] = [
   {
     id: "gcp-message-collecting",
     title: "Message Collecting System",
-    description: "IoT Core → PubSub → Dataflow → BigQuery and Cloud Storage",
-    prompt: "Build a message collecting system with IoT Core, PubSub, Dataflow, BigQuery, and Cloud Storage",
+    description: "Mobile users and IoT devices sending messages through PubSub → Dataflow → BigQuery and Cloud Storage",
+    prompt: "Build a message collecting system with mobile users and IoT devices sending data through PubSub, Dataflow processing, storing in BigQuery and Cloud Storage",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.gcp.analytics import BigQuery, Dataflow, PubSub
 from diagrams.gcp.compute import Functions
 from diagrams.gcp.database import BigTable
 from diagrams.gcp.iot import IotCore
 from diagrams.gcp.storage import GCS
+from diagrams.generic.device import Mobile
+from diagrams.onprem.client import Users
 
 with Diagram("Message Collecting", show=False):
+    users = Users("Users")
+    mobile = Mobile("Mobile Clients")
     pubsub = PubSub("pubsub")
 
     with Cluster("Source of Data"):
         [IotCore("core1"),
          IotCore("core2"),
          IotCore("core3")] >> pubsub
+        [users, mobile] >> pubsub
 
     with Cluster("Targets"):
         with Cluster("Data Flow"):
@@ -36,11 +41,12 @@ with Diagram("Message Collecting", show=False):
     pubsub >> flow`,
     category: "data-pipeline",
     complexity: "complex",
-    tags: ["iot", "pubsub", "dataflow", "bigquery", "gcs", "gcp"],
+    tags: ["iot", "pubsub", "dataflow", "bigquery", "gcs", "mobile", "users", "gcp"],
     recommendedVariations: [
       "Add Cloud Functions for event processing",
       "Use Cloud Run instead of Functions",
-      "Add Cloud SQL for relational data"
+      "Add Cloud SQL for relational data",
+      "Include Android/iOS specific clients"
     ]
   },
   {
@@ -459,6 +465,48 @@ with Diagram("Cloud Armor Protected", show=False, direction="TB"):
       "Add IAM for access control",
       "Use Secret Manager for secrets",
       "Add Cloud Monitoring for security monitoring"
+    ]
+  },
+  {
+    id: "hybrid-cloud-gcp",
+    title: "Hybrid Cloud Architecture",
+    description: "On-premises datacenter with VMware virtualization connecting to GCP VPC via Cloud Interconnect",
+    prompt: "Create a hybrid cloud architecture with on-premises datacenter using VMware virtualization connecting to GCP VPC through Cloud Interconnect",
+    codeSnippet: `from diagrams import Cluster, Diagram
+from diagrams.gcp.compute import ComputeEngine
+from diagrams.gcp.network import CloudInterconnect, VPC
+from diagrams.generic.os import LinuxGeneral, Windows
+from diagrams.generic.place import Datacenter
+from diagrams.generic.virtualization import Vmware
+from diagrams.onprem.client import Users
+
+with Diagram("Hybrid Cloud Architecture", show=False):
+    users = Users("Users")
+    
+    with Cluster("On-Premises"):
+        dc = Datacenter("Data Center")
+        vmware = Vmware("VMware")
+        with Cluster("Virtual Machines"):
+            win_vm = Windows("Windows Server")
+            linux_vm = LinuxGeneral("Linux Server")
+    
+    interconnect = CloudInterconnect("Cloud Interconnect")
+    
+    with Cluster("GCP VPC"):
+        vpc = VPC("VPC")
+        gce = ComputeEngine("Compute Engine")
+    
+    users >> dc
+    dc >> vmware >> [win_vm, linux_vm]
+    [win_vm, linux_vm] >> interconnect >> vpc >> gce`,
+    category: "hybrid",
+    complexity: "complex",
+    tags: ["hybrid", "datacenter", "cloud-interconnect", "vpc", "vmware", "windows", "linux", "onprem", "gcp"],
+    recommendedVariations: [
+      "Add Cloud VPN as backup connection",
+      "Include multiple datacenters",
+      "Use different virtualization platforms (QEMU, VirtualBox)",
+      "Add load balancer in GCP VPC"
     ]
   }
 ]
