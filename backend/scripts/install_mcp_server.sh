@@ -25,10 +25,10 @@ fi
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
 echo "✓ Python found: $(python3 --version)"
 
-# Install Python 3.10+ if needed via uv
+# Install Python 3.11+ if needed via uv (prefer 3.11, fallback to 3.10 or 3.12)
 echo ""
-echo "Installing Python 3.10+ via uv..."
-uv python install 3.10 || uv python install 3.11 || uv python install 3.12
+echo "Installing Python 3.11+ via uv..."
+uv python install 3.11 || uv python install 3.10 || uv python install 3.12
 
 # Install GraphViz (check if installed)
 if ! command -v dot &> /dev/null; then
@@ -53,8 +53,8 @@ MCP_VENV_DIR="${MCP_VENV_DIR:-./.mcp_server_venv}"
 echo ""
 echo "Creating virtual environment at: $MCP_VENV_DIR"
 
-# Use uv to create venv with Python 3.10+
-uv venv "$MCP_VENV_DIR" --python 3.10 || uv venv "$MCP_VENV_DIR" --python 3.11 || uv venv "$MCP_VENV_DIR"
+# Use uv to create venv with Python 3.11+ (prefer 3.11, fallback to 3.10 or 3.12)
+uv venv "$MCP_VENV_DIR" --python 3.11 || uv venv "$MCP_VENV_DIR" --python 3.10 || uv venv "$MCP_VENV_DIR" --python 3.12
 
 # Activate virtual environment
 source "$MCP_VENV_DIR/bin/activate"

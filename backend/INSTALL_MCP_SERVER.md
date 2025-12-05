@@ -20,8 +20,8 @@ cd backend
 ### Option 2: Manual Installation
 
 ```bash
-# Create virtual environment
-uv venv .mcp_server_venv --python 3.10
+# Create virtual environment (using Python 3.11)
+uv venv .mcp_server_venv --python 3.11
 
 # Activate (Linux/macOS)
 source .mcp_server_venv/bin/activate

@@ -22,12 +22,12 @@ try {
     Write-Host "Warning: Python not found, will install via uv" -ForegroundColor Yellow
 }
 
-# Install Python 3.10+ if needed via uv
+# Install Python 3.11+ if needed via uv (prefer 3.11, fallback to 3.10 or 3.12)
 Write-Host ""
-Write-Host "Installing Python 3.10+ via uv..." -ForegroundColor Cyan
-uv python install 3.10
+Write-Host "Installing Python 3.11+ via uv..." -ForegroundColor Cyan
+uv python install 3.11
 if ($LASTEXITCODE -ne 0) {
-    uv python install 3.11
+    uv python install 3.10
     if ($LASTEXITCODE -ne 0) {
         uv python install 3.12
     }
@@ -53,10 +53,10 @@ $MCP_VENV_DIR = if ($env:MCP_SERVER_VENV) { $env:MCP_SERVER_VENV } else { ".\mcp
 Write-Host ""
 Write-Host "Creating virtual environment at: $MCP_VENV_DIR" -ForegroundColor Cyan
 
-# Use uv to create venv
-uv venv $MCP_VENV_DIR --python 3.10
+# Use uv to create venv with Python 3.11+ (prefer 3.11, fallback to 3.10 or 3.12)
+uv venv $MCP_VENV_DIR --python 3.11
 if ($LASTEXITCODE -ne 0) {
-    uv venv $MCP_VENV_DIR --python 3.11
+    uv venv $MCP_VENV_DIR --python 3.10
     if ($LASTEXITCODE -ne 0) {
         uv venv $MCP_VENV_DIR --python 3.12
     }

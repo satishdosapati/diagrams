@@ -38,7 +38,7 @@ export USE_MCP_DIAGRAM_SERVER=true
 
 Ensure you have:
 - `uv` package manager installed
-- Python 3.10+ available
+- Python 3.11+ available (or 3.10/3.12)
 - GraphViz installed
 
 Test MCP server:

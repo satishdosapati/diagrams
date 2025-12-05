@@ -7,7 +7,8 @@ Installing the AWS Diagram MCP Server locally improves performance by avoiding t
 ## Prerequisites
 
 1. **uv package manager** - Install from https://astral.sh/uv
-2. **Python 3.10+** - Will be installed automatically via uv if needed
+2. **Python 3.11+** (or 3.10/3.12) - Will be installed automatically via uv if needed
+   - If you have Python 3.11 installed, the scripts will prefer it
 3. **GraphViz** - Required for diagram generation
    - macOS: `brew install graphviz`
    - Linux: `apt-get install graphviz` or `yum install graphviz`
@@ -43,10 +44,12 @@ The script will:
 #### Step 1: Create Virtual Environment
 
 ```bash
-# Using uv (recommended)
-uv venv .mcp_server_venv --python 3.10
+# Using uv (recommended) - prefers Python 3.11
+uv venv .mcp_server_venv --python 3.11
 
-# Or using standard Python
+# Or using standard Python (if Python 3.11 is available)
+python3.11 -m venv .mcp_server_venv
+# Or use default Python 3.x
 python3 -m venv .mcp_server_venv
 ```
 
@@ -195,7 +198,7 @@ MCP Diagram Client initialized with command: .../mcp_server_venv/bin/python -m a
 **Error:** `pip install awslabs.aws-diagram-mcp-server` fails
 
 **Solution:**
-1. Ensure Python 3.10+ is installed
+1. Ensure Python 3.11+ (or 3.10/3.12) is installed
 2. Upgrade pip: `pip install --upgrade pip`
 3. Try installing from source if package name differs
 
@@ -213,13 +216,19 @@ MCP Diagram Client initialized with command: .../mcp_server_venv/bin/python -m a
 **Error:** Python version mismatch
 
 **Solution:**
-1. Create venv with specific Python version:
+1. Create venv with Python 3.11 (preferred):
+   ```bash
+   uv venv .mcp_server_venv --python 3.11
+   ```
+2. Or use system Python 3.11:
+   ```bash
+   python3.11 -m venv .mcp_server_venv
+   ```
+3. Fallback to Python 3.10 or 3.12 if 3.11 not available:
    ```bash
    uv venv .mcp_server_venv --python 3.10
-   ```
-2. Or use system Python 3.10+:
-   ```bash
-   python3.10 -m venv .mcp_server_venv
+   # or
+   uv venv .mcp_server_venv --python 3.12
    ```
 
 ### Path Issues (Windows)

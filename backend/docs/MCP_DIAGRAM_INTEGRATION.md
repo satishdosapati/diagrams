@@ -117,9 +117,9 @@ fallback_on_error: true
    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
-2. Install Python 3.10+:
+2. Install Python 3.11+ (preferred, or 3.10/3.12):
    ```bash
-   uv python install 3.10
+   uv python install 3.11
    ```
 
 3. Install GraphViz:
