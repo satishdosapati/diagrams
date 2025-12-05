@@ -1,17 +1,37 @@
 """
 FastAPI application entry point for MVP.
 """
+# IMPORTANT: Load .env file BEFORE any other imports that might use environment variables
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+import logging
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    # Try loading from current directory as fallback
+    load_dotenv()
+
+# Configure logging level (must be before other imports that log)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+logger.info(f"Environment loaded. USE_MCP_DIAGRAM_SERVER={os.getenv('USE_MCP_DIAGRAM_SERVER', 'not set')}")
+
+# Now import other modules (they will have access to environment variables)
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-import os
 import uuid
-import logging
 import time
 
 from src.api.routes import router
-
-logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Architecture Diagram Generator API",
