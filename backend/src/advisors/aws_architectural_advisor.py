@@ -565,13 +565,11 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         if "overlap" not in graphviz_attrs.graph_attr:
             graphviz_attrs.graph_attr["overlap"] = "false"
         
-        # Set default direction to left-to-right for architecture diagrams (if not specified)
-        # This ensures a clear flow from left to right, matching professional diagram conventions
-        if not spec.direction:
-            spec.direction = "LR"
+        # Always enforce left-to-right direction for all architecture diagrams
+        # This ensures a clear, consistent flow from left to right, matching professional diagram conventions
+        spec.direction = "LR"
         # Also set rankdir in graph_attr for Graphviz compatibility
-        if "rankdir" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["rankdir"] = spec.direction if spec.direction else "LR"
+        graphviz_attrs.graph_attr["rankdir"] = "LR"
         
         # Improve spacing for better edge routing (always apply if not set)
         # Increased spacing helps orthogonal routing work better and prevents crowding

@@ -197,7 +197,7 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
             - provider: Cloud provider (aws, azure, gcp)
             - outformat: Output format (png, svg, pdf, dot)
             - graphviz_attrs: Optional Graphviz styling attributes
-            - direction: Optional diagram direction (LR, TB, etc.)
+            - direction: (Deprecated - always uses LR for left-to-right layout)
         http_request: FastAPI request object (for request ID tracking)
     
     Returns:
@@ -239,9 +239,9 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
             )
             spec.graphviz_attrs = graphviz_attrs
         
-        # Apply direction override if provided
-        if request.direction:
-            spec.direction = request.direction
+        # Always use left-to-right direction for all diagrams
+        # This ensures consistent, professional diagram layout
+        spec.direction = "LR"
         
         # Apply outformat override if provided (normalize invalid formats)
         if request.outformat:

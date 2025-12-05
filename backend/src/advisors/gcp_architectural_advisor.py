@@ -445,11 +445,10 @@ GCP Architectural Best Practices (Based on Google Cloud Architecture Framework):
         if "overlap" not in graphviz_attrs.graph_attr:
             graphviz_attrs.graph_attr["overlap"] = "false"
         
-        # Set default direction to left-to-right
-        if not spec.direction:
-            spec.direction = "LR"
-        if "rankdir" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["rankdir"] = spec.direction if spec.direction else "LR"
+        # Always enforce left-to-right direction for all architecture diagrams
+        # This ensures a clear, consistent flow from left to right
+        spec.direction = "LR"
+        graphviz_attrs.graph_attr["rankdir"] = "LR"
         
         # Improve spacing for better edge routing
         if "nodesep" not in graphviz_attrs.graph_attr:

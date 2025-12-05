@@ -218,7 +218,7 @@ IMPORTANT:
             # Add general AWS guidance if no specific guidance
             if not guidance_parts:
                 guidance_parts.append(self.aws_advisor._get_static_guidance())
-        
+            
         elif spec.provider == "azure":
             logger.info(f"Getting Azure advisor guidance for modification: {modification[:50]}...")
             

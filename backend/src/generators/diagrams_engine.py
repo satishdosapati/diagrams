@@ -185,9 +185,9 @@ class DiagramsEngine:
             f'filename="{filename}"'
         ]
         
-        # Add direction parameter if specified
-        if spec.direction:
-            diagram_params.append(f'direction="{spec.direction}"')
+        # Always use left-to-right direction for consistent diagram layout
+        direction = spec.direction if spec.direction else "LR"
+        diagram_params.append(f'direction="{direction}"')
         
         # Add outformat parameter if specified (normalize first)
         if spec.outformat:

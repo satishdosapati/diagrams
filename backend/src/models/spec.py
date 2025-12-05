@@ -327,8 +327,8 @@ class ArchitectureSpec(BaseModel):
     metadata: dict = Field(default_factory=dict, description="Additional metadata (diagram_type, etc.)")
     graphviz_attrs: Optional[GraphvizAttributes] = Field(None, description="Custom Graphviz attributes for diagram styling")
     direction: Optional[Literal["TB", "BT", "LR", "RL"]] = Field(
-        None,
-        description="Layout direction: TB (top-bottom), BT (bottom-top), LR (left-right), RL (right-left)"
+        "LR",
+        description="Layout direction: Always left-to-right (LR) for consistent diagram flow"
     )
     outformat: Optional[Union[str, List[str]]] = Field(
         None,
