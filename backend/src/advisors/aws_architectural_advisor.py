@@ -530,26 +530,20 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
             if auto_clusters:
                 logger.info(f"[ADVISOR] Created {len(auto_clusters)} clusters")
         
-        # Optimize edges with blank nodes if we have clusters
+        # Skip blank node optimization - with strict orthogonal routing (splines="ortho"),
+        # blank nodes create convoluted paths instead of simplifying them.
+        # Orthogonal routing handles edge routing better on its own.
         final_components = sorted_components
         final_connections = new_connections
         final_clusters = auto_clusters if auto_clusters else spec.clusters
         
-        if final_clusters and len(new_connections) >= 5:
-            logger.info(f"[ADVISOR] Optimizing edges with blank nodes...")
-            optimized_components, optimized_connections = self._optimize_edges_with_blank_nodes(
-                ArchitectureSpec(
-                    title=spec.title,
-                    provider=spec.provider,
-                    components=sorted_components,
-                    connections=new_connections,
-                    clusters=final_clusters
-                )
-            )
-            if len(optimized_components) > len(final_components):
-                final_components = optimized_components
-                final_connections = optimized_connections
-                logger.info(f"[ADVISOR] Inserted {len(optimized_components) - len(sorted_components)} blank nodes for cleaner routing")
+        # DISABLED: Blank node optimization conflicts with orthogonal routing
+        # With splines="ortho", Graphviz handles routing better without intermediate waypoints
+        # Blank nodes were useful for curved routing but create unnecessary complexity with orthogonal routing
+        # if final_clusters and len(new_connections) >= 5:
+        #     logger.info(f"[ADVISOR] Optimizing edges with blank nodes...")
+        #     optimized_components, optimized_connections = self._optimize_edges_with_blank_nodes(...)
+        #     ...
         
         # Prepare graphviz attributes for better edge routing
         graphviz_attrs = spec.graphviz_attrs
