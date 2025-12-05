@@ -7,7 +7,7 @@ export const awsExamples: Example[] = [
     description: "Application Load Balancer distributing traffic to Auto Scaling EC2 workers connected to RDS Multi-AZ database",
     prompt: "Create an Application Load Balancer with Auto Scaling EC2 worker instances connected to an RDS Multi-AZ database",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.aws.compute import AutoScaling, EC2
+from diagrams.aws.compute import EC2AutoScaling, EC2
 from diagrams.aws.database import RDS
 from diagrams.aws.network import ApplicationLoadBalancer
 
@@ -20,7 +20,7 @@ with Diagram("Grouped Workers", show=False, direction="TB"):
                   EC2("worker3"),
                   EC2("worker4"),
                   EC2("worker5")]
-        asg = AutoScaling("ASG")
+        asg = EC2AutoScaling("ASG")
     
     with Cluster("RDS Multi-AZ"):
         rds_primary = RDS("Primary")

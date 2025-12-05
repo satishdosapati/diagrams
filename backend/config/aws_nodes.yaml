@@ -1,5 +1,11 @@
 # AWS Node Registry Configuration
 # Maps AWS node types to their Diagrams library classes and categories
+#
+# IMPORTANT: Always refer to the official documentation for accurate class names:
+# https://diagrams.mingrammer.com/docs/nodes/aws
+#
+# Class names must match exactly as defined in the diagrams library.
+# Use the official class name, not aliases, for consistency.
 
 # AWS provider module mappings
 modules:
@@ -50,14 +56,14 @@ nodes:
     category: compute
     class_name: ElasticBeanstalk
     description: "Elastic Beanstalk"
-  auto_scaling:
+  ec2_auto_scaling:
     category: compute
-    class_name: AutoScaling
-    description: "Auto Scaling Group"
+    class_name: EC2AutoScaling
+    description: "EC2 Auto Scaling Group"
   application_auto_scaling:
     category: compute
     class_name: ApplicationAutoScaling
-    description: "Application Auto Scaling"
+    description: "Application Auto Scaling (ECS, DynamoDB, etc.)"
   
   # Storage
   s3:
@@ -116,7 +122,7 @@ nodes:
     description: "Amazon Neptune"
   dax:
     category: database
-    class_name: DAX
+    class_name: DynamodbDax
     description: "DynamoDB Accelerator"
   timestream:
     category: database
@@ -154,11 +160,11 @@ nodes:
     description: "Elastic Load Balancer"
   alb:
     category: network
-    class_name: ApplicationLoadBalancer
+    class_name: ElbApplicationLoadBalancer
     description: "Application Load Balancer"
   nlb:
     category: network
-    class_name: NetworkLoadBalancer
+    class_name: ElbNetworkLoadBalancer
     description: "Network Load Balancer"
   route53:
     category: network

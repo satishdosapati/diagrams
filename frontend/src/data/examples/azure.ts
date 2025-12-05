@@ -7,12 +7,12 @@ export const azureExamples: Example[] = [
     description: "Azure Functions → Blob Storage → Cosmos DB",
     prompt: "Create an Azure web application with Azure Functions, Blob Storage, and Cosmos DB",
     codeSnippet: `from diagrams import Diagram
-from diagrams.azure.compute import Function
+from diagrams.azure.compute import FunctionApps
 from diagrams.azure.database import CosmosDb
 from diagrams.azure.storage import BlobStorage
 
 with Diagram("Azure Web App", show=False, direction="TB"):
-    func = Function("Azure Function")
+    func = FunctionApps("Azure Function")
     blob = BlobStorage("Blob Storage")
     cosmos = CosmosDb("Cosmos DB")
     func >> blob >> cosmos`,
@@ -112,7 +112,7 @@ with Diagram("AKS Cluster", show=False):
     description: "Event Grid → Logic Apps → Azure Functions → Storage",
     prompt: "Create an event-driven architecture with Event Grid, Logic Apps, Azure Functions, and Blob Storage",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.azure.compute import Function
+from diagrams.azure.compute import FunctionApps
 from diagrams.azure.integration import EventGrid, LogicApps
 from diagrams.azure.storage import BlobStorage
 
@@ -121,7 +121,7 @@ with Diagram("Event-Driven Azure", show=False):
     
     with Cluster("Processing"):
         logic = LogicApps("Logic Apps")
-        func = Function("Function")
+        func = FunctionApps("Function")
     
     storage = BlobStorage("Blob Storage")
     
@@ -141,16 +141,16 @@ with Diagram("Event-Driven Azure", show=False):
     description: "Azure Functions → Service Bus → Multiple subscribers",
     prompt: "Create a messaging architecture with Azure Functions triggering Service Bus, which sends to multiple Azure Functions and Logic Apps",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.azure.compute import Function
+from diagrams.azure.compute import FunctionApps
 from diagrams.azure.integration import LogicApps, ServiceBus
 
 with Diagram("Service Bus Messaging", show=False):
-    trigger = Function("Trigger")
+    trigger = FunctionApps("Trigger")
     sb = ServiceBus("Service Bus")
     
     with Cluster("Subscribers"):
-        func1 = Function("Processor 1")
-        func2 = Function("Processor 2")
+        func1 = FunctionApps("Processor 1")
+        func2 = FunctionApps("Processor 2")
         logic = LogicApps("Logic App")
     
     trigger >> sb >> [func1, func2, logic]`,
@@ -170,14 +170,14 @@ with Diagram("Service Bus Messaging", show=False):
     prompt: "Create a real-time streaming architecture with Event Hubs receiving data, Stream Analytics processing, storing in Cosmos DB and Blob Storage",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.azure.analytics import StreamAnalytics
-from diagrams.azure.compute import Function, VM
+from diagrams.azure.compute import FunctionApps, VM
 from diagrams.azure.database import CosmosDb
 from diagrams.azure.integration import EventHubs
 from diagrams.azure.storage import BlobStorage
 
 with Diagram("Event Hubs Streaming", show=False):
     with Cluster("Data Sources"):
-        sources = [VM("source1"), VM("source2"), Function("api")]
+        sources = [VM("source1"), VM("source2"), FunctionApps("api")]
     
     eh = EventHubs("Event Hubs")
     sa = StreamAnalytics("Stream Analytics")
@@ -255,7 +255,7 @@ with Diagram("Key Vault Security", show=False, direction="TB"):
     description: "Azure CDN → API Management → Azure Functions → Cosmos DB",
     prompt: "Create an API architecture with Azure CDN, API Management gateway, Azure Functions, and Cosmos DB",
     codeSnippet: `from diagrams import Diagram
-from diagrams.azure.compute import Function
+from diagrams.azure.compute import FunctionApps
 from diagrams.azure.database import CosmosDb
 from diagrams.azure.integration import APIManagement
 from diagrams.azure.network import CDN
@@ -263,7 +263,7 @@ from diagrams.azure.network import CDN
 with Diagram("API Management", show=False, direction="TB"):
     cdn = CDN("Azure CDN")
     apim = APIManagement("API Management")
-    func = Function("Function")
+    func = FunctionApps("Function")
     db = CosmosDb("Cosmos DB")
     
     cdn >> apim >> func >> db`,
@@ -397,7 +397,7 @@ with Diagram("IoT Pipeline", show=False):
     description: "Blob Storage → Machine Learning → Azure Functions → Cosmos DB",
     prompt: "Create a machine learning pipeline with Blob Storage for data, Azure Machine Learning for training and inference, Azure Functions, and Cosmos DB",
     codeSnippet: `from diagrams import Diagram
-from diagrams.azure.compute import Function
+from diagrams.azure.compute import FunctionApps
 from diagrams.azure.database import CosmosDb
 from diagrams.azure.ml import MachineLearning
 from diagrams.azure.storage import BlobStorage
@@ -405,7 +405,7 @@ from diagrams.azure.storage import BlobStorage
 with Diagram("ML Pipeline", show=False, direction="TB"):
     data = BlobStorage("Training Data")
     ml = MachineLearning("Machine Learning")
-    func = Function("API")
+    func = FunctionApps("API")
     db = CosmosDb("Results")
     
     data >> ml >> func >> db`,
