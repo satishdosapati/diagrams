@@ -95,7 +95,10 @@ async def security_middleware(request: Request, call_next):
             )
         
         # Check for excessive path depth (more than /api/diagrams/{filename})
-        if path.count('/') > 3:  # /api/diagrams/{filename} = 3 slashes max
+        # Split path and count non-empty segments
+        path_segments = [seg for seg in path.split('/') if seg]
+        # Expected: ['api', 'diagrams', '{filename}'] = 3 segments
+        if len(path_segments) != 3 or path_segments[0] != 'api' or path_segments[1] != 'diagrams':
             from fastapi.responses import JSONResponse
             return JSONResponse(
                 status_code=403,

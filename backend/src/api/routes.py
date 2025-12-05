@@ -3,6 +3,7 @@ API routes for diagram generation (MVP).
 """
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
+from starlette.requests import Request
 from pydantic import BaseModel, Field, field_validator
 import os
 import uuid
@@ -282,7 +283,7 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
 
 
 @router.get("/diagrams/{filename}", tags=["diagrams"])
-async def get_diagram(filename: str, request: Request = None):
+async def get_diagram(filename: str, request: Request):
     """
     Serve generated diagram file.
     
@@ -311,17 +312,22 @@ async def get_diagram(filename: str, request: Request = None):
     if not filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     
-    # Check raw request path if available (catches path traversal before normalization)
-    if request:
-        raw_path = str(request.url.path)
-        # Check if path contains traversal patterns in the raw URL
-        if '/../' in raw_path or raw_path.endswith('/..') or raw_path.count('/api/diagrams/') == 0:
-            # Path was normalized or doesn't match expected pattern
-            # Check if it contains dangerous patterns
-            if '..' in raw_path or raw_path.count('/') > 2:  # More than /api/diagrams/{filename}
-                raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+    # Check raw request path (catches path traversal before normalization)
+    # Request is now required, so we can always check the raw path
+    raw_path = str(request.url.path)
+    # Check for path traversal patterns in the raw URL path
+    if '..' in raw_path or '/../' in raw_path or raw_path.endswith('/..'):
+        raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
     
-    # Prevent directory traversal attacks - check filename for dangerous patterns
+    # Check for excessive path depth (more than /api/diagrams/{filename})
+    # Normalized paths should have exactly 3 path segments: ['api', 'diagrams', '{filename}']
+    path_parts = [p for p in raw_path.split('/') if p]
+    if len(path_parts) != 3 or path_parts[0] != 'api' or path_parts[1] != 'diagrams':
+        # Path structure is wrong - could be path traversal attempt
+        raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+    
+    # Prevent directory traversal attacks - check filename for dangerous patterns FIRST
+    # This catches cases where FastAPI might have normalized the path parameter
     dangerous_patterns = ['..', '/', '\\']
     if any(pattern in filename for pattern in dangerous_patterns):
         raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
@@ -331,6 +337,7 @@ async def get_diagram(filename: str, request: Request = None):
         raise HTTPException(status_code=403, detail="Invalid file path")
     
     # Validate filename format (alphanumeric, dots, underscores, hyphens only)
+    # Note: dots are allowed for file extensions, but we've already checked for '..' above
     if not re.match(r'^[a-zA-Z0-9._-]+$', filename):
         raise HTTPException(status_code=400, detail="Invalid filename format")
     
