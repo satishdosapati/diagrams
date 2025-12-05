@@ -4,7 +4,6 @@ import ProviderSelector from './ProviderSelector'
 import ExamplesPanel from './ExamplesPanel'
 import AdvancedCodeMode from './AdvancedCodeMode'
 import FeedbackWidget from './FeedbackWidget'
-import DiagramViewer from './DiagramViewer'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -226,8 +225,8 @@ function DiagramGenerator() {
           {diagramUrl && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Generated Diagram</h3>
-              {downloadFormat === 'dot' ? (
-                <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="border rounded-lg p-4 bg-gray-50">
+                {downloadFormat === 'dot' ? (
                   <div className="w-full max-w-4xl mx-auto">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800 mb-2">
@@ -238,14 +237,14 @@ function DiagramGenerator() {
                       </p>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <DiagramViewer
-                  diagramUrl={diagramUrl}
-                  alt="Generated architecture diagram"
-                  className="p-4"
-                />
-              )}
+                ) : (
+                  <img
+                    src={diagramUrl}
+                    alt="Generated architecture diagram"
+                    className="w-full max-w-4xl mx-auto"
+                  />
+                )}
+              </div>
               <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <label htmlFor="downloadFormat" className="text-sm font-medium text-gray-700">

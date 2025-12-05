@@ -445,3 +445,4 @@ For complex diagrams, apply attributes in this order:
 6. ✅ **Consider `splines="ortho"`** - For very structured diagrams
 
 These solutions are documented in Graphviz and diagrams package documentation and should significantly improve arrow routing in your complex diagrams.
+
