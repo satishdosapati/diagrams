@@ -133,14 +133,6 @@ def sanitize_variable_name(name: str) -> str:
 class DiagramsEngine:
     """Generates architecture diagrams using the Diagrams library."""
     
-    # Default node attributes for consistent icon sizing
-    # These ensure all icons render at the same size regardless of their original dimensions
-    DEFAULT_NODE_ATTR = {
-        "width": "2.0",
-        "height": "2.0",
-        "fixedsize": "true"
-    }
-    
     def __init__(self, output_dir: str = None):
         """Initialize the engine with output directory."""
         if output_dir is None:
@@ -206,21 +198,14 @@ class DiagramsEngine:
             else:
                 diagram_params.append(f'outformat="{normalized_format}"')
         
-        # Prepare node attributes: merge defaults with user-provided attributes
-        # User-provided attributes override defaults for flexibility
-        node_attr = self.DEFAULT_NODE_ATTR.copy()
-        if spec.graphviz_attrs and spec.graphviz_attrs.node_attr:
-            node_attr.update(spec.graphviz_attrs.node_attr)
-        
-        # Always include node_attr for consistent sizing across all diagrams
-        node_attr_str = self._format_attr_dict(node_attr)
-        diagram_params.append(f'node_attr={node_attr_str}')
-        
         # Add Graphviz attributes if provided
         if spec.graphviz_attrs:
             if spec.graphviz_attrs.graph_attr:
                 graph_attr_str = self._format_attr_dict(spec.graphviz_attrs.graph_attr)
                 diagram_params.append(f'graph_attr={graph_attr_str}')
+            if spec.graphviz_attrs.node_attr:
+                node_attr_str = self._format_attr_dict(spec.graphviz_attrs.node_attr)
+                diagram_params.append(f'node_attr={node_attr_str}')
             if spec.graphviz_attrs.edge_attr:
                 edge_attr_str = self._format_attr_dict(spec.graphviz_attrs.edge_attr)
                 diagram_params.append(f'edge_attr={edge_attr_str}')
