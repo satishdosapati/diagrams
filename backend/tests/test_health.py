@@ -159,3 +159,5 @@ class TestComponentResolution:
         except Exception as e:
             pytest.fail(f"GCP component resolution failed: {e}")
 
+
+

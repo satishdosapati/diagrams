@@ -42,3 +42,5 @@ echo "To view HTML report (if browser available):"
 echo "  firefox tests/reports/test_report_*.html"
 echo ""
 
+
+

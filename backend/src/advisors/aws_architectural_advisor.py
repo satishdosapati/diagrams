@@ -556,30 +556,41 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         if not graphviz_attrs:
             graphviz_attrs = GraphvizAttributes()
         
-        # Always apply edge routing optimizations for cleaner diagrams
-        if len(final_connections) > 5:
-            logger.info(f"[ADVISOR] Applying edge routing optimizations for diagram ({len(final_connections)} connections)...")
-            
-            # Use orthogonal or polyline splines for cleaner edge routing
-            # Orthogonal is cleaner but may not work well for all layouts
-            # Polyline is a good compromise - cleaner than spline but more flexible than ortho
-            if len(final_connections) > 15:
-                graphviz_attrs.graph_attr["splines"] = "polyline"
-                graphviz_attrs.graph_attr["concentrate"] = "true"
-            elif len(final_connections) > 10:
-                graphviz_attrs.graph_attr["splines"] = "ortho"
-            else:
-                graphviz_attrs.graph_attr["splines"] = "polyline"
-        else:
-            # For simpler diagrams, use polyline for cleaner routing
-            if "splines" not in graphviz_attrs.graph_attr:
-                graphviz_attrs.graph_attr["splines"] = "polyline"
+        # Always apply strict orthogonal routing for clean, structured lines
+        # This ensures all connectors use 90-degree angles (orthogonal routing)
+        # Matching the clean, structured appearance of professional AWS diagrams
+        logger.info(f"[ADVISOR] Applying strict orthogonal routing for clean structured lines ({len(final_connections)} connections)...")
+        
+        # CRITICAL: Always use "ortho" for strict 90-degree angle connectors
+        # This produces clean, structured lines like professional architecture diagrams
+        if "splines" not in graphviz_attrs.graph_attr:
+            graphviz_attrs.graph_attr["splines"] = "ortho"
+        
+        # CRITICAL: Prevent node overlaps - required for proper orthogonal routing
+        # Without this, Graphviz may revert to curved/spline routing
+        if "overlap" not in graphviz_attrs.graph_attr:
+            graphviz_attrs.graph_attr["overlap"] = "false"
+        
+        # Set default direction to left-to-right for architecture diagrams (if not specified)
+        # This ensures a clear flow from left to right, matching professional diagram conventions
+        if not spec.direction:
+            spec.direction = "LR"
+        # Also set rankdir in graph_attr for Graphviz compatibility
+        if "rankdir" not in graphviz_attrs.graph_attr:
+            graphviz_attrs.graph_attr["rankdir"] = spec.direction if spec.direction else "LR"
         
         # Improve spacing for better edge routing (always apply if not set)
+        # Increased spacing helps orthogonal routing work better and prevents crowding
         if "nodesep" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["nodesep"] = "0.8"
+            graphviz_attrs.graph_attr["nodesep"] = "1.0"  # Increased from 0.8 for better spacing
         if "ranksep" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["ranksep"] = "1.2"
+            graphviz_attrs.graph_attr["ranksep"] = "1.5"  # Increased from 1.2 for better spacing
+        
+        # For complex diagrams with many connections, merge parallel edges
+        # This reduces visual clutter when multiple sources connect to the same target
+        if len(final_connections) > 10:
+            if "concentrate" not in graphviz_attrs.graph_attr:
+                graphviz_attrs.graph_attr["concentrate"] = "true"
         
         # Set default edge attributes for cleaner appearance (always apply if not set)
         if not graphviz_attrs.edge_attr:
@@ -589,8 +600,7 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         if "penwidth" not in graphviz_attrs.edge_attr:
             graphviz_attrs.edge_attr["penwidth"] = "1.0"
         
-        if len(final_connections) > 5:
-            logger.info(f"[ADVISOR] Edge routing: splines={graphviz_attrs.graph_attr.get('splines')}, concentrate={graphviz_attrs.graph_attr.get('concentrate', 'false')}")
+        logger.info(f"[ADVISOR] Edge routing: splines={graphviz_attrs.graph_attr.get('splines')}, overlap={graphviz_attrs.graph_attr.get('overlap')}, rankdir={graphviz_attrs.graph_attr.get('rankdir')}, concentrate={graphviz_attrs.graph_attr.get('concentrate', 'false')}")
         
         # Create enhanced spec
         enhanced_spec = ArchitectureSpec(
