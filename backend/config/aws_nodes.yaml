@@ -11,6 +11,7 @@ modules:
   analytics: diagrams.aws.analytics
   security: diagrams.aws.security
   management: diagrams.aws.management
+  devtools: diagrams.aws.devtools
   iot: diagrams.aws.iot
   ml: diagrams.aws.ml
 
@@ -49,6 +50,14 @@ nodes:
     category: compute
     class_name: ElasticBeanstalk
     description: "Elastic Beanstalk"
+  auto_scaling:
+    category: compute
+    class_name: AutoScaling
+    description: "Auto Scaling Group"
+  application_auto_scaling:
+    category: compute
+    class_name: ApplicationAutoScaling
+    description: "Application Auto Scaling"
   
   # Storage
   s3:
@@ -105,6 +114,14 @@ nodes:
     category: database
     class_name: Neptune
     description: "Amazon Neptune"
+  dax:
+    category: database
+    class_name: DAX
+    description: "DynamoDB Accelerator"
+  timestream:
+    category: database
+    class_name: Timestream
+    description: "Amazon Timestream"
   
   # Network
   vpc:
@@ -167,6 +184,18 @@ nodes:
     category: network
     class_name: DirectConnect
     description: "AWS Direct Connect"
+  vpc_endpoint:
+    category: network
+    class_name: Endpoint
+    description: "VPC Endpoint"
+  vpc_flow_logs:
+    category: network
+    class_name: VPCFlowLogs
+    description: "VPC Flow Logs"
+  global_accelerator:
+    category: network
+    class_name: GlobalAccelerator
+    description: "AWS Global Accelerator"
   
   # Integration
   sqs:
@@ -279,6 +308,18 @@ nodes:
     category: management
     class_name: TrustedAdvisor
     description: "AWS Trusted Advisor"
+  cloudwatch_logs:
+    category: management
+    class_name: CloudwatchLogs
+    description: "CloudWatch Logs"
+  xray:
+    category: devtools
+    class_name: XRay
+    description: "AWS X-Ray"
+  parameter_store:
+    category: management
+    class_name: ParameterStore
+    description: "Systems Manager Parameter Store"
   
   # IoT
   iot_core:

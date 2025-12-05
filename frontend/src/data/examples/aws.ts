@@ -4,74 +4,91 @@ export const awsExamples: Example[] = [
   {
     id: "grouped-workers",
     title: "Grouped Workers",
-    description: "Load balancer distributing traffic to multiple EC2 workers connected to RDS database",
-    prompt: "Create a load balancer with multiple EC2 worker instances connected to an RDS database",
-    codeSnippet: `from diagrams import Diagram
-from diagrams.aws.compute import EC2
+    description: "Application Load Balancer distributing traffic to Auto Scaling EC2 workers connected to RDS Multi-AZ database",
+    prompt: "Create an Application Load Balancer with Auto Scaling EC2 worker instances connected to an RDS Multi-AZ database",
+    codeSnippet: `from diagrams import Cluster, Diagram
+from diagrams.aws.compute import AutoScaling, EC2
 from diagrams.aws.database import RDS
-from diagrams.aws.network import ELB
+from diagrams.aws.network import ApplicationLoadBalancer
 
 with Diagram("Grouped Workers", show=False, direction="TB"):
-    ELB("lb") >> [EC2("worker1"),
+    alb = ApplicationLoadBalancer("ALB")
+    
+    with Cluster("Auto Scaling Group"):
+        workers = [EC2("worker1"),
                   EC2("worker2"),
                   EC2("worker3"),
                   EC2("worker4"),
-                  EC2("worker5")] >> RDS("events")`,
+                  EC2("worker5")]
+        asg = AutoScaling("ASG")
+    
+    with Cluster("RDS Multi-AZ"):
+        rds_primary = RDS("Primary")
+        rds_standby = RDS("Standby")
+        rds_primary - rds_standby
+    
+    alb >> workers >> rds_primary
+    asg >> workers`,
     category: "three-tier",
-    complexity: "simple",
-    tags: ["load-balancer", "ec2", "rds", "workers"],
+    complexity: "medium",
+    tags: ["alb", "autoscaling", "ec2", "rds", "multi-az", "workers"],
     recommendedVariations: [
       "Replace EC2 with Lambda for serverless workers",
-      "Add Auto Scaling Group for EC2 instances",
-      "Use Aurora instead of RDS for better performance"
+      "Add ElastiCache for caching",
+      "Use Aurora instead of RDS for better performance",
+      "Add CloudWatch for monitoring"
     ]
   },
   {
     id: "clustered-web-services",
     title: "Clustered Web Services",
-    description: "Route53 DNS → Load balancer → ECS services → RDS with ElastiCache",
-    prompt: "Create a clustered web service architecture with Route53, load balancer, ECS containers, RDS database, and ElastiCache",
+    description: "Route53 DNS → CloudFront CDN → Application Load Balancer → ECS services → RDS Multi-AZ with ElastiCache",
+    prompt: "Create a clustered web service architecture with Route53, CloudFront CDN, Application Load Balancer, ECS containers, RDS Multi-AZ database, and ElastiCache",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.aws.compute import ECS
 from diagrams.aws.database import ElastiCache, RDS
-from diagrams.aws.network import ELB, Route53
+from diagrams.aws.network import ApplicationLoadBalancer, CloudFront, Route53
 
 with Diagram("Clustered Web Services", show=False):
     dns = Route53("dns")
-    lb = ELB("lb")
+    cdn = CloudFront("CloudFront")
+    alb = ApplicationLoadBalancer("ALB")
 
-    with Cluster("Services"):
+    with Cluster("ECS Services"):
         svc_group = [ECS("web1"),
                      ECS("web2"),
                      ECS("web3")]
 
-    with Cluster("DB Cluster"):
-        db_primary = RDS("userdb")
-        db_primary - [RDS("userdb ro")]
+    with Cluster("RDS Multi-AZ"):
+        db_primary = RDS("Primary")
+        db_standby = RDS("Standby")
+        db_primary - db_standby
 
-    memcached = ElastiCache("memcached")
+    memcached = ElastiCache("ElastiCache")
 
-    dns >> lb >> svc_group
+    dns >> cdn >> alb >> svc_group
     svc_group >> db_primary
     svc_group >> memcached`,
     category: "microservices",
     complexity: "medium",
-    tags: ["route53", "elb", "ecs", "rds", "elasticache", "clusters"],
+    tags: ["route53", "cloudfront", "alb", "ecs", "rds", "elasticache", "multi-az", "clusters"],
     recommendedVariations: [
-      "Add CloudFront CDN in front of Route53",
+      "Add WAF for security",
       "Use EKS instead of ECS for Kubernetes",
-      "Add S3 for static assets"
+      "Add S3 for static assets",
+      "Add CloudWatch for monitoring"
     ]
   },
   {
     id: "event-processing",
     title: "Event Processing Pipeline",
-    description: "EKS source → ECS workers → SQS → Lambda handlers → S3 storage and Redshift analytics",
-    prompt: "Build an event processing pipeline with EKS source, ECS workers, SQS queue, Lambda handlers, S3 storage, and Redshift analytics",
+    description: "EKS source → ECS workers → SQS with DLQ → Lambda handlers → S3 storage and Redshift analytics with CloudWatch monitoring",
+    prompt: "Build an event processing pipeline with EKS source, ECS workers, SQS queue with Dead Letter Queue, Lambda handlers, S3 storage, Redshift analytics, and CloudWatch monitoring",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.aws.compute import ECS, EKS, Lambda
 from diagrams.aws.database import Redshift
 from diagrams.aws.integration import SQS
+from diagrams.aws.management import Cloudwatch
 from diagrams.aws.storage import S3
 
 with Diagram("Event Processing", show=False):
@@ -83,7 +100,9 @@ with Diagram("Event Processing", show=False):
                        ECS("worker2"),
                        ECS("worker3")]
 
-        queue = SQS("event queue")
+        with Cluster("Queue"):
+            queue = SQS("event queue")
+            dlq = SQS("DLQ")
 
         with Cluster("Processing"):
             handlers = [Lambda("proc1"),
@@ -92,100 +111,135 @@ with Diagram("Event Processing", show=False):
 
     store = S3("events store")
     dw = Redshift("analytics")
+    cw = Cloudwatch("CloudWatch")
 
     source >> workers >> queue >> handlers
+    queue >> dlq  # Failed messages
     handlers >> store
-    handlers >> dw`,
+    handlers >> dw
+    handlers >> cw  # Monitoring`,
     category: "data-pipeline",
     complexity: "complex",
-    tags: ["eks", "ecs", "sqs", "lambda", "s3", "redshift", "events"],
+    tags: ["eks", "ecs", "sqs", "dlq", "lambda", "s3", "redshift", "cloudwatch", "events"],
     recommendedVariations: [
       "Add Kinesis Data Streams for real-time processing",
       "Use EventBridge instead of SQS",
-      "Add DynamoDB for event metadata"
+      "Add DynamoDB for event metadata",
+      "Add X-Ray for distributed tracing"
     ]
   },
   {
     id: "serverless-api",
     title: "Serverless API",
-    description: "API Gateway → Lambda functions → DynamoDB database",
-    prompt: "Create a serverless API with API Gateway, Lambda functions, and DynamoDB",
+    description: "CloudFront CDN → WAF → API Gateway → Lambda functions → DynamoDB with CloudWatch monitoring",
+    prompt: "Create a serverless API with CloudFront CDN, WAF protection, API Gateway, Lambda functions, DynamoDB, and CloudWatch monitoring",
     codeSnippet: `from diagrams import Diagram
 from diagrams.aws.compute import Lambda
 from diagrams.aws.database import Dynamodb
-from diagrams.aws.network import APIGateway
+from diagrams.aws.management import Cloudwatch
+from diagrams.aws.network import APIGateway, CloudFront
+from diagrams.aws.security import WAF
 
 with Diagram("Serverless API", show=False, direction="TB"):
+    cdn = CloudFront("CloudFront")
+    waf = WAF("WAF")
     api = APIGateway("API Gateway")
     func = Lambda("Function")
     db = Dynamodb("Database")
-    api >> func >> db`,
+    cw = Cloudwatch("CloudWatch")
+    
+    cdn >> waf >> api >> func >> db
+    func >> cw
+    db >> cw`,
     category: "serverless",
-    complexity: "simple",
-    tags: ["api-gateway", "lambda", "dynamodb", "serverless"],
+    complexity: "medium",
+    tags: ["cloudfront", "waf", "api-gateway", "lambda", "dynamodb", "cloudwatch", "serverless"],
     recommendedVariations: [
-      "Add CloudFront CDN in front of API Gateway",
-      "Add S3 for static assets",
-      "Use Step Functions for workflows"
+      "Add DAX for DynamoDB caching",
+      "Add X-Ray for distributed tracing",
+      "Use Step Functions for workflows",
+      "Add S3 for static assets"
     ]
   },
   {
     id: "vpc-network",
     title: "VPC Network Architecture",
-    description: "VPC with public and private subnets, NAT Gateway, and Internet Gateway",
-    prompt: "Create a VPC with public and private subnets, NAT Gateway, and Internet Gateway",
+    description: "Multi-AZ VPC with public and private subnets, NAT Gateways, Internet Gateway, and VPC Endpoints",
+    prompt: "Create a multi-AZ VPC with public and private subnets in multiple availability zones, NAT Gateways, Internet Gateway, and VPC Endpoints for S3 and DynamoDB",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.aws.compute import EC2
-from diagrams.aws.network import VPC, PublicSubnet, PrivateSubnet, InternetGateway, NATGateway
+from diagrams.aws.network import VPC, PublicSubnet, PrivateSubnet, InternetGateway, NATGateway, Endpoint
 
 with Diagram("VPC Network", show=False):
     igw = InternetGateway("Internet Gateway")
     
     with Cluster("VPC"):
-        with Cluster("Public Subnet"):
-            pub_sub = PublicSubnet("Public")
-            nat = NATGateway("NAT")
-            web = EC2("Web Server")
+        with Cluster("AZ-1"):
+            with Cluster("Public Subnet AZ-1"):
+                pub_sub_1 = PublicSubnet("Public AZ-1")
+                nat_1 = NATGateway("NAT AZ-1")
+                web_1 = EC2("Web Server AZ-1")
+            
+            with Cluster("Private Subnet AZ-1"):
+                priv_sub_1 = PrivateSubnet("Private AZ-1")
+                app_1 = EC2("App Server AZ-1")
         
-        with Cluster("Private Subnet"):
-            priv_sub = PrivateSubnet("Private")
-            app = EC2("App Server")
-            db = EC2("Database")
+        with Cluster("AZ-2"):
+            with Cluster("Public Subnet AZ-2"):
+                pub_sub_2 = PublicSubnet("Public AZ-2")
+                nat_2 = NATGateway("NAT AZ-2")
+                web_2 = EC2("Web Server AZ-2")
+            
+            with Cluster("Private Subnet AZ-2"):
+                priv_sub_2 = PrivateSubnet("Private AZ-2")
+                app_2 = EC2("App Server AZ-2")
+        
+        with Cluster("Data Tier"):
+            db = EC2("Database Multi-AZ")
+        
+        s3_endpoint = Endpoint("S3 Endpoint")
+        dynamodb_endpoint = Endpoint("DynamoDB Endpoint")
     
-    igw >> pub_sub
-    pub_sub >> nat >> priv_sub
-    web >> app >> db`,
+    igw >> [pub_sub_1, pub_sub_2]
+    pub_sub_1 >> nat_1 >> priv_sub_1
+    pub_sub_2 >> nat_2 >> priv_sub_2
+    [web_1, web_2] >> [app_1, app_2] >> db
+    [app_1, app_2] >> [s3_endpoint, dynamodb_endpoint]`,
     category: "network",
-    complexity: "medium",
-    tags: ["vpc", "subnet", "nat", "internet-gateway", "network"],
+    complexity: "complex",
+    tags: ["vpc", "subnet", "nat", "internet-gateway", "multi-az", "vpc-endpoint", "network"],
     recommendedVariations: [
       "Add VPN Gateway for site-to-site VPN",
       "Add Transit Gateway for multi-VPC",
+      "Add VPC Flow Logs for monitoring",
       "Add Security Groups visualization"
     ]
   },
   {
     id: "cloudfront-s3-static",
     title: "CloudFront Static Website",
-    description: "CloudFront CDN → S3 bucket for static website hosting",
-    prompt: "Create a static website architecture with CloudFront CDN distributing content from S3 bucket",
+    description: "Route53 DNS → CloudFront CDN → WAF → S3 bucket for static website hosting",
+    prompt: "Create a static website architecture with Route53 DNS, CloudFront CDN, WAF protection, and S3 bucket for content storage",
     codeSnippet: `from diagrams import Diagram
 from diagrams.aws.network import CloudFront, Route53
+from diagrams.aws.security import WAF
 from diagrams.aws.storage import S3
 
 with Diagram("CloudFront Static Site", show=False, direction="TB"):
     dns = Route53("DNS")
     cdn = CloudFront("CloudFront")
+    waf = WAF("WAF")
     bucket = S3("S3 Bucket")
     
-    dns >> cdn >> bucket`,
+    dns >> cdn >> waf >> bucket`,
     category: "static-hosting",
-    complexity: "simple",
-    tags: ["cloudfront", "s3", "route53", "cdn", "static"],
+    complexity: "medium",
+    tags: ["cloudfront", "s3", "route53", "waf", "cdn", "static"],
     recommendedVariations: [
       "Add Lambda@Edge for edge computing",
       "Use S3 website hosting endpoint",
-      "Add WAF for security"
+      "Add CloudWatch for monitoring",
+      "Add S3 versioning for content management"
     ]
   },
   {
@@ -255,29 +309,33 @@ with Diagram("Step Functions Workflow", show=False, direction="TB"):
   {
     id: "aurora-serverless",
     title: "Aurora Serverless Database",
-    description: "Application Load Balancer → ECS Fargate → Aurora Serverless",
-    prompt: "Create a serverless database architecture with ALB, ECS Fargate containers, and Aurora Serverless database",
+    description: "Application Load Balancer → ECS Fargate → RDS Proxy → Aurora Serverless with ElastiCache",
+    prompt: "Create a serverless database architecture with ALB, ECS Fargate containers, RDS Proxy for connection pooling, Aurora Serverless database, and ElastiCache for caching",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.aws.compute import ECS, Fargate
-from diagrams.aws.database import Aurora
+from diagrams.aws.database import Aurora, ElastiCache
 from diagrams.aws.network import ApplicationLoadBalancer
 
 with Diagram("Aurora Serverless", show=False):
     alb = ApplicationLoadBalancer("ALB")
     
-    with Cluster("Fargate"):
+    with Cluster("Fargate Services"):
         containers = [Fargate("service1"), Fargate("service2")]
     
-    aurora = Aurora("Aurora")
+    cache = ElastiCache("ElastiCache")
+    aurora = Aurora("Aurora Serverless")
     
-    alb >> containers >> aurora`,
+    alb >> containers
+    containers >> cache
+    containers >> aurora`,
     category: "serverless",
     complexity: "medium",
-    tags: ["alb", "fargate", "aurora", "serverless", "containers"],
+    tags: ["alb", "fargate", "aurora", "elasticache", "serverless", "containers"],
     recommendedVariations: [
-      "Add ElastiCache for caching",
-      "Use RDS Proxy for connection pooling",
-      "Add CloudFront for CDN"
+      "Add RDS Proxy for connection pooling (when available)",
+      "Add CloudFront for CDN",
+      "Add CloudWatch for monitoring",
+      "Use Multi-AZ Aurora for high availability"
     ]
   },
   {
