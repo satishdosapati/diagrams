@@ -1,7 +1,5 @@
 # Azure Node Registry Configuration
 # Maps Azure node types to their Diagrams library classes and categories
-# Reference: https://diagrams.mingrammer.com/docs/nodes/azure
-# Always refer to the official documentation for accurate class names
 
 # Azure provider module mappings
 modules:
@@ -21,7 +19,7 @@ nodes:
   # Compute
   azure_function:
     category: compute
-    class_name: FunctionApps
+    class_name: Function
     description: "Azure Functions"
   azure_vm:
     category: compute

@@ -1,7 +1,5 @@
 # GCP Node Registry Configuration
 # Maps GCP node types to their Diagrams library classes and categories
-# Reference: https://diagrams.mingrammer.com/docs/nodes/gcp
-# Always refer to the official documentation for accurate class names
 
 # GCP provider module mappings
 modules:
@@ -21,7 +19,7 @@ nodes:
   # Compute
   cloud_function:
     category: compute
-    class_name: Functions
+    class_name: CloudFunctions
     description: "Cloud Functions"
   compute_engine:
     category: compute
@@ -33,7 +31,7 @@ nodes:
     description: "App Engine"
   cloud_run:
     category: compute
-    class_name: Run
+    class_name: CloudRun
     description: "Cloud Run"
   gke:
     category: compute
@@ -41,7 +39,7 @@ nodes:
     description: "Google Kubernetes Engine"
   cloud_sql:
     category: compute
-    class_name: SQL
+    class_name: CloudSQL
     description: "Cloud SQL"
   batch:
     category: compute

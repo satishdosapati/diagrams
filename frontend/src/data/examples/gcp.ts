@@ -9,7 +9,7 @@ export const gcpExamples: Example[] = [
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.gcp.analytics import BigQuery, Dataflow, PubSub
 from diagrams.gcp.compute import Functions
-from diagrams.gcp.database import Bigtable
+from diagrams.gcp.database import BigTable
 from diagrams.gcp.iot import IotCore
 from diagrams.gcp.storage import GCS
 
@@ -31,7 +31,7 @@ with Diagram("Message Collecting", show=False):
 
         with Cluster("Event Driven"):
             with Cluster("Processing"):
-                flow >> Functions("func") >> Bigtable("bigtable")
+                flow >> Functions("func") >> BigTable("bigtable")
 
     pubsub >> flow`,
     category: "data-pipeline",
@@ -49,12 +49,12 @@ with Diagram("Message Collecting", show=False):
     description: "Cloud Functions → Cloud Storage → Firestore",
     prompt: "Create a GCP serverless architecture with Cloud Functions, Cloud Storage, and Firestore",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import Functions
+from diagrams.gcp.compute import CloudFunctions
 from diagrams.gcp.database import Firestore
 from diagrams.gcp.storage import GCS
 
 with Diagram("GCP Serverless", show=False, direction="TB"):
-    func = Functions("Cloud Function")
+    func = CloudFunctions("Cloud Function")
     storage = GCS("Cloud Storage")
     db = Firestore("Firestore")
     func >> storage >> db`,
@@ -73,7 +73,7 @@ with Diagram("GCP Serverless", show=False, direction="TB"):
     description: "Cloud CDN → Load Balancing → Cloud Run → Cloud SQL",
     prompt: "Create a containerized architecture with Cloud CDN, Load Balancing, Cloud Run containers, and Cloud SQL",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.gcp.compute import Run, SQL
+from diagrams.gcp.compute import CloudRun, CloudSQL
 from diagrams.gcp.network import CloudCDN, LoadBalancing
 
 with Diagram("Cloud Run Services", show=False):
@@ -81,9 +81,9 @@ with Diagram("Cloud Run Services", show=False):
     lb = LoadBalancing("Load Balancer")
     
     with Cluster("Cloud Run"):
-        containers = [Run("service1"), Run("service2"), Run("service3")]
+        containers = [CloudRun("service1"), CloudRun("service2"), CloudRun("service3")]
     
-    db = SQL("Cloud SQL")
+    db = CloudSQL("Cloud SQL")
     
     cdn >> lb >> containers >> db`,
     category: "containers",
@@ -101,7 +101,7 @@ with Diagram("Cloud Run Services", show=False):
     description: "Cloud CDN → Load Balancing → GKE → Cloud SQL",
     prompt: "Create a Kubernetes architecture with Cloud CDN, Load Balancing, GKE cluster, and Cloud SQL",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.gcp.compute import GKE, SQL
+from diagrams.gcp.compute import GKE, CloudSQL
 from diagrams.gcp.network import CloudCDN, LoadBalancing
 
 with Diagram("GKE Cluster", show=False):
@@ -111,7 +111,7 @@ with Diagram("GKE Cluster", show=False):
     with Cluster("Kubernetes"):
         gke = GKE("GKE Cluster")
     
-    db = SQL("Cloud SQL")
+    db = CloudSQL("Cloud SQL")
     
     cdn >> lb >> gke >> db`,
     category: "containers",
@@ -129,7 +129,7 @@ with Diagram("GKE Cluster", show=False):
     description: "Cloud CDN → Load Balancing → Compute Engine VMs → Cloud SQL",
     prompt: "Create a web application with Cloud CDN, Load Balancing, Compute Engine VMs, and Cloud SQL",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.gcp.compute import ComputeEngine, SQL
+from diagrams.gcp.compute import ComputeEngine, CloudSQL
 from diagrams.gcp.network import CloudCDN, LoadBalancing
 
 with Diagram("Compute Engine Web App", show=False):
@@ -139,7 +139,7 @@ with Diagram("Compute Engine Web App", show=False):
     with Cluster("Compute"):
         vms = [ComputeEngine("vm1"), ComputeEngine("vm2"), ComputeEngine("vm3")]
     
-    db = SQL("Cloud SQL")
+    db = CloudSQL("Cloud SQL")
     
     cdn >> lb >> vms >> db`,
     category: "three-tier",
@@ -157,15 +157,15 @@ with Diagram("Compute Engine Web App", show=False):
     description: "Cloud Functions → Pub/Sub → Cloud Tasks → Cloud Functions → Firestore",
     prompt: "Create a workflow architecture with Cloud Functions triggering Pub/Sub, Cloud Tasks for scheduling, and Firestore for storage",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import Functions
+from diagrams.gcp.compute import CloudFunctions
 from diagrams.gcp.database import Firestore
 from diagrams.gcp.integration import CloudTasks, PubSub
 
 with Diagram("Pub/Sub Workflow", show=False, direction="TB"):
-    trigger = Functions("Trigger")
+    trigger = CloudFunctions("Trigger")
     pubsub = PubSub("Pub/Sub")
     tasks = CloudTasks("Cloud Tasks")
-    processor = Functions("Processor")
+    processor = CloudFunctions("Processor")
     db = Firestore("Firestore")
     
     trigger >> pubsub >> tasks >> processor >> db`,
@@ -212,16 +212,16 @@ with Diagram("BigQuery Analytics", show=False):
     description: "API Gateway → Cloud Workflows → Cloud Functions → Firestore",
     prompt: "Create a workflow orchestration with API Gateway, Cloud Workflows orchestrating Cloud Functions, and Firestore",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import Functions
+from diagrams.gcp.compute import CloudFunctions
 from diagrams.gcp.database import Firestore
 from diagrams.gcp.integration import APIGateway, Workflows
 
 with Diagram("Cloud Workflows", show=False, direction="TB"):
     api = APIGateway("API Gateway")
     workflow = Workflows("Cloud Workflows")
-    func1 = Functions("Process")
-    func2 = Functions("Validate")
-    func3 = Functions("Store")
+    func1 = CloudFunctions("Process")
+    func2 = CloudFunctions("Validate")
+    func3 = CloudFunctions("Store")
     db = Firestore("Firestore")
     
     api >> workflow >> [func1, func2] >> func3 >> db`,
@@ -240,7 +240,7 @@ with Diagram("Cloud Workflows", show=False, direction="TB"):
     description: "Load Balancing → Compute Engine → Memorystore → Cloud SQL",
     prompt: "Create a high-performance architecture with Load Balancing, Compute Engine VMs, Memorystore for caching, and Cloud SQL",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import ComputeEngine, SQL
+from diagrams.gcp.compute import ComputeEngine, CloudSQL
 from diagrams.gcp.database import Memorystore
 from diagrams.gcp.network import LoadBalancing
 
@@ -251,7 +251,7 @@ with Diagram("Memorystore Caching", show=False):
         vms = [ComputeEngine("vm1"), ComputeEngine("vm2"), ComputeEngine("vm3")]
     
     cache = Memorystore("Memorystore")
-    db = SQL("Cloud SQL")
+    db = CloudSQL("Cloud SQL")
     
     lb >> vms
     vms >> cache
@@ -271,7 +271,7 @@ with Diagram("Memorystore Caching", show=False):
     description: "Cloud CDN → Load Balancing → Cloud Run → Cloud Spanner",
     prompt: "Create a globally distributed architecture with Cloud CDN, Load Balancing, Cloud Run services, and Cloud Spanner global database",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.gcp.compute import Run
+from diagrams.gcp.compute import CloudRun
 from diagrams.gcp.database import Spanner
 from diagrams.gcp.network import CloudCDN, LoadBalancing
 
@@ -280,7 +280,7 @@ with Diagram("Spanner Global", show=False):
     lb = LoadBalancing("Load Balancer")
     
     with Cluster("Cloud Run"):
-        services = [Run("region1"), Run("region2")]
+        services = [CloudRun("region1"), CloudRun("region2")]
     
     spanner = Spanner("Cloud Spanner")
     
@@ -300,12 +300,12 @@ with Diagram("Spanner Global", show=False):
     description: "Cloud Functions → Bigtable → Cloud Storage",
     prompt: "Create a NoSQL architecture with Cloud Functions, Bigtable for high-throughput data, and Cloud Storage",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import Functions
+from diagrams.gcp.compute import CloudFunctions
 from diagrams.gcp.database import Bigtable
 from diagrams.gcp.storage import GCS
 
 with Diagram("Bigtable NoSQL", show=False, direction="TB"):
-    func = Functions("Function")
+    func = CloudFunctions("Function")
     bigtable = Bigtable("Bigtable")
     storage = GCS("Cloud Storage")
     
@@ -349,7 +349,7 @@ with Diagram("Dataproc Big Data", show=False, direction="TB"):
     description: "IoT Core → Pub/Sub → Cloud Functions → Bigtable and Cloud Storage",
     prompt: "Create an IoT data pipeline with IoT Core devices, Pub/Sub messaging, Cloud Functions processors, storing in Bigtable and Cloud Storage",
     codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.gcp.compute import Functions
+from diagrams.gcp.compute import CloudFunctions
 from diagrams.gcp.database import Bigtable
 from diagrams.gcp.integration import PubSub
 from diagrams.gcp.iot import IotCore
@@ -362,7 +362,7 @@ with Diagram("IoT Pipeline", show=False):
     pubsub = PubSub("Pub/Sub")
     
     with Cluster("Processing"):
-        processors = [Functions("process"), Functions("analyze")]
+        processors = [CloudFunctions("process"), CloudFunctions("analyze")]
     
     bigtable = Bigtable("Bigtable")
     storage = GCS("Cloud Storage")
@@ -385,7 +385,7 @@ with Diagram("IoT Pipeline", show=False):
     description: "Cloud Storage → AI Platform → Cloud Functions → Firestore",
     prompt: "Create a machine learning pipeline with Cloud Storage for data, AI Platform for model training and inference, Cloud Functions, and Firestore",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import Functions
+from diagrams.gcp.compute import CloudFunctions
 from diagrams.gcp.database import Firestore
 from diagrams.gcp.ml import AIPlatform
 from diagrams.gcp.storage import GCS
@@ -393,7 +393,7 @@ from diagrams.gcp.storage import GCS
 with Diagram("ML Pipeline", show=False, direction="TB"):
     data = GCS("Training Data")
     ai = AIPlatform("AI Platform")
-    func = Functions("API")
+    func = CloudFunctions("API")
     db = Firestore("Results")
     
     data >> ai >> func >> db`,
@@ -442,14 +442,14 @@ with Diagram("VPC Network", show=False):
     description: "Cloud CDN → Cloud Armor → Load Balancing → Cloud Run",
     prompt: "Create a protected API architecture with Cloud CDN, Cloud Armor for DDoS protection, Load Balancing, and Cloud Run services",
     codeSnippet: `from diagrams import Diagram
-from diagrams.gcp.compute import Run
+from diagrams.gcp.compute import CloudRun
 from diagrams.gcp.network import CloudArmor, CloudCDN, LoadBalancing
 
 with Diagram("Cloud Armor Protected", show=False, direction="TB"):
     cdn = CloudCDN("Cloud CDN")
     armor = CloudArmor("Cloud Armor")
     lb = LoadBalancing("Load Balancer")
-    run = Run("Cloud Run")
+    run = CloudRun("Cloud Run")
     
     cdn >> armor >> lb >> run`,
     category: "security",
