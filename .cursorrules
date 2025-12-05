@@ -1,0 +1,16 @@
+# Project Rules for Diagrams Project
+
+## Documentation Files
+- **DO NOT** create unnecessary .md files when asking questions or seeking clarification
+- Only create documentation files when explicitly requested or when documenting significant features/changes
+- Prefer inline code comments and existing documentation files over creating new .md files
+
+## Code Style
+- Follow existing code patterns and architecture
+- Keep changes minimal and focused
+- Add comprehensive logging for debugging and observability
+
+## Integration Guidelines
+- When integrating new services (like MCP servers), use feature flags for gradual rollout
+- Always include fallback mechanisms for external service failures
+- Log all external service interactions for debugging

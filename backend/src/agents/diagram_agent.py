@@ -12,8 +12,7 @@ from ..models.node_registry import get_registry
 from .classifier_agent import ClassifierAgent
 from ..advisors.aws_architectural_advisor import AWSArchitecturalAdvisor
 from ..validators.input_validator import InputValidator
-from .mcp_tools import get_mcp_tools, generate_code_from_spec, validate_diagram_code, generate_diagram_from_code
-from ..integrations.mcp_client import get_mcp_client
+from ..integrations.mcp_diagram_client import get_mcp_client
 
 logger = logging.getLogger(__name__)
 
@@ -41,44 +40,20 @@ class DiagramAgent:
         # Initialize Input Validator
         self.input_validator = InputValidator()
         
-        # Check if MCP is enabled
-        self.use_mcp = os.getenv("USE_MCP_DIAGRAM_SERVER", "false").lower() == "true"
-        self.mcp_client = get_mcp_client() if self.use_mcp else None
+        # Initialize MCP client (for optional MCP tool integration)
+        self.mcp_client = get_mcp_client()
+        self.use_mcp_tools = self.mcp_client.enabled
         
-        if self.use_mcp and self.mcp_client:
-            logger.info("MCP Diagram Server integration enabled")
-        elif self.use_mcp:
-            logger.warning("MCP enabled but client creation failed - continuing without MCP")
-            self.use_mcp = False
+        logger.info(f"[DIAGRAM_AGENT] MCP tools enabled: {self.use_mcp_tools}")
         
         # Generate system prompt with node lists from registry
         system_prompt = self._generate_system_prompt()
         
-        # Get MCP tools if enabled
-        tools = []
-        if self.use_mcp:
-            try:
-                tools = get_mcp_tools()
-                logger.info(f"MCP tools available: {[tool.__name__ for tool in tools]}")
-            except Exception as e:
-                logger.warning(f"Failed to load MCP tools: {e}")
-        
         # Create agent with structured output
-        # Note: Tool registration depends on Strands SDK capabilities
-        # If Strands supports tools parameter, uncomment:
-        # agent_kwargs = {
-        #     "model": model,
-        #     "structured_output_model": ArchitectureSpec,
-        #     "system_prompt": system_prompt
-        # }
-        # if tools:
-        #     agent_kwargs["tools"] = tools
-        
         self.agent = Agent(
             model=model,
             structured_output_model=ArchitectureSpec,
             system_prompt=system_prompt
-            # tools=tools if tools else None  # Uncomment if Strands supports tools parameter
         )
     
     def _generate_system_prompt(self) -> str:
@@ -101,45 +76,6 @@ class DiagramAgent:
         # Get AWS architectural guidance
         aws_guidance = self.aws_advisor._get_static_guidance()
         
-        # Build MCP tools instruction if enabled
-        mcp_tools_instruction = ""
-        if self.use_mcp:
-            mcp_tools_instruction = """
-
-AVAILABLE MCP TOOLS (for diagram generation and validation):
-You have access to the following tools through the AWS Diagram MCP Server:
-
-1. generate_diagram_from_code(code, title, diagram_type, outformat):
-   - Generate a diagram from Python code using the diagrams library
-   - Validates code for security and correctness
-   - Returns the generated diagram file path
-   - Use this to create diagrams iteratively or validate your code generation
-   - Example: generate_diagram_from_code(code="from diagrams import Diagram...", title="My Diagram")
-
-2. validate_diagram_code(code):
-   - Validate Python diagram code before execution
-   - Checks for security issues, syntax errors, and best practices
-   - Returns validation results with errors and warnings
-   - Use this to ensure code is safe and correct before generating diagrams
-   - Example: validate_diagram_code(code="from diagrams import Diagram...")
-
-3. generate_code_from_spec(spec):
-   - Convert an ArchitectureSpec to Python code
-   - Generates diagrams library code from structured specification
-   - Use this to convert ArchitectureSpec to executable Python code
-   - Example: generate_code_from_spec(spec=architecture_spec_object)
-
-WORKFLOW WITH MCP TOOLS:
-1. Parse architecture description → Create ArchitectureSpec
-2. Optionally: Use generate_code_from_spec() to convert spec to code
-3. Optionally: Use validate_diagram_code() to validate the code
-4. Optionally: Use generate_diagram_from_code() to generate the diagram
-5. Return the ArchitectureSpec (diagram generation happens separately)
-
-Note: MCP tools provide enhanced security scanning and code validation.
-You can use them to improve diagram quality and catch errors early.
-"""
-        
         return f"""You are an expert at understanding cloud architecture descriptions and converting them into structured specifications.
 
 Your task:
@@ -148,7 +84,7 @@ Your task:
 3. Identify connections between components
 4. Determine the cloud provider from the description
 5. Return a valid ArchitectureSpec JSON
-{mcp_tools_instruction}
+
 Rules:
 - Detect provider from description (AWS/Azure/GCP)
 - Use appropriate NodeType values based on provider (use the node_id strings):
@@ -249,6 +185,7 @@ Output:
     {{"from_id": "lambda3", "to_id": "db"}}
   ]
 }}
+{mcp_tools_instruction}
 """
     
     def generate_spec(self, description: str, provider: Optional[str] = None) -> ArchitectureSpec:
@@ -301,7 +238,75 @@ Return a valid ArchitectureSpec JSON with components and connections."""
         
         # Enhance spec with AWS architectural guidance if AWS provider
         if final_provider == "aws":
+            logger.info("[DIAGRAM_AGENT] Enhancing spec with AWS architectural advisor")
             spec = self.aws_advisor.enhance_spec(spec)
+        
+        # Optional: Post-process with MCP tools if enabled
+        # This allows MCP server to validate/enhance the generated ArchitectureSpec
+        if self.use_mcp_tools and final_provider == "aws":
+            logger.info("[DIAGRAM_AGENT] Post-processing spec with MCP tools")
+            spec = self._post_process_with_mcp(spec)
+        
+        return spec
+    
+    def _post_process_with_mcp(self, spec: ArchitectureSpec) -> ArchitectureSpec:
+        """
+        Post-process ArchitectureSpec using MCP tools.
+        
+        This generates Python code from the spec, validates/enhances it via MCP,
+        and logs the results. The spec itself is not modified, but we log MCP feedback.
+        
+        Args:
+            spec: ArchitectureSpec to post-process
+            
+        Returns:
+            Original spec (MCP processing is for validation/logging only)
+        """
+        try:
+            logger.info("[DIAGRAM_AGENT] === MCP Post-processing ===")
+            logger.info(f"[DIAGRAM_AGENT] Spec: {len(spec.components)} components, {len(spec.connections)} connections")
+            
+            # Generate Python code from spec (for MCP validation)
+            from ..generators.diagrams_engine import DiagramsEngine
+            from ..resolvers.component_resolver import ComponentResolver
+            
+            resolver = ComponentResolver(primary_provider=spec.provider)
+            engine = DiagramsEngine()
+            
+            # Generate code
+            code = engine._generate_code(spec, resolver)
+            logger.debug(f"[DIAGRAM_AGENT] Generated code length: {len(code)} characters")
+            
+            # Validate code via MCP
+            validation_result = self.mcp_client.validate_code(code)
+            if validation_result.get("valid"):
+                logger.info("[DIAGRAM_AGENT] MCP code validation: PASSED")
+                if validation_result.get("warnings"):
+                    logger.warning(f"[DIAGRAM_AGENT] MCP validation warnings: {validation_result.get('warnings')}")
+            else:
+                logger.warning(f"[DIAGRAM_AGENT] MCP code validation: FAILED - {validation_result.get('error')}")
+            
+            # Try to enhance code via MCP (optional)
+            diagram_type = spec.metadata.get("diagram_type", "cloud_architecture")
+            mcp_diagram_type = "aws_architecture" if diagram_type == "cloud_architecture" else diagram_type
+            
+            enhance_result = self.mcp_client.generate_diagram(
+                code,
+                diagram_type=mcp_diagram_type,
+                title=spec.title
+            )
+            
+            if enhance_result.get("success"):
+                logger.info("[DIAGRAM_AGENT] MCP code enhancement: SUCCESS")
+                logger.debug(f"[DIAGRAM_AGENT] Enhanced code available (length: {len(enhance_result.get('code', ''))})")
+            else:
+                logger.warning(f"[DIAGRAM_AGENT] MCP code enhancement: FAILED - {enhance_result.get('error')}")
+            
+            logger.info("[DIAGRAM_AGENT] === MCP Post-processing complete ===")
+            
+        except Exception as e:
+            logger.error(f"[DIAGRAM_AGENT] Error in MCP post-processing: {e}", exc_info=True)
+            # Don't fail the request if MCP processing fails
         
         return spec
 

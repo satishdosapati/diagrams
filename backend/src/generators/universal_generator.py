@@ -1,10 +1,13 @@
 """
 UniversalGenerator - Routes to appropriate rendering engine based on diagram type.
 """
+import logging
 from typing import Protocol
 from abc import ABC, abstractmethod
 
 from ..models.spec import ArchitectureSpec
+
+logger = logging.getLogger(__name__)
 
 
 class DiagramEngine(Protocol):
@@ -45,15 +48,20 @@ class UniversalGenerator:
         """
         # Determine diagram type from spec metadata or infer
         diagram_type = spec.metadata.get("diagram_type", "cloud_architecture")
+        logger.info(f"[UNIVERSAL_GENERATOR] Generating diagram: type={diagram_type}, provider={spec.provider}")
+        logger.info(f"[UNIVERSAL_GENERATOR] Components: {len(spec.components)}, Connections: {len(spec.connections)}")
         
         # Route to appropriate engine
         engine = self.engines.get(diagram_type)
         if not engine:
             # Default to cloud architecture
+            logger.warning(f"[UNIVERSAL_GENERATOR] Unknown diagram type '{diagram_type}', using cloud_architecture")
             engine = self.engines["cloud_architecture"]
         
         # Render
+        logger.debug(f"[UNIVERSAL_GENERATOR] Using engine: {type(engine).__name__}")
         output_path = engine.render(spec)
+        logger.info(f"[UNIVERSAL_GENERATOR] Diagram generated: {output_path}")
         
         return output_path
 

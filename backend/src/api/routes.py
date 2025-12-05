@@ -193,11 +193,22 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
     try:
         # Get request ID for logging
         request_id = getattr(http_request.state, 'request_id', 'unknown') if http_request else 'unknown'
-        logger.info(f"[{request_id}] Generating diagram for provider: {request.provider}")
+        logger.info(f"[{request_id}] === Starting diagram generation ===")
+        logger.info(f"[{request_id}] Provider: {request.provider}")
+        logger.info(f"[{request_id}] Description length: {len(request.description)} characters")
+        
+        # Check MCP status
+        from ..integrations.mcp_diagram_client import get_mcp_client
+        mcp_client = get_mcp_client()
+        if mcp_client.enabled:
+            logger.info(f"[{request_id}] MCP Diagram Server: ENABLED")
+        else:
+            logger.debug(f"[{request_id}] MCP Diagram Server: DISABLED")
         
         # Generate spec from description (pass provider from UI)
         # Provider from UI takes precedence - no need to detect or override
         spec = agent.generate_spec(request.description, provider=request.provider)
+        logger.info(f"[{request_id}] Spec generated: {len(spec.components)} components, {len(spec.connections)} connections")
         
         # Apply Graphviz attributes if provided
         if request.graphviz_attrs:

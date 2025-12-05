@@ -54,9 +54,3 @@ deployment/secrets/
 
 *.txt
 useful_commands.txt
-
-# MCP Server virtual environments
-.mcp_server_venv/
-mcp_server_venv/
-backend/.mcp_server_venv/
-backend/mcp_server_venv/
