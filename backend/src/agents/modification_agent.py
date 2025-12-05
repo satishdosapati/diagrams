@@ -10,6 +10,8 @@ from strands.session.file_session_manager import FileSessionManager
 from ..models.spec import ArchitectureSpec
 from ..models.node_registry import get_registry
 from ..advisors.aws_architectural_advisor import AWSArchitecturalAdvisor
+from ..advisors.azure_architectural_advisor import AzureArchitecturalAdvisor
+from ..advisors.gcp_architectural_advisor import GCPArchitecturalAdvisor
 import logging
 
 
@@ -30,8 +32,10 @@ class ModificationAgent:
         # Load registry for generating node lists
         self.registry = get_registry()
         
-        # Initialize AWS Architectural Advisor
+        # Initialize architectural advisors for all providers
         self.aws_advisor = AWSArchitecturalAdvisor()
+        self.azure_advisor = AzureArchitecturalAdvisor()
+        self.gcp_advisor = GCPArchitecturalAdvisor()
         
         # Base system prompt (will be enhanced with node lists per request)
         self.base_system_prompt = """You are an expert at modifying existing architecture diagrams based on user requests.
@@ -180,20 +184,10 @@ IMPORTANT:
         guidance_parts = []
         
         # Get provider-specific guidance
+        modification_lower = modification.lower()
+        
         if spec.provider == "aws":
             logger.info(f"Getting AWS advisor guidance for modification: {modification[:50]}...")
-            
-            # MCP implementation commented out for now
-            # # Try to get MCP guidance if enabled
-            # if self.aws_advisor.use_mcp:
-            #     logger.info("MCP enabled - querying AWS Documentation for guidance")
-            #     mcp_guidance = self.aws_advisor.get_architectural_guidance(modification)
-            #     if mcp_guidance and mcp_guidance != self.aws_advisor._get_static_guidance():
-            #         logger.info("MCP guidance received")
-            #         guidance_parts.append(f"MCP Guidance:\n{mcp_guidance}")
-            
-            # Analyze modification to provide specific guidance
-            modification_lower = modification.lower()
             
             # Check if adding components
             if any(word in modification_lower for word in ["add", "create", "new", "include"]):
@@ -224,7 +218,72 @@ IMPORTANT:
             # Add general AWS guidance if no specific guidance
             if not guidance_parts:
                 guidance_parts.append(self.aws_advisor._get_static_guidance())
+        
+        elif spec.provider == "azure":
+            logger.info(f"Getting Azure advisor guidance for modification: {modification[:50]}...")
             
+            # Check if adding components
+            if any(word in modification_lower for word in ["add", "create", "new", "include"]):
+                if "vm" in modification_lower or "virtual machine" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: If adding VMs, ensure Virtual Network exists. "
+                        "VMs should be connected: Virtual Network → VM"
+                    )
+                if "function" in modification_lower or "azure function" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: Azure Functions commonly connect to API Management or Event Grid. "
+                        "Consider adding these connections if they exist."
+                    )
+                if "sql" in modification_lower or "database" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: SQL Database requires Virtual Network. "
+                        "Ensure proper network connections: Virtual Network → SQL Database"
+                    )
+            
+            # Check if modifying connections
+            if any(word in modification_lower for word in ["connect", "link", "route"]):
+                guidance_parts.append(
+                    "NOTE: Ensure connections follow Azure architectural patterns. "
+                    "Common patterns: API Management → Azure Function → Cosmos DB, Application Gateway → VM → SQL Database"
+                )
+            
+            # Add general Azure guidance if no specific guidance
+            if not guidance_parts:
+                guidance_parts.append(self.azure_advisor._get_static_guidance())
+        
+        elif spec.provider == "gcp":
+            logger.info(f"Getting GCP advisor guidance for modification: {modification[:50]}...")
+            
+            # Check if adding components
+            if any(word in modification_lower for word in ["add", "create", "new", "include"]):
+                if "compute engine" in modification_lower or "vm" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: If adding Compute Engine instances, ensure VPC exists. "
+                        "Compute Engine instances should be connected: VPC → Compute Engine"
+                    )
+                if "cloud function" in modification_lower or "function" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: Cloud Functions commonly connect to API Gateway or Pub/Sub. "
+                        "Consider adding these connections if they exist."
+                    )
+                if "cloud sql" in modification_lower or "sql" in modification_lower:
+                    guidance_parts.append(
+                        "NOTE: Cloud SQL requires VPC. "
+                        "Ensure proper network connections: VPC → Cloud SQL"
+                    )
+            
+            # Check if modifying connections
+            if any(word in modification_lower for word in ["connect", "link", "route"]):
+                guidance_parts.append(
+                    "NOTE: Ensure connections follow GCP architectural patterns. "
+                    "Common patterns: API Gateway → Cloud Function → Firestore, Load Balancing → Compute Engine → Cloud SQL"
+                )
+            
+            # Add general GCP guidance if no specific guidance
+            if not guidance_parts:
+                guidance_parts.append(self.gcp_advisor._get_static_guidance())
+        
+        if guidance_parts:
             logger.info(f"Generated {len(guidance_parts)} guidance items")
             return "\n\nArchitectural Guidance:\n" + "\n".join(f"- {g}" for g in guidance_parts)
         
@@ -242,13 +301,17 @@ IMPORTANT:
         """
         logger = logging.getLogger(__name__)
         
-        # Use AWS advisor for AWS provider
+        # Use provider-specific advisor
         if spec.provider == "aws":
             logger.info("Consulting AWS Architectural Advisor for enhancement")
             return self.aws_advisor.enhance_spec(spec)
+        elif spec.provider == "azure":
+            logger.info("Consulting Azure Architectural Advisor for enhancement")
+            return self.azure_advisor.enhance_spec(spec)
+        elif spec.provider == "gcp":
+            logger.info("Consulting GCP Architectural Advisor for enhancement")
+            return self.gcp_advisor.enhance_spec(spec)
         
-        # For other providers, return as-is (can be extended with Azure/GCP advisors)
-        # TODO: Add Azure and GCP advisors
         logger.info(f"Architectural advisor not available for provider: {spec.provider}")
         return spec
     

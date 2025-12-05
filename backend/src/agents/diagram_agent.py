@@ -11,6 +11,8 @@ from ..models.spec import ArchitectureSpec
 from ..models.node_registry import get_registry
 from .classifier_agent import ClassifierAgent
 from ..advisors.aws_architectural_advisor import AWSArchitecturalAdvisor
+from ..advisors.azure_architectural_advisor import AzureArchitecturalAdvisor
+from ..advisors.gcp_architectural_advisor import GCPArchitecturalAdvisor
 from ..validators.input_validator import InputValidator
 from ..integrations.mcp_diagram_client import get_mcp_client
 
@@ -34,8 +36,10 @@ class DiagramAgent:
         # Load registry for generating node lists
         self.registry = get_registry()
         
-        # Initialize AWS Architectural Advisor
+        # Initialize architectural advisors for all providers
         self.aws_advisor = AWSArchitecturalAdvisor()
+        self.azure_advisor = AzureArchitecturalAdvisor()
+        self.gcp_advisor = GCPArchitecturalAdvisor()
         
         # Initialize Input Validator
         self.input_validator = InputValidator()
@@ -249,10 +253,16 @@ Return a valid ArchitectureSpec JSON with components and connections."""
         # Set provider (UI selection takes precedence)
         spec.provider = final_provider
         
-        # Enhance spec with AWS architectural guidance if AWS provider
+        # Enhance spec with provider-specific architectural guidance
         if final_provider == "aws":
             logger.info("[DIAGRAM_AGENT] Enhancing spec with AWS architectural advisor")
             spec = self.aws_advisor.enhance_spec(spec)
+        elif final_provider == "azure":
+            logger.info("[DIAGRAM_AGENT] Enhancing spec with Azure architectural advisor")
+            spec = self.azure_advisor.enhance_spec(spec)
+        elif final_provider == "gcp":
+            logger.info("[DIAGRAM_AGENT] Enhancing spec with GCP architectural advisor")
+            spec = self.gcp_advisor.enhance_spec(spec)
         
         # Optional: Post-process with MCP tools if enabled
         # This allows MCP server to validate/enhance the generated ArchitectureSpec

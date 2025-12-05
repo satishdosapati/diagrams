@@ -18,6 +18,10 @@ def setup_test_environment():
     test_output_dir = Path(os.getenv("OUTPUT_DIR", "./test_output"))
     test_output_dir.mkdir(exist_ok=True)
     
+    # Create reports directory
+    reports_dir = Path(__file__).parent / "reports"
+    reports_dir.mkdir(exist_ok=True)
+    
     yield
     
     # Cleanup after all tests
@@ -31,6 +35,25 @@ def cleanup_between_tests():
     """Cleanup between tests if needed."""
     yield
     # Add any per-test cleanup here
+
+
+# Pytest hooks for failure collection
+def pytest_collection_modifyitems(config, items):
+    """Modify test items to add markers."""
+    for item in items:
+        # Add advisor marker to advisor tests
+        if "test_advisors" in str(item.fspath):
+            item.add_marker(pytest.mark.advisor)
+
+
+def pytest_runtest_setup(item):
+    """Setup before each test."""
+    pass
+
+
+def pytest_runtest_teardown(item):
+    """Teardown after each test."""
+    pass
 
 
 

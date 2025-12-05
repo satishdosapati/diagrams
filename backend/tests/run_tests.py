@@ -59,10 +59,13 @@ def run_tests(html_report=False, json_report=False, verbose=False, coverage=Fals
     
     # Add additional options
     cmd.extend([
-        "-x",  # Stop on first failure (remove for full run)
+        # Remove -x flag to continue on failures
         "--tb=short",  # Short traceback format
         "--strict-markers",  # Strict marker checking
         "-ra",  # Show extra test summary info
+        "--maxfail=999999",  # Continue running all tests even on failures
+        "--continue-on-collection-errors",  # Continue even if collection fails
+        "--junit-xml", str(reports_dir / f"junit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xml"),  # JUnit XML report
     ])
     
     print("=" * 80)
@@ -82,7 +85,8 @@ def generate_summary_report(reports_dir):
     """Generate a summary report from test results."""
     summary_file = reports_dir / "test_summary.txt"
     
-    # Try to read latest JSON report if available
+    # Try to parse JUnit XML first (more reliable)
+    xml_files = list(reports_dir.glob("junit_*.xml"))
     json_reports = list(reports_dir.glob("test_report_*.json"))
     
     with open(summary_file, "w") as f:
@@ -92,7 +96,37 @@ def generate_summary_report(reports_dir):
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("\n")
         
-        if json_reports:
+        # Parse JUnit XML if available
+        if xml_files:
+            latest_xml = max(xml_files, key=lambda p: p.stat().st_mtime)
+            try:
+                from test_report_generator import TestReportGenerator
+                generator = TestReportGenerator(reports_dir)
+                data = generator.parse_junit_xml(latest_xml)
+                
+                # Summary statistics
+                f.write("SUMMARY STATISTICS\n")
+                f.write("-" * 80 + "\n")
+                f.write(f"Total Tests: {data.get('total', 0)}\n")
+                f.write(f"Passed: {data.get('passed_count', 0)}\n")
+                f.write(f"Failed: {data.get('failed_count', 0)}\n")
+                f.write(f"Skipped: {data.get('skipped_count', 0)}\n")
+                f.write("\n")
+                
+                # Failed tests summary
+                failures = data.get("failures", [])
+                errors = data.get("errors", [])
+                if failures or errors:
+                    f.write("FAILED TESTS SUMMARY\n")
+                    f.write("-" * 80 + "\n")
+                    for failure in failures + errors:
+                        f.write(f"  - {failure['name']}\n")
+                    f.write(f"\nSee failure_report_*.txt for detailed error messages.\n\n")
+            except Exception as e:
+                f.write(f"Note: Could not parse JUnit XML: {e}\n\n")
+        
+        # Fallback to JSON if available
+        elif json_reports:
             latest_json = max(json_reports, key=lambda p: p.stat().st_mtime)
             try:
                 with open(latest_json) as json_f:
@@ -173,13 +207,26 @@ def main():
     # Generate summary from pytest output
     generate_summary_report(reports_dir)
     
+    # Generate detailed failure reports
+    try:
+        from test_report_generator import generate_failure_reports
+        txt_report, json_report = generate_failure_reports(reports_dir)
+        print(f"\nDetailed failure report: {txt_report}")
+        print(f"Failure JSON report: {json_report}")
+    except ImportError:
+        print("\nNote: Detailed failure report generator not available")
+    except Exception as e:
+        print(f"\nNote: Could not generate detailed failure report: {e}")
+    
     # Print report locations
     print("\n" + "=" * 80)
     print("REPORT FILES")
     print("=" * 80)
-    html_reports = list(reports_dir.glob("test_report_*.html"))
-    json_reports = list(reports_dir.glob("test_report_*.json"))
+    html_reports = list(reports_dir.glob("test_report_*.html")) + list(reports_dir.glob("report.html"))
+    json_reports = list(reports_dir.glob("test_report_*.json")) + list(reports_dir.glob("failure_report_*.json"))
     summary_reports = list(reports_dir.glob("test_summary.txt"))
+    failure_reports = list(reports_dir.glob("failure_report_*.txt"))
+    junit_reports = list(reports_dir.glob("junit_*.xml"))
     
     if html_reports:
         print(f"HTML Report: {max(html_reports, key=lambda p: p.stat().st_mtime)}")
@@ -187,6 +234,10 @@ def main():
         print(f"JSON Report: {max(json_reports, key=lambda p: p.stat().st_mtime)}")
     if summary_reports:
         print(f"Summary Report: {max(summary_reports, key=lambda p: p.stat().st_mtime)}")
+    if failure_reports:
+        print(f"Failure Report: {max(failure_reports, key=lambda p: p.stat().st_mtime)}")
+    if junit_reports:
+        print(f"JUnit XML: {max(junit_reports, key=lambda p: p.stat().st_mtime)}")
     print("=" * 80)
     
     sys.exit(0 if success else 1)
