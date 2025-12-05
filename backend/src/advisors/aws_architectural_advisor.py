@@ -557,25 +557,41 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
             graphviz_attrs = GraphvizAttributes()
         
         # Always apply edge routing optimizations for cleaner diagrams
-        if len(final_connections) > 5:
-            logger.info(f"[ADVISOR] Applying edge routing optimizations for diagram ({len(final_connections)} connections)...")
+        # CRITICAL: Prevent node overlaps - essential for proper edge routing
+        graphviz_attrs.graph_attr["overlap"] = "false"
+        
+        # Apply edge routing optimizations based on complexity
+        num_connections = len(final_connections)
+        if num_connections > 5:
+            logger.info(f"[ADVISOR] Applying edge routing optimizations for diagram ({num_connections} connections)...")
             
             # Use orthogonal or polyline splines for cleaner edge routing
             # Orthogonal is cleaner but may not work well for all layouts
             # Polyline is a good compromise - cleaner than spline but more flexible than ortho
-            if len(final_connections) > 15:
+            if num_connections > 15:
                 graphviz_attrs.graph_attr["splines"] = "polyline"
                 graphviz_attrs.graph_attr["concentrate"] = "true"
-            elif len(final_connections) > 10:
+                # More aggressive spacing for very complex diagrams
+                graphviz_attrs.graph_attr["nodesep"] = "1.0"
+                graphviz_attrs.graph_attr["ranksep"] = "1.5"
+            elif num_connections > 10:
                 graphviz_attrs.graph_attr["splines"] = "ortho"
+                graphviz_attrs.graph_attr["nodesep"] = "0.9"
+                graphviz_attrs.graph_attr["ranksep"] = "1.3"
             else:
                 graphviz_attrs.graph_attr["splines"] = "polyline"
+                graphviz_attrs.graph_attr["nodesep"] = "0.8"
+                graphviz_attrs.graph_attr["ranksep"] = "1.2"
         else:
             # For simpler diagrams, use polyline for cleaner routing
             if "splines" not in graphviz_attrs.graph_attr:
                 graphviz_attrs.graph_attr["splines"] = "polyline"
+            if "nodesep" not in graphviz_attrs.graph_attr:
+                graphviz_attrs.graph_attr["nodesep"] = "0.8"
+            if "ranksep" not in graphviz_attrs.graph_attr:
+                graphviz_attrs.graph_attr["ranksep"] = "1.0"
         
-        # Improve spacing for better edge routing (always apply if not set)
+        # Improve spacing for better edge routing (apply if not already set)
         if "nodesep" not in graphviz_attrs.graph_attr:
             graphviz_attrs.graph_attr["nodesep"] = "0.8"
         if "ranksep" not in graphviz_attrs.graph_attr:
@@ -589,8 +605,43 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         if "penwidth" not in graphviz_attrs.edge_attr:
             graphviz_attrs.edge_attr["penwidth"] = "1.0"
         
-        if len(final_connections) > 5:
-            logger.info(f"[ADVISOR] Edge routing: splines={graphviz_attrs.graph_attr.get('splines')}, concentrate={graphviz_attrs.graph_attr.get('concentrate', 'false')}")
+        # Ensure consistent node/icon sizes
+        if not graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr = {}
+        # Set consistent minimum size for icons (keeps them proportional)
+        # Using fixedsize="shape" maintains aspect ratio while enforcing size
+        if "fixedsize" not in graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr["fixedsize"] = "shape"
+        # Set consistent width/height for all nodes (in inches)
+        # This ensures icons are roughly the same size
+        if "width" not in graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr["width"] = "1.0"
+        if "height" not in graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr["height"] = "1.0"
+        
+        if num_connections > 5:
+            logger.info(f"[ADVISOR] Edge routing: splines={graphviz_attrs.graph_attr.get('splines')}, concentrate={graphviz_attrs.graph_attr.get('concentrate', 'false')}, overlap={graphviz_attrs.graph_attr.get('overlap')}")
+        
+        # Apply port control for database connections to improve routing
+        # Identify database components and connections to them
+        database_types = {"rds", "dynamodb", "aurora", "redshift", "documentdb", "neptune", "elasticache", "database"}
+        database_component_ids = {
+            comp.id for comp in final_components 
+            if comp.type and any(db_type in str(comp.type).lower() for db_type in database_types)
+        }
+        
+        # Apply port control to connections targeting database components
+        for conn in final_connections:
+            if conn.to_id in database_component_ids:
+                # Route from bottom of source to top of database
+                if not conn.graphviz_attrs:
+                    conn.graphviz_attrs = {}
+                # Only set if not already specified
+                if "tailport" not in conn.graphviz_attrs:
+                    conn.graphviz_attrs["tailport"] = "s"  # Connect from south (bottom)
+                if "headport" not in conn.graphviz_attrs:
+                    conn.graphviz_attrs["headport"] = "n"  # Connect to north (top)
+                logger.debug(f"[ADVISOR] Applied port control to connection {conn.from_id} -> {conn.to_id}")
         
         # Create enhanced spec
         enhanced_spec = ArchitectureSpec(

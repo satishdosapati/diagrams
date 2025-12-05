@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react'
 import { executeCode, getCompletions, validateCode, getDiagramUrl, type CompletionsResponse } from '../services/api'
 import type { editor } from 'monaco-editor'
 import * as monaco from 'monaco-editor'
+import DiagramViewer from './DiagramViewer'
 
 type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot'
 
@@ -307,8 +308,8 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
       {diagramUrl && (
         <div className="mt-4">
           <h4 className="font-semibold mb-2">Generated Diagram:</h4>
-          <div className="border rounded-lg p-4 bg-gray-50">
-            {outputFormat === 'dot' ? (
+          {outputFormat === 'dot' ? (
+            <div className="border rounded-lg p-4 bg-gray-50">
               <div className="w-full max-w-4xl mx-auto">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800 mb-2">
@@ -319,14 +320,14 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
                   </p>
                 </div>
               </div>
-            ) : (
-              <img
-                src={diagramUrl}
-                alt="Generated diagram"
-                className="w-full max-w-4xl mx-auto"
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <DiagramViewer
+              diagramUrl={diagramUrl}
+              alt="Generated diagram"
+              className="p-4"
+            />
+          )}
           <div className="mt-4 flex gap-2">
             <a
               href={diagramUrl}
