@@ -307,21 +307,34 @@ async def get_diagram(filename: str):
             - 404: Diagram file not found
     """
     # Security: Validate filename to prevent path traversal
-    if not filename or not re.match(r'^[a-zA-Z0-9._-]+$', filename):
+    # Check for path traversal FIRST (security-critical)
+    if not filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     
-    # Prevent directory traversal
-    if '..' in filename or '/' in filename or '\\' in filename:
+    # Prevent directory traversal attacks - check for dangerous patterns
+    dangerous_patterns = ['..', '/', '\\']
+    if any(pattern in filename for pattern in dangerous_patterns):
+        raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+    
+    # Prevent absolute paths and hidden files
+    if filename.startswith('.') or filename.startswith('/') or (len(filename) > 1 and filename[1] == ':'):
         raise HTTPException(status_code=403, detail="Invalid file path")
+    
+    # Validate filename format (alphanumeric, dots, underscores, hyphens only)
+    if not re.match(r'^[a-zA-Z0-9._-]+$', filename):
+        raise HTTPException(status_code=400, detail="Invalid filename format")
     
     output_dir = Path(os.getenv("OUTPUT_DIR", "./output"))
     file_path = output_dir / filename
     
-    # Security: Ensure file is within output directory
+    # Security: Ensure file is within output directory (double-check)
     try:
-        file_path.resolve().relative_to(output_dir.resolve())
+        resolved_path = file_path.resolve()
+        resolved_output_dir = output_dir.resolve()
+        resolved_path.relative_to(resolved_output_dir)
     except ValueError:
-        raise HTTPException(status_code=403, detail="Invalid file path")
+        # Path is outside output directory - security violation
+        raise HTTPException(status_code=403, detail="Invalid file path: outside allowed directory")
     
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Diagram not found")
