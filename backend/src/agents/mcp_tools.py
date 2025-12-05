@@ -14,37 +14,35 @@ logger = logging.getLogger(__name__)
 
 def generate_diagram_from_code(
     code: str,
-    diagram_type: str = "aws_architecture",
-    title: str = "Diagram"
+    filename: Optional[str] = None,
+    timeout: Optional[int] = None
 ) -> Dict[str, Any]:
     """
     Tool function for Strands Agent to generate diagrams via MCP server.
     
-    This function can be called by the agent during reasoning to:
-    - Generate diagram code
-    - Validate code before execution
-    - Get enhanced/optimized code from MCP server
+    This function calls the AWS Diagram MCP Server's generate_diagram tool
+    to generate a PNG diagram from Python code.
     
     Args:
         code: Python code for diagram generation (using diagrams library)
-        diagram_type: Type of diagram (aws_architecture, sequence, flow, class)
-        title: Diagram title
+        filename: Optional filename for the generated diagram (default: random)
+        timeout: Optional timeout in seconds (default: 90)
         
     Returns:
         Dict with:
-        - 'code': Generated/validated Python code
+        - 'code': Original Python code
         - 'success': Boolean indicating success
         - 'error': Error message if failed
-        - 'output_path': Path to generated diagram (if successful)
+        - 'output_path': Path to generated PNG diagram (if successful)
     """
     logger.info("[MCP_TOOLS] === generate_diagram_from_code called ===")
-    logger.info(f"[MCP_TOOLS] Diagram type: {diagram_type}")
-    logger.info(f"[MCP_TOOLS] Title: {title}")
+    if filename:
+        logger.info(f"[MCP_TOOLS] Filename: {filename}")
     logger.debug(f"[MCP_TOOLS] Code preview: {code[:200]}...")
     
     try:
         client = get_mcp_client()
-        result = client.generate_diagram(code, diagram_type, title)
+        result = client.generate_diagram(code, filename=filename, timeout=timeout)
         
         if result.get("success"):
             logger.info("[MCP_TOOLS] Diagram generation succeeded")
@@ -137,9 +135,9 @@ def enhance_diagram_code(code: str, diagram_type: str = "aws_architecture") -> D
                 "enhanced": False
             }
         
-        # Then generate/enhance via MCP
+        # Then generate via MCP (MCP server doesn't have diagram_type or title parameters)
         client = get_mcp_client()
-        result = client.generate_diagram(code, diagram_type, "Enhanced Diagram")
+        result = client.generate_diagram(code, filename="enhanced_diagram")
         
         if result.get("success"):
             logger.info("[MCP_TOOLS] Code enhancement succeeded")

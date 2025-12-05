@@ -13,7 +13,7 @@ import logging
 import threading
 import time
 import uuid
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 from queue import Queue, Empty
 
@@ -47,8 +47,11 @@ class MCPDiagramClient:
         self._request_id_counter = 0
         self._pending_requests: Dict[int, Queue] = {}
         self._response_reader_thread: Optional[threading.Thread] = None
+        self._stderr_reader_thread: Optional[threading.Thread] = None
         self._initialized = False
         self._lock = threading.Lock()
+        self._connection_retries = 0
+        self._max_retries = 3
         
         # Parse server command into list for subprocess
         self._server_command_list, self._use_shell = self._parse_server_command(self.server_command)
@@ -373,23 +376,31 @@ class MCPDiagramClient:
     def generate_diagram(
         self,
         code: str,
-        diagram_type: str = "aws_architecture",
-        title: str = "Diagram"
+        filename: Optional[str] = None,
+        timeout: Optional[int] = None,
+        workspace_dir: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Call MCP server's generate_diagram tool to generate/validate diagram code.
+        Call MCP server's generate_diagram tool to generate diagram from Python code.
+        
+        AWS Diagram MCP Server API:
+        - code (required): Python code using diagrams package DSL
+        - filename (optional): Name of output file (default: random)
+        - timeout (optional): Max time in seconds (default: 90)
+        - workspace_dir (optional): Directory to save diagrams (saves to 'generated-diagrams' subdir)
         
         Args:
             code: Python code for diagram generation (using diagrams library)
-            diagram_type: Type of diagram (aws_architecture, sequence, flow, class)
-            title: Diagram title
+            filename: Optional filename for the generated diagram
+            timeout: Optional timeout in seconds (default: 90)
+            workspace_dir: Optional workspace directory (diagrams saved to 'generated-diagrams' subdir)
             
         Returns:
             Dict with:
-            - 'code': Validated/enhanced Python code
+            - 'code': Original code (MCP server doesn't return enhanced code)
             - 'success': Boolean indicating success
             - 'error': Error message if failed
-            - 'output_path': Path to generated diagram (if successful)
+            - 'output_path': Path to generated diagram PNG file (if successful)
         """
         if not self.enabled:
             logger.debug("[MCP] MCP server disabled, skipping generate_diagram call")
@@ -401,27 +412,35 @@ class MCPDiagramClient:
             }
         
         logger.info(f"[MCP] === Calling generate_diagram tool ===")
-        logger.info(f"[MCP] Diagram type: {diagram_type}")
-        logger.info(f"[MCP] Title: {title}")
+        if filename:
+            logger.info(f"[MCP] Filename: {filename}")
+        if workspace_dir:
+            logger.info(f"[MCP] Workspace dir: {workspace_dir}")
         logger.debug(f"[MCP] Code length: {len(code)} characters")
         
         try:
-            # Prepare MCP tool input
+            # Prepare MCP tool input (matching actual API)
             tool_input = {
-                "code": code,
-                "diagram_type": diagram_type,
-                "title": title
+                "code": code
             }
             
-            logger.debug(f"[MCP] Tool input prepared: {json.dumps(tool_input, indent=2)[:500]}...")
+            # Add optional parameters
+            if filename:
+                tool_input["filename"] = filename
+            if timeout is not None:
+                tool_input["timeout"] = timeout
+            if workspace_dir:
+                tool_input["workspace_dir"] = workspace_dir
             
-            # Call MCP server via subprocess (stdio protocol)
-            # Note: In production, use proper MCP client library
+            logger.debug(f"[MCP] Tool input prepared: {json.dumps({k: v if k != 'code' else f'{len(v)} chars' for k, v in tool_input.items()}, indent=2)}")
+            
+            # Call MCP server via JSON-RPC 2.0
             result = self._call_mcp_tool("generate_diagram", tool_input)
             
             if result.get("success"):
                 logger.info("[MCP] generate_diagram succeeded")
-                logger.debug(f"[MCP] Response: {result.get('code', '')[:200]}...")
+                if result.get("output_path"):
+                    logger.info(f"[MCP] Diagram saved to: {result.get('output_path')}")
                 return result
             else:
                 logger.warning(f"[MCP] generate_diagram failed: {result.get('error')}")
@@ -462,10 +481,10 @@ class MCPDiagramClient:
         
         try:
             # Use generate_diagram to validate (it will fail if code is invalid)
+            # Use a temporary filename for validation
             tool_input = {
                 "code": code,
-                "diagram_type": "aws_architecture",
-                "title": "Validation Test"
+                "filename": "validation_test"
             }
             result = self._call_mcp_tool("generate_diagram", tool_input)
             
@@ -575,8 +594,10 @@ class MCPDiagramClient:
             # Parse result based on tool type
             if tool_name == "generate_diagram":
                 return self._parse_generate_diagram_result(result, params)
-            elif tool_name == "validate_code":
-                return self._parse_validate_code_result(result, params)
+            elif tool_name == "list_icons":
+                return self._parse_list_icons_result(result, params)
+            elif tool_name == "get_diagram_examples":
+                return self._parse_get_diagram_examples_result(result, params)
             else:
                 # Generic result parsing
                 return {
@@ -681,28 +702,37 @@ class MCPDiagramClient:
             "warnings": warnings
         }
     
-    def _parse_validate_code_result(self, result: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse validate_code tool result."""
+    def _parse_list_icons_result(self, result: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse list_icons tool result."""
         content = result.get("content", [])
-        
-        valid = True
-        error = None
-        warnings = []
+        icons = []
         
         if isinstance(content, list):
             for item in content:
                 if isinstance(item, dict) and item.get("type") == "text":
                     text = item.get("text", "")
-                    if "error" in text.lower() or "invalid" in text.lower():
-                        valid = False
-                        error = text
-                    elif "warning" in text.lower():
-                        warnings.append(text)
+                    # Parse icon list from text (format depends on server)
+                    icons.append(text)
         
         return {
-            "valid": valid,
-            "error": error,
-            "warnings": warnings
+            "icons": icons,
+            "success": True
+        }
+    
+    def _parse_get_diagram_examples_result(self, result: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse get_diagram_examples tool result."""
+        content = result.get("content", [])
+        examples = []
+        
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    text = item.get("text", "")
+                    examples.append(text)
+        
+        return {
+            "examples": examples,
+            "success": True
         }
     
     def _simulated_response(self, tool_name: str, params: Dict[str, Any], error: Optional[str] = None) -> Dict[str, Any]:

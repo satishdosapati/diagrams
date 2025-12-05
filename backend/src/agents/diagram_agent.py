@@ -82,8 +82,8 @@ class DiagramAgent:
             mcp_tools_instruction = """
 
 AVAILABLE MCP TOOLS (for diagram code generation and validation):
-- generate_diagram_from_code(code, diagram_type, title): Generate/validate diagram Python code using MCP server
-- validate_diagram_code(code): Validate diagram code for security and best practices
+- generate_diagram_from_code(code, filename=None, timeout=None): Generate diagram PNG from Python code using MCP server
+- validate_diagram_code(code): Validate diagram code for security and best practices (uses generate_diagram internally)
 - enhance_diagram_code(code, diagram_type): Enhance diagram code with MCP server optimizations
 
 Note: These tools are available for post-processing ArchitectureSpec. The primary task is still to generate ArchitectureSpec from natural language.
@@ -299,14 +299,16 @@ Return a valid ArchitectureSpec JSON with components and connections."""
             else:
                 logger.warning(f"[DIAGRAM_AGENT] MCP code validation: FAILED - {validation_result.get('error')}")
             
-            # Try to enhance code via MCP (optional)
-            diagram_type = spec.metadata.get("diagram_type", "cloud_architecture")
-            mcp_diagram_type = "aws_architecture" if diagram_type == "cloud_architecture" else diagram_type
+            # Generate diagram via MCP (for validation and actual diagram generation)
+            # Note: MCP server generates PNG file, doesn't return enhanced code
+            # Use spec title as filename (sanitized)
+            import re
+            safe_filename = re.sub(r'[^\w\-_\.]', '_', spec.title)[:50]  # Sanitize filename
             
             enhance_result = self.mcp_client.generate_diagram(
                 code,
-                diagram_type=mcp_diagram_type,
-                title=spec.title
+                filename=safe_filename,
+                timeout=90  # Use default timeout
             )
             
             if enhance_result.get("success"):
