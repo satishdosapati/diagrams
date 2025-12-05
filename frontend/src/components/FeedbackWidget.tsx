@@ -26,22 +26,35 @@ function FeedbackWidget({
 
     try {
       // Calculate code hash if code provided
+      // Note: Hash can be calculated on backend if crypto.subtle is not available
       let codeHash: string | undefined
       if (code) {
-        // Simple hash calculation (in production, use crypto.subtle)
-        const encoder = new TextEncoder()
-        const data = encoder.encode(code)
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-        const hashArray = Array.from(new Uint8Array(hashBuffer))
-        codeHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+        try {
+          // Check if crypto.subtle is available (requires HTTPS or localhost)
+          if (window.crypto && window.crypto.subtle) {
+            const encoder = new TextEncoder()
+            const data = encoder.encode(code)
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data)
+            const hashArray = Array.from(new Uint8Array(hashBuffer))
+            codeHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+          } else {
+            // Fallback: Backend will calculate hash if not provided
+            // Or use a simple hash for non-critical use cases
+            console.warn('crypto.subtle not available, backend will calculate hash')
+          }
+        } catch (hashError) {
+          // If hash calculation fails, continue without hash
+          // Backend can calculate it from the code
+          console.warn('Failed to calculate hash:', hashError)
+        }
       }
 
       await submitFeedback({
         generation_id: generationId,
         session_id: sessionId,
         thumbs_up: thumbsUp,
-        code_hash: codeHash,
-        code: code // Include code for pattern extraction
+        code_hash: codeHash, // May be undefined if crypto.subtle unavailable
+        code: code // Include code for pattern extraction (backend can hash it)
       })
 
       setFeedbackSubmitted(true)
