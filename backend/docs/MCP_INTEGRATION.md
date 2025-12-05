@@ -79,11 +79,12 @@ Tool functions available to Strands Agents:
 
 ## Current Behavior
 
-- ✅ **MCP Client**: Fully implemented with logging
+- ✅ **MCP Client**: Fully implemented with JSON-RPC 2.0 stdio protocol
 - ✅ **Agent Integration**: Integrated into DiagramAgent
 - ✅ **Post-processing**: Validates and enhances generated code
 - ✅ **Logging**: Comprehensive logging throughout
-- ⏳ **MCP Protocol**: Currently uses simulated calls (ready for real MCP client library)
+- ✅ **MCP Protocol**: Full JSON-RPC 2.0 implementation with connection management
+- ✅ **Error Handling**: Automatic retries and fallback to simulated mode
 
 ## Prerequisites
 
@@ -124,10 +125,11 @@ python3.11 --version  # Should show Python 3.11.x
 ## Next Steps
 
 1. ✅ MCP integration code is complete
-2. ⏳ Install AWS Diagram MCP Server (see `MCP_INSTALLATION.md`)
-3. ⏳ Enable MCP integration (`USE_MCP_DIAGRAM_SERVER=true`)
-4. ⏳ Test with diagram generation requests
-5. ⏳ Update `_call_mcp_tool()` with actual MCP protocol implementation
+2. ✅ Full MCP JSON-RPC 2.0 protocol implemented
+3. ⏳ Install AWS Diagram MCP Server (see `MCP_INSTALLATION.md`)
+4. ⏳ Enable MCP integration (`USE_MCP_DIAGRAM_SERVER=true`)
+5. ⏳ Test with diagram generation requests
+6. ✅ Connection management and error handling implemented
 
 ## Code Locations
 
