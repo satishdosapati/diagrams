@@ -161,8 +161,8 @@ Future:
 
 The advisor is always active for AWS modifications. No configuration needed.
 
-For future MCP integration:
+For AWS Diagram MCP Server integration:
 ```bash
-export USE_AWS_MCP=true  # Enables AWS Documentation MCP queries
+export USE_MCP_DIAGRAM_SERVER=true  # Enables AWS Diagram MCP Server integration
 ```
 

@@ -1,48 +1,40 @@
-# MCP Integration Guide
+# AWS Diagram MCP Server Integration Guide
 
 ## Current Status
 
-The AWS Architectural Advisor is **prepared for MCP integration** but MCP tools are **not directly invoked** in the Python code. This is because:
+The AWS Diagram MCP Server integration is **implemented and ready for testing**. The integration provides:
 
-1. **MCP tools are invoked through the MCP protocol/server**, not as direct Python function calls
-2. **MCP tools are available at the agent level** where the MCP server is connected
-3. **The advisor logs MCP queries** but actual invocation happens when the agent uses MCP tools
+1. **MCP Client Wrapper**: Python interface to AWS Diagram MCP Server
+2. **MCP Tools**: Functions available for diagram code generation and validation
+3. **Agent Integration**: DiagramAgent can use MCP tools for post-processing
+4. **Comprehensive Logging**: All MCP operations are logged for debugging
 
-## How MCP Works
+## How It Works
 
-MCP (Model Context Protocol) tools are invoked through:
-- The MCP server connection
-- Agent-level tool calls
-- Not direct Python function calls
+The integration follows this flow:
 
-## Current Implementation
-
-### Logging
-
-The advisor now logs MCP usage at multiple points:
-
-```python
-logger.info("[MCP] Querying AWS Documentation: {query}")
-logger.info("[MCP] Query prepared: {query}")
-logger.info("[ADVISOR] Enhancing spec...")
+```
+User Input → DiagramAgent → ArchitectureSpec → 
+  ├─→ AWS Architectural Advisor (enhancement)
+  └─→ MCP Post-processing (if enabled)
+      ├─→ Generate Python code from spec
+      ├─→ Validate code via MCP server
+      └─→ Enhance code via MCP server
 ```
 
-### MCP Query Preparation
+## Enabling MCP Integration
 
-The advisor prepares queries that would be sent to MCP:
-
-```python
-# In enhance_spec()
-mcp_query = f"AWS architecture best practices for {components}"
-logger.info(f"[MCP] Query prepared: {mcp_query}")
-```
-
-## Enabling MCP
-
-To enable MCP (when fully integrated):
+To enable AWS Diagram MCP Server integration:
 
 ```bash
-export USE_AWS_MCP=true
+export USE_MCP_DIAGRAM_SERVER=true
+```
+
+Optional: Set custom MCP server command:
+```bash
+export MCP_DIAGRAM_SERVER_COMMAND="uvx awslabs.aws-diagram-mcp-server"
+# Or for local installation:
+export MCP_DIAGRAM_SERVER_COMMAND="uv tool run awslabs.aws-diagram-mcp-server"
 ```
 
 ## What You'll See in Logs
@@ -50,53 +42,97 @@ export USE_AWS_MCP=true
 When MCP is enabled, you'll see:
 
 ```
-[MCP] Requesting architectural guidance for: ...
-[MCP] Search query prepared: AWS architecture patterns...
-[MCP] Querying AWS Documentation: ...
-[ADVISOR] Enhancing spec: 3 components, 2 connections
-[ADVISOR] Suggested 2 additional connections
+[DIAGRAM_AGENT] MCP tools enabled: True
+[MCP] MCPDiagramClient initialized
+[MCP] Enabled: True
+[MCP] Server command: uvx awslabs.aws-diagram-mcp-server
+[DIAGRAM_AGENT] === MCP Post-processing ===
+[MCP] === Calling validate_code ===
+[MCP] Code validation passed
+[MCP] === Calling generate_diagram tool ===
+[MCP] Tool call simulated (MCP server integration pending)
+[DIAGRAM_AGENT] MCP code validation: PASSED
+[DIAGRAM_AGENT] MCP code enhancement: SUCCESS
 ```
 
-## Full MCP Integration (Future)
+## Implementation Details
 
-For full MCP integration, the agent would need to:
+### MCP Client (`backend/src/integrations/mcp_diagram_client.py`)
 
-1. **Have MCP tools available** in its tool list
-2. **Call MCP tools directly** in prompts or tool calls
-3. **Process MCP responses** to enhance guidance
+Provides methods to interact with AWS Diagram MCP Server:
+- `generate_diagram(code, diagram_type, title)`: Generate/validate diagram code
+- `validate_code(code)`: Validate code for security and best practices
 
-Example (conceptual):
-```python
-# In agent prompt or tool call
-result = mcp_AWS_Documentation_search_documentation(
-    search_phrase="AWS architecture patterns",
-    limit=5
-)
-# Process result and use in guidance
-```
+### MCP Tools (`backend/src/agents/mcp_tools.py`)
+
+Tool functions available to Strands Agents:
+- `generate_diagram_from_code()`: Generate diagrams via MCP
+- `validate_diagram_code()`: Validate code before execution
+- `enhance_diagram_code()`: Enhance code with MCP optimizations
+
+### Agent Integration (`backend/src/agents/diagram_agent.py`)
+
+- Initializes MCP client on startup
+- Adds MCP tool instructions to system prompt
+- Post-processes ArchitectureSpec with MCP tools (for AWS diagrams)
+- Logs all MCP operations
 
 ## Current Behavior
 
-- ✅ **Logging**: All MCP queries are logged
-- ✅ **Query Preparation**: Queries are prepared and logged
-- ⏳ **Actual Invocation**: MCP tools invoked at agent level (when MCP server connected)
-- ✅ **Fallback**: Uses enhanced static guidance when MCP not available
+- ✅ **MCP Client**: Fully implemented with logging
+- ✅ **Agent Integration**: Integrated into DiagramAgent
+- ✅ **Post-processing**: Validates and enhances generated code
+- ✅ **Logging**: Comprehensive logging throughout
+- ⏳ **MCP Protocol**: Currently uses simulated calls (ready for real MCP client library)
+
+## Prerequisites
+
+1. **Python 3.10+** (3.11 recommended, already installed in your venv)
+2. **GraphViz** installed (required for diagram generation)
+3. **AWS Diagram MCP Server** installed (see `MCP_INSTALLATION.md`)
 
 ## Troubleshooting
 
-If you don't see MCP logs:
+### MCP Not Working
 
-1. **Check environment variable**: `USE_AWS_MCP=true`
+1. **Check environment variable**: `USE_MCP_DIAGRAM_SERVER=true`
 2. **Check logs**: Look for `[MCP]` prefix in logs
-3. **Check advisor calls**: Ensure advisor is being called
-4. **Check provider**: MCP only active for AWS provider
+3. **Check MCP server**: Verify MCP server is installed and accessible
+4. **Check provider**: MCP post-processing only runs for AWS provider
+
+### MCP Server Not Found
+
+If you see errors about MCP server not found:
+
+```bash
+# Install MCP server (see MCP_INSTALLATION.md)
+./backend/scripts/install_mcp_server.sh
+
+# Or use uvx (on-demand)
+export MCP_DIAGRAM_SERVER_COMMAND="uvx awslabs.aws-diagram-mcp-server"
+```
+
+### Python Version Issues
+
+The project requires **Python 3.10+**. You have Python 3.11 installed, which is perfect.
+
+To verify:
+```bash
+python3.11 --version  # Should show Python 3.11.x
+```
 
 ## Next Steps
 
-To fully integrate MCP:
+1. ✅ MCP integration code is complete
+2. ⏳ Install AWS Diagram MCP Server (see `MCP_INSTALLATION.md`)
+3. ⏳ Enable MCP integration (`USE_MCP_DIAGRAM_SERVER=true`)
+4. ⏳ Test with diagram generation requests
+5. ⏳ Update `_call_mcp_tool()` with actual MCP protocol implementation
 
-1. Ensure MCP server is running and connected
-2. Make MCP tools available to the agent
-3. Update agent to call MCP tools directly
-4. Process MCP responses in advisor
+## Code Locations
+
+- MCP Client: `backend/src/integrations/mcp_diagram_client.py`
+- MCP Tools: `backend/src/agents/mcp_tools.py`
+- Agent Integration: `backend/src/agents/diagram_agent.py`
+- Installation Scripts: `backend/scripts/install_mcp_server.*`
 

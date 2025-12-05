@@ -76,6 +76,19 @@ class DiagramAgent:
         # Get AWS architectural guidance
         aws_guidance = self.aws_advisor._get_static_guidance()
         
+        # Add MCP tools instruction if enabled
+        mcp_tools_instruction = ""
+        if self.use_mcp_tools:
+            mcp_tools_instruction = """
+
+AVAILABLE MCP TOOLS (for diagram code generation and validation):
+- generate_diagram_from_code(code, diagram_type, title): Generate/validate diagram Python code using MCP server
+- validate_diagram_code(code): Validate diagram code for security and best practices
+- enhance_diagram_code(code, diagram_type): Enhance diagram code with MCP server optimizations
+
+Note: These tools are available for post-processing ArchitectureSpec. The primary task is still to generate ArchitectureSpec from natural language.
+"""
+        
         return f"""You are an expert at understanding cloud architecture descriptions and converting them into structured specifications.
 
 Your task:

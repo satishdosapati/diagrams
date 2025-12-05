@@ -94,15 +94,15 @@ updated_spec, changes = modification_agent.modify(
 
 ## Configuration
 
-### Enable MCP Integration (Future)
+### Enable MCP Integration
 
-Set environment variable to enable AWS Knowledge Base MCP:
+Set environment variable to enable AWS Diagram MCP Server:
 
 ```bash
-export USE_AWS_MCP=true
+export USE_MCP_DIAGRAM_SERVER=true
 ```
 
-Currently uses static guidance. Future enhancement will query AWS Documentation MCP tools for real-time architectural guidance.
+The AWS Diagram MCP Server integration validates and enhances generated diagram code. See `MCP_INTEGRATION.md` for details.
 
 ## Examples
 

@@ -11,7 +11,7 @@ This guide explains how to install the AWS Diagram MCP Server locally for improv
 
 ## Prerequisites
 
-1. **Python 3.10+** installed
+1. **Python 3.10+** installed (Python 3.11 recommended and already in your venv)
 2. **GraphViz** installed (required for diagram generation)
 3. **uv** package manager (recommended) or **pip**
 
