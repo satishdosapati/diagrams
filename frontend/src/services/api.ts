@@ -37,6 +37,7 @@ export interface GenerateDiagramResponse {
   diagram_url: string;
   message: string;
   session_id: string;
+  generation_id: string;
   generated_code?: string;
 }
 
@@ -157,6 +158,52 @@ export async function validateCode(code: string): Promise<ValidateCodeResponse> 
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to validate code');
+  }
+
+  return response.json();
+}
+
+export interface SubmitFeedbackRequest {
+  generation_id: string;
+  session_id: string;
+  thumbs_up: boolean;
+  code_hash?: string;
+  code?: string;
+}
+
+export interface FeedbackResponse {
+  feedback_id: string;
+  message: string;
+}
+
+export async function submitFeedback(request: SubmitFeedbackRequest): Promise<FeedbackResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to submit feedback');
+  }
+
+  return response.json();
+}
+
+export interface FeedbackStats {
+  total_feedbacks: number;
+  thumbs_up: number;
+  thumbs_down: number;
+  thumbs_up_rate: number;
+}
+
+export async function getFeedbackStats(days: number = 30): Promise<FeedbackStats> {
+  const response = await fetch(`${API_BASE_URL}/api/feedback/stats?days=${days}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to get feedback stats');
   }
 
   return response.json();

@@ -3,6 +3,7 @@ import { generateDiagram, getDiagramUrl, regenerateFormat } from '../services/ap
 import ProviderSelector from './ProviderSelector'
 import ExamplesPanel from './ExamplesPanel'
 import AdvancedCodeMode from './AdvancedCodeMode'
+import FeedbackWidget from './FeedbackWidget'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -15,6 +16,7 @@ function DiagramGenerator() {
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('png')
   const [diagramUrl, setDiagramUrl] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [generationId, setGenerationId] = useState<string | null>(null)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [downloadFormat, setDownloadFormat] = useState<OutputFormat>('png')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -43,6 +45,7 @@ function DiagramGenerator() {
       const response = await generateDiagram(description, selectedProvider, outputFormat)
       setMessage(response.message)
       setSessionId(response.session_id)
+      setGenerationId(response.generation_id)
       
       // Store generated code for Advanced Code Mode
       if (response.generated_code) {
@@ -292,6 +295,16 @@ function DiagramGenerator() {
                     </a>
                   )}
                 </div>
+                {/* Feedback Widget */}
+                {generationId && sessionId && (
+                  <div className="mt-4">
+                    <FeedbackWidget
+                      generationId={generationId}
+                      sessionId={sessionId}
+                      code={generatedCode || undefined}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

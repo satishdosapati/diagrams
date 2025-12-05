@@ -16,6 +16,7 @@ from typing import Optional, Union, List, Literal
 from ..agents.diagram_agent import DiagramAgent
 from ..generators.universal_generator import UniversalGenerator
 from ..models.spec import ArchitectureSpec, GraphvizAttributes
+from ..storage.feedback_storage import FeedbackStorage
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -23,6 +24,9 @@ logger = logging.getLogger(__name__)
 # Initialize agents and generator
 agent = DiagramAgent()
 generator = UniversalGenerator()
+
+# Initialize feedback storage
+feedback_storage = FeedbackStorage()
 
 # Cache for DiagramsEngine and ComponentResolver instances per provider
 # Format: {provider: {"engine": DiagramsEngine, "resolver": ComponentResolver}}
@@ -107,6 +111,7 @@ class GenerateDiagramResponse(BaseModel):
     diagram_url: str
     message: str
     session_id: str
+    generation_id: str  # Unique ID for this generation (for feedback)
     generated_code: Optional[str] = None
 
 
@@ -142,6 +147,21 @@ class ValidateCodeResponse(BaseModel):
     valid: bool
     errors: List[str] = []
     suggestions: List[str] = []
+
+
+class SubmitFeedbackRequest(BaseModel):
+    """Request model for submitting feedback."""
+    generation_id: str
+    session_id: str
+    thumbs_up: bool
+    code_hash: Optional[str] = None
+    code: Optional[str] = None  # Optional: include code for pattern extraction
+
+
+class FeedbackResponse(BaseModel):
+    """Response model for feedback submission."""
+    feedback_id: str
+    message: str
 
 
 @router.post("/generate-diagram", response_model=GenerateDiagramResponse, tags=["diagrams"])
@@ -260,11 +280,13 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
         
         # Create session and store spec with timestamp
         session_id = str(uuid.uuid4())
+        generation_id = str(uuid.uuid4())  # Unique ID for this generation
         current_time = time.time()
         current_specs[session_id] = {
             "spec": spec,
             "created_at": current_time,
-            "last_accessed": current_time
+            "last_accessed": current_time,
+            "generation_id": generation_id  # Store generation_id with session
         }
         
         # Cleanup old sessions periodically
@@ -278,6 +300,7 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
             diagram_url=diagram_url,
             message=f"Successfully generated diagram: {spec.title}",
             session_id=session_id,
+            generation_id=generation_id,
             generated_code=generated_code
         )
     
@@ -665,5 +688,71 @@ async def validate_code(request: ValidateCodeRequest):
             valid=False,
             errors=[f"Validation error: {str(e)}"],
             suggestions=[]
+        )
+
+
+@router.post("/feedback", response_model=FeedbackResponse, tags=["feedback"])
+async def submit_feedback(request: SubmitFeedbackRequest):
+    """
+    Submit thumbs up/down feedback for a diagram generation.
+    
+    Args:
+        request: Feedback request with generation_id, session_id, and thumbs_up
+        
+    Returns:
+        FeedbackResponse with feedback_id
+    """
+    try:
+        # Calculate code hash if code provided
+        code_hash = None
+        if request.code:
+            import hashlib
+            code_hash = hashlib.sha256(request.code.encode('utf-8')).hexdigest()
+        elif request.code_hash:
+            code_hash = request.code_hash
+        
+        # Save feedback
+        feedback_id = feedback_storage.save_feedback(
+            generation_id=request.generation_id,
+            session_id=request.session_id,
+            thumbs_up=request.thumbs_up,
+            code_hash=code_hash,
+            code=request.code
+        )
+        
+        logger.info(f"Feedback submitted: {feedback_id} - {'👍' if request.thumbs_up else '👎'} for generation {request.generation_id}")
+        
+        return FeedbackResponse(
+            feedback_id=feedback_id,
+            message="Thank you for your feedback!"
+        )
+    
+    except Exception as e:
+        logger.error(f"Error submitting feedback: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit feedback: {str(e)}"
+        )
+
+
+@router.get("/feedback/stats", tags=["feedback"])
+async def get_feedback_stats(days: int = 30):
+    """
+    Get feedback statistics.
+    
+    Args:
+        days: Number of days to look back (default: 30)
+        
+    Returns:
+        Dictionary with feedback statistics
+    """
+    try:
+        stats = feedback_storage.get_feedback_stats(days=days)
+        return stats
+    except Exception as e:
+        logger.error(f"Error getting feedback stats: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get feedback stats: {str(e)}"
         )
 
