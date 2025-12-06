@@ -108,42 +108,37 @@ with Diagram("Event Processing", show=False):
   {
     id: "serverless-api",
     title: "Serverless API",
-    description: "Users accessing API Gateway → Lambda functions → DynamoDB database",
-    prompt: "Create a serverless API with users accessing through API Gateway, Lambda functions, and DynamoDB",
+    description: "API Gateway → Lambda functions → DynamoDB database",
+    prompt: "Create a serverless API with API Gateway, Lambda functions, and DynamoDB",
     codeSnippet: `from diagrams import Diagram
 from diagrams.aws.compute import Lambda
 from diagrams.aws.database import Dynamodb
 from diagrams.aws.network import APIGateway
-from diagrams.onprem.client import Users
 
 with Diagram("Serverless API", show=False, direction="TB"):
-    users = Users("Users")
     api = APIGateway("API Gateway")
     func = Lambda("Function")
     db = Dynamodb("Database")
-    users >> api >> func >> db`,
+    api >> func >> db`,
     category: "serverless",
     complexity: "simple",
-    tags: ["api-gateway", "lambda", "dynamodb", "serverless", "users"],
+    tags: ["api-gateway", "lambda", "dynamodb", "serverless"],
     recommendedVariations: [
       "Add CloudFront CDN in front of API Gateway",
       "Add S3 for static assets",
-      "Use Step Functions for workflows",
-      "Add mobile clients with Android/iOS nodes"
+      "Use Step Functions for workflows"
     ]
   },
   {
     id: "vpc-network",
     title: "VPC Network Architecture",
-    description: "Users accessing web application through VPC with public and private subnets",
-    prompt: "Create a VPC architecture with users accessing through public subnet to private subnet with NAT Gateway and Internet Gateway",
+    description: "VPC with public and private subnets, NAT Gateway, and Internet Gateway",
+    prompt: "Create a VPC with public and private subnets, NAT Gateway, and Internet Gateway",
     codeSnippet: `from diagrams import Cluster, Diagram
 from diagrams.aws.compute import EC2
 from diagrams.aws.network import VPC, PublicSubnet, PrivateSubnet, InternetGateway, NATGateway
-from diagrams.onprem.client import Users
 
 with Diagram("VPC Network", show=False):
-    users = Users("Users")
     igw = InternetGateway("Internet Gateway")
     
     with Cluster("VPC"):
@@ -157,17 +152,16 @@ with Diagram("VPC Network", show=False):
             app = EC2("App Server")
             db = EC2("Database")
     
-    users >> igw >> pub_sub
+    igw >> pub_sub
     pub_sub >> nat >> priv_sub
     web >> app >> db`,
     category: "network",
     complexity: "medium",
-    tags: ["vpc", "subnet", "nat", "internet-gateway", "network", "users"],
+    tags: ["vpc", "subnet", "nat", "internet-gateway", "network"],
     recommendedVariations: [
       "Add VPN Gateway for site-to-site VPN",
       "Add Transit Gateway for multi-VPC",
-      "Add Security Groups visualization",
-      "Include mobile clients (Android/iOS)"
+      "Add Security Groups visualization"
     ]
   },
   {
@@ -849,46 +843,6 @@ with Diagram("Elastic Beanstalk", show=False, direction="TB"):
       "Add ElastiCache for caching",
       "Use S3 for static assets",
       "Add CloudWatch for monitoring"
-    ]
-  },
-  {
-    id: "hybrid-cloud-aws",
-    title: "Hybrid Cloud Architecture",
-    description: "On-premises datacenter with Windows and Linux servers connecting to AWS VPC via Direct Connect",
-    prompt: "Create a hybrid cloud architecture with on-premises datacenter containing Windows and Linux servers connecting to AWS VPC through Direct Connect",
-    codeSnippet: `from diagrams import Cluster, Diagram
-from diagrams.aws.compute import EC2
-from diagrams.aws.network import VPC, DirectConnect
-from diagrams.generic.os import Windows, LinuxGeneral
-from diagrams.generic.place import Datacenter
-from diagrams.onprem.client import Users
-
-with Diagram("Hybrid Cloud Architecture", show=False):
-    users = Users("Users")
-    
-    with Cluster("On-Premises"):
-        dc = Datacenter("Data Center")
-        with Cluster("Servers"):
-            win_server = Windows("Windows Server")
-            linux_server = LinuxGeneral("Linux Server")
-    
-    dx = DirectConnect("Direct Connect")
-    
-    with Cluster("AWS VPC"):
-        vpc = VPC("VPC")
-        ec2 = EC2("EC2 Instance")
-    
-    users >> dc
-    dc >> [win_server, linux_server]
-    [win_server, linux_server] >> dx >> vpc >> ec2`,
-    category: "hybrid",
-    complexity: "complex",
-    tags: ["hybrid", "datacenter", "direct-connect", "vpc", "windows", "linux", "onprem"],
-    recommendedVariations: [
-      "Add VPN Gateway as backup connection",
-      "Include multiple datacenters",
-      "Add load balancer in AWS VPC",
-      "Use different OS combinations"
     ]
   }
 ]

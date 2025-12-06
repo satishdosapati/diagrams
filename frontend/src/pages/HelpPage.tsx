@@ -36,23 +36,21 @@ const sections: Section[] = [
         <h4 className="text-lg font-semibold mt-6">Example - Natural Language</h4>
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
           <p className="font-mono text-sm text-gray-800">
-            "Users accessing serverless API through API Gateway with Lambda functions and DynamoDB"
+            "Create a serverless API with API Gateway, Lambda functions, and DynamoDB"
           </p>
         </div>
 
         <h4 className="text-lg font-semibold mt-6">Example - Code Mode</h4>
         <CodeBlock code={`from diagrams import Diagram
 from diagrams.aws.compute import Lambda
-from diagrams.aws.database import Dynamodb
+from diagrams.aws.database import DynamoDB
 from diagrams.aws.network import APIGateway
-from diagrams.onprem.client import Users
 
 with Diagram("Serverless API", show=False):
-    users = Users("Users")
     api = APIGateway("API")
     func = Lambda("Function")
-    db = Dynamodb("Database")
-    users >> api >> func >> db`} />
+    db = DynamoDB("Database")
+    api >> func >> db`} />
       </div>
     )
   },

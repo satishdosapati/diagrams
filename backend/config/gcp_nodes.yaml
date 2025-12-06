@@ -13,10 +13,6 @@ modules:
   analytics: diagrams.gcp.analytics
   iot: diagrams.gcp.iot
   ml: diagrams.gcp.ml
-  generic_os: diagrams.generic.os
-  generic_place: diagrams.generic.place
-  generic_virtualization: diagrams.generic.virtualization
-  onprem_client: diagrams.onprem.client
 
 # GCP node mappings
 nodes:
@@ -263,84 +259,4 @@ nodes:
     category: ml
     class_name: VisionAPI
     description: "Vision API"
-  
-  # Generic OS (cross-platform)
-  android:
-    category: generic_os
-    class_name: Android
-    description: "Android Operating System"
-  centos:
-    category: generic_os
-    class_name: Centos
-    description: "CentOS Operating System"
-  debian:
-    category: generic_os
-    class_name: Debian
-    description: "Debian Operating System"
-  ios:
-    category: generic_os
-    class_name: IOS
-    description: "iOS Operating System"
-  linux_general:
-    category: generic_os
-    class_name: LinuxGeneral
-    description: "Linux (General)"
-  raspbian:
-    category: generic_os
-    class_name: Raspbian
-    description: "Raspbian Operating System"
-  redhat:
-    category: generic_os
-    class_name: RedHat
-    description: "Red Hat Operating System"
-  suse:
-    category: generic_os
-    class_name: Suse
-    description: "SUSE Operating System"
-  ubuntu:
-    category: generic_os
-    class_name: Ubuntu
-    description: "Ubuntu Operating System"
-  windows:
-    category: generic_os
-    class_name: Windows
-    description: "Windows Operating System"
-  
-  # Generic Place (cross-platform)
-  datacenter:
-    category: generic_place
-    class_name: Datacenter
-    description: "Data Center"
-  
-  # Generic Virtualization (cross-platform)
-  qemu:
-    category: generic_virtualization
-    class_name: Qemu
-    description: "QEMU Virtualization"
-  virtualbox:
-    category: generic_virtualization
-    class_name: Virtualbox
-    description: "VirtualBox"
-  vmware:
-    category: generic_virtualization
-    class_name: Vmware
-    description: "VMware"
-  xen:
-    category: generic_virtualization
-    class_name: XEN
-    description: "XEN Virtualization"
-  
-  # OnPrem Client (cross-platform)
-  client:
-    category: onprem_client
-    class_name: Client
-    description: "Client Device"
-  user:
-    category: onprem_client
-    class_name: User
-    description: "User"
-  users:
-    category: onprem_client
-    class_name: Users
-    description: "Multiple Users"
 

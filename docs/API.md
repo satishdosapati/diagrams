@@ -34,9 +34,10 @@ Generate an architecture diagram from natural language description.
 **Request:**
 ```json
 {
-  "description": "Users accessing serverless API through API Gateway with Lambda functions and DynamoDB",
+  "description": "Create a serverless API with API Gateway, Lambda, and DynamoDB",
   "provider": "aws",
   "outformat": "png",
+  "direction": "LR",
   "graphviz_attrs": {
     "graph_attr": {},
     "node_attr": {},
@@ -44,8 +45,6 @@ Generate an architecture diagram from natural language description.
   }
 }
 ```
-
-**Note:** Diagrams always use left-to-right (LR) direction. The `direction` parameter is deprecated but accepted for backward compatibility.
 
 **Parameters:**
 - `description` (required): Natural language description of the architecture
