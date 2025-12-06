@@ -47,62 +47,20 @@ Generated Diagram (PNG)
 Returned to Frontend
 ```
 
-## Current Architecture (Production Ready)
+## Architecture Components
 
-### Backend Components
+### Backend
+- **FastAPI**: REST API with request tracking
+- **Strands Agents**: Natural language processing (DiagramAgent, ModificationAgent, ClassifierAgent)
+- **Generators**: UniversalGenerator routes to DiagramsEngine for code generation
+- **Resolvers**: Component mapping with intelligent fuzzy matching
+- **Advisors**: Provider-specific architectural best practices
 
-- **FastAPI Application**: REST API with request tracking middleware
-- **Strands Agents**: 
-  - DiagramAgent: Natural language to ArchitectureSpec conversion
-  - ModificationAgent: Chat-based diagram modifications
-  - ClassifierAgent: Diagram type classification
-- **Generators**:
-  - UniversalGenerator: Router for different diagram types
-  - DiagramsEngine: Python code generation and execution
-- **Resolvers**:
-  - ComponentResolver: Maps components to Diagrams library classes
-  - IntelligentResolver: Fuzzy matching for component names
-  - LibraryDiscovery: Discovers available components from Diagrams library
-- **Advisors**:
-  - AWSArchitecturalAdvisor: Enhances AWS diagrams with best practices
-- **Validators**:
-  - InputValidator: Validates user input before processing
+### Frontend
+- **React + TypeScript**: UI framework with type safety
+- **Components**: DiagramGenerator, AdvancedCodeMode, ExamplesPanel, ProviderSelector
 
-### Frontend Components
-
-- **DiagramGenerator**: Main component with mode switching
-- **AdvancedCodeMode**: Direct Python code editing with Monaco editor
-- **DiagramChat**: Chat interface for modifications
-- **ExamplesPanel**: Pre-built architecture examples sidebar
-- **ProviderSelector**: Cloud provider selection
-
-### Security Features
-
-- Path traversal protection for file serving
-- Input validation and sanitization
-- Session expiration (1 hour TTL)
-- CORS configuration for production
-- Request ID tracking for debugging
-
-### Performance Optimizations
-
-- Instance caching for DiagramsEngine and ComponentResolver
-- Automatic file cleanup (24-hour retention)
-- Session cleanup (every 5 minutes)
-- Request processing time tracking
-
-### Session Management
-
-- In-memory session storage with expiration
-- Automatic cleanup of expired sessions
-- Last accessed timestamp tracking
-- Session-based diagram modifications
-
-## Phase 1 (MVP) Architecture (Historical)
-
-- Single provider: AWS only
-- Simple ArchitectureSpec model
-- Basic DiagramsEngine
-- Single API endpoint
-- Simple React UI
+### Security & Performance
+- Path traversal protection, input validation, session expiration (1 hour)
+- Instance caching, automatic file cleanup (24-hour retention), session cleanup
 

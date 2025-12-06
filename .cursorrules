@@ -1,9 +1,28 @@
 # Project Rules for Diagrams Project
 
-## Documentation Files
-- **DO NOT** create unnecessary .md files when asking questions or seeking clarification
-- Only create documentation files when explicitly requested or when documenting significant features/changes
-- Prefer inline code comments and existing documentation files over creating new .md files
+## Documentation Policy (STRICT)
+
+**Essential Documentation Only:**
+- `README.md` (root) - Main project documentation with quick start
+- `docs/ARCHITECTURE.md` - System architecture (1-2 pages max, high-level only)
+- `docs/DECISIONS.md` - Architectural decisions (ADR format)
+- `docs/API.md` - API documentation (if exposing external API)
+
+**Documentation Rules:**
+- **DO NOT** create new documentation files unless explicitly requested
+- **DO NOT** create implementation detail docs, phase docs, or brainstorming notes
+- **DO NOT** create separate files for features, changes, or quick references
+- **DO NOT** create archive or meta-documentation files
+- Prefer inline code comments and self-documenting code
+- Keep existing docs updated or remove them (outdated docs are worse than none)
+- Consolidate information into existing files rather than creating new ones
+- Remove redundant documentation immediately
+
+**When Adding Documentation:**
+- Update existing files (README, ARCHITECTURE, API, DECISIONS) instead of creating new ones
+- Keep ARCHITECTURE.md to 1-2 pages - remove implementation details
+- Merge quick references into API.md
+- Merge deployment info into README.md
 
 ## Code Style
 - Follow existing code patterns and architecture

@@ -75,14 +75,13 @@ npm run dev
 
 ## Documentation
 
-See `docs/` directory for detailed documentation:
-- [Architecture](docs/ARCHITECTURE.md) - System architecture and data flow
-- [API Documentation](docs/API.md) - Complete API endpoint reference
-- [Deployment Guide](docs/DEPLOYMENT.md) - EC2 deployment instructions
-- [Phase Documentation](docs/phases/) - Implementation phases
+Essential documentation:
+- [Architecture](docs/ARCHITECTURE.md) - System architecture overview
+- [API Documentation](docs/API.md) - API endpoints and quick reference
+- [Architectural Decisions](docs/DECISIONS.md) - Key design decisions
 
-**API Documentation (Interactive):**
-- Swagger UI: `http://localhost:8000/docs` (when backend is running)
+**Interactive API Docs:**
+- Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
 ## Testing
@@ -94,7 +93,66 @@ pytest tests/
 
 ## Deployment
 
-See [DEPLOYMENT_INSTRUCTIONS.md](DEPLOYMENT_INSTRUCTIONS.md) or [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for EC2 deployment instructions.
+### Prerequisites
+- AWS EC2 instance (Amazon Linux 2023)
+- Security group: ports 22, 3000, 8000
+- AWS credentials configured for Bedrock access
+
+### Quick Deploy
+```bash
+# SSH into EC2
+ssh -i your-key.pem ec2-user@your-ec2-ip
+
+# Pull and deploy
+cd /opt/diagram-generator
+git pull origin main
+bash deployment/deploy-git.sh
+```
+
+### Initial Setup
+1. Install dependencies: `sudo yum install -y python3 python3-pip nodejs graphviz git`
+2. Clone repository to `/opt/diagram-generator`
+3. Setup backend: `cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt`
+4. Setup frontend: `cd frontend && npm install && npm run build`
+5. Configure `.env` in `backend/` with AWS credentials and Bedrock model ID
+6. Create systemd services (see `deployment/systemd/` directory)
+7. Start services: `sudo systemctl start diagram-api diagram-frontend`
+
+### Updating
+```bash
+cd /opt/diagram-generator
+git pull origin main
+bash deployment/deploy-git.sh
+# Or manually:
+# cd backend && source venv/bin/activate && pip install -r requirements.txt && sudo systemctl restart diagram-api
+# cd ../frontend && npm install && npm run build && sudo systemctl restart diagram-frontend
+```
+
+### Troubleshooting
+
+**Service Issues:**
+- Check logs: `sudo journalctl -u diagram-api.service -f`
+- Verify services: `sudo systemctl status diagram-api diagram-frontend`
+- Restart services: `sudo systemctl restart diagram-api diagram-frontend`
+
+**Backend Errors:**
+- **ModuleNotFoundError: No module named 'strands'**
+  ```bash
+  cd backend
+  source venv/bin/activate
+  pip install git+https://github.com/strands-agents/sdk-python.git
+  deactivate
+  ```
+- **Dependency conflicts**: Upgrade packages:
+  ```bash
+  pip install --upgrade uvicorn[standard] pydantic python-multipart anyio
+  pip install -r requirements.txt --upgrade
+  ```
+- **Python version**: Ensure Python 3.10+ is installed
+  ```bash
+  python3 --version  # Should be 3.10+
+  # If not available: sudo yum install -y python3.11 python3.11-pip python3.11-devel
+  ```
 
 ## Security Features
 

@@ -1,4 +1,24 @@
-<!-- b200a86f-6384-4250-b377-7df419baff1e d33340ed-5559-486e-b9c1-0d7c0ab1ef7d -->
+---
+name: End-to-End Implementation Plan
+overview: ""
+todos:
+  - id: 2fe9059a-8898-4faf-863b-483ef1eea2e1
+    content: "Complete Phase 1: MVP with basic AWS diagram generation"
+    status: pending
+  - id: 2217f5f6-d2a4-42d1-a1ef-f111d26d8bc6
+    content: "Complete Phase 2: Add provider selection (AWS/Azure/GCP)"
+    status: pending
+  - id: c0734fb6-c4ec-4b7d-aeca-71fd8c3ad095
+    content: "Complete Phase 3: Add chat-based modifications"
+    status: pending
+  - id: c15fb106-c9c5-4e08-b841-8ac11f249771
+    content: "Complete Phase 4: Universal generator for all diagram types"
+    status: pending
+  - id: 22d7cb83-a335-43c3-b283-4be0437ea21e
+    content: "Complete Phase 5: Polish, testing, and production deployment"
+    status: pending
+---
+
 # End-to-End Implementation Plan
 
 ## Architecture Diagram Generator - Complete Roadmap
@@ -287,11 +307,3 @@ Phase 5 (Polish & Production) ←─┘
 2. Start with Phase 1 (MVP)
 3. Complete each phase before moving to next
 4. Update documentation after each phase
-
-### To-dos
-
-- [ ] Complete Phase 1: MVP with basic AWS diagram generation
-- [ ] Complete Phase 2: Add provider selection (AWS/Azure/GCP)
-- [ ] Complete Phase 3: Add chat-based modifications
-- [ ] Complete Phase 4: Universal generator for all diagram types
-- [ ] Complete Phase 5: Polish, testing, and production deployment

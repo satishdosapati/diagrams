@@ -266,3 +266,70 @@ Supported output formats:
 - **svg**: Scalable Vector Graphics (vector, editable)
 - **pdf**: PDF document (vector)
 - **dot**: Graphviz DOT source code (text, editable)
+
+## Quick Reference
+
+### Common Graphviz Attributes
+
+**Graph Attributes:**
+```json
+{
+  "rankdir": "LR",           // Layout direction: LR, TB, BT, RL
+  "bgcolor": "#ffffff",      // Background color
+  "fontname": "Helvetica",   // Font family
+  "nodesep": "0.8",         // Node spacing
+  "ranksep": "1.0",         // Rank spacing
+  "splines": "polyline"     // Edge routing: polyline, ortho, curved
+}
+```
+
+**Node Attributes:**
+```json
+{
+  "shape": "box",            // box, ellipse, circle, diamond
+  "style": "filled,rounded", // filled, rounded, dashed, dotted
+  "fillcolor": "#e8f4f8",    // Fill color
+  "fontcolor": "#2c3e50",    // Text color
+  "penwidth": "1.5"         // Border width
+}
+```
+
+**Edge Attributes:**
+```json
+{
+  "color": "#333333",        // Edge color
+  "style": "bold",          // solid, dashed, dotted, bold
+  "arrowsize": "0.8",      // Arrow size
+  "penwidth": "1.5",        // Edge width
+  "label": "HTTP"           // Edge label
+}
+```
+
+### Common Patterns
+
+**Serverless API:**
+```json
+{
+  "description": "API Gateway, Lambda, DynamoDB",
+  "provider": "aws",
+  "direction": "LR"
+}
+```
+
+**Microservices with Clusters:**
+```json
+{
+  "description": "Microservices architecture",
+  "provider": "aws",
+  "clusters": [
+    {"id": "services", "name": "Services", "component_ids": ["svc1", "svc2"]},
+    {"id": "data", "name": "Data Layer", "component_ids": ["db"]}
+  ]
+}
+```
+
+### Troubleshooting
+
+- **Diagram not generating?** Check backend logs: `sudo journalctl -u diagram-api.service -f`
+- **Messy edges?** Use `"splines": "polyline"` in graph_attr, increase `nodesep` and `ranksep`
+- **Session expired?** Sessions expire after 1 hour of inactivity - generate a new diagram

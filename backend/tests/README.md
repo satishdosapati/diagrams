@@ -1,23 +1,34 @@
-# Test Suite Documentation
+# Test Suite
 
-## Overview
-
-This comprehensive test suite validates all functionality of the Architecture Diagram Generator application. It includes unit tests, integration tests, API tests, and health checks.
-
-## Running Tests
-
-### Quick Start
+## Quick Start
 
 ```bash
 cd backend
 python -m pytest tests/ -v
 ```
 
-### Using the Test Runner Script
+Or use the test runner:
+```bash
+python tests/run_tests.py
+bash tests/run_tests.sh  # On EC2
+```
+
+## Test Coverage
+
+- **API Endpoints**: Health checks, diagram generation, modifications, code execution
+- **Integration**: End-to-end workflows, multi-provider support
+- **Unit Tests**: Models, resolvers, advisors
+- **Health Checks**: System dependencies, Graphviz, permissions
+
+## View Results
 
 ```bash
-cd backend
-python tests/run_tests.py
+# HTML report
+firefox tests/reports/test_report_*.html
+
+# Summary
+cat tests/reports/test_summary.txt
+```
 ```
 
 ### Generate HTML Report
