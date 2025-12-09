@@ -637,9 +637,10 @@ async def validate_code(request: ValidateCodeRequest):
         errors = []
         suggestions = []
         
-        # Basic syntax check
+        # Basic syntax check and parse AST tree
+        tree = None
         try:
-            ast.parse(request.code)
+            tree = ast.parse(request.code)
         except SyntaxError as e:
             errors.append(f"Syntax error: {e.msg} at line {e.lineno}")
             suggestions.append(f"Check syntax around line {e.lineno}")
@@ -662,18 +663,72 @@ async def validate_code(request: ValidateCodeRequest):
                 suggestions.append("Add imports for components (e.g., from diagrams.aws.compute import EC2)")
         
         # Check for undefined variables in connections
-        # Extract variable names
-        var_pattern = r'(\w+)\s*=\s*\w+\('
-        defined_vars = set(re.findall(var_pattern, request.code))
+        # Use AST to properly detect all variable assignments (including lists)
+        # This matches how Python actually parses code and handles all valid patterns
+        # from the official diagrams library examples
+        defined_vars = set()
+        if tree is not None:
+            try:
+                # Use the AST tree from syntax check
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Assign):
+                        for target in node.targets:
+                            if isinstance(target, ast.Name):
+                                defined_vars.add(target.id)
+            except Exception as e:
+                # Fallback to regex if AST walking fails
+                var_pattern_single = r'(\w+)\s*=\s*\w+\('
+                var_pattern_list = r'(\w+)\s*=\s*\['
+                defined_vars = set(re.findall(var_pattern_single, request.code))
+                defined_vars.update(re.findall(var_pattern_list, request.code))
+                logger.warning(f"AST walking failed, using regex fallback: {e}")
+        else:
+            # Fallback to regex if tree is None (shouldn't happen after syntax check)
+            var_pattern_single = r'(\w+)\s*=\s*\w+\('
+            var_pattern_list = r'(\w+)\s*=\s*\['
+            defined_vars = set(re.findall(var_pattern_single, request.code))
+            defined_vars.update(re.findall(var_pattern_list, request.code))
         
         # Check connection operators
         connection_pattern = r'(\w+)\s*[><-]+\s*(\w+)'
         connections = re.findall(connection_pattern, request.code)
         
+        # Filter out connections that are part of inline lists (e.g., ELB >> [EC2, EC2] >> RDS)
+        # These are valid patterns from official examples and shouldn't trigger errors
+        valid_connections = []
         for from_var, to_var in connections:
-            if from_var not in defined_vars and from_var not in ['Edge', 'Cluster']:
+            # Skip validation for Edge and Cluster (these are imported classes, not variables)
+            if from_var in ['Edge', 'Cluster'] or to_var in ['Edge', 'Cluster']:
+                continue
+            
+            # Find the actual match position to check context
+            for match in re.finditer(connection_pattern, request.code):
+                if match.group(1) == from_var and match.group(2) == to_var:
+                    # Check if this connection involves an inline list
+                    match_start = match.start()
+                    before_full = request.code[:match_start]
+                    after_full = request.code[match.end():]
+                    
+                    # Count brackets to see if we're inside a list
+                    open_brackets = before_full.count('[') - before_full.count(']')
+                    if open_brackets > 0:
+                        # We're inside brackets (inline list), skip validation
+                        # This handles patterns like: ELB("lb") >> [EC2("w1"), EC2("w2")] >> RDS("db")
+                        continue
+                    
+                    # Check if the connection ends with a bracket (inline list on right side)
+                    if after_full.strip().startswith('['):
+                        # Pattern like: var >> [node1, node2]
+                        continue
+                    
+                    valid_connections.append((from_var, to_var))
+                    break
+        
+        # Validate connections
+        for from_var, to_var in valid_connections:
+            if from_var not in defined_vars:
                 errors.append(f"Undefined variable '{from_var}' used in connection")
-            if to_var not in defined_vars and to_var not in ['Edge', 'Cluster']:
+            if to_var not in defined_vars:
                 errors.append(f"Undefined variable '{to_var}' used in connection")
         
         return ValidateCodeResponse(
