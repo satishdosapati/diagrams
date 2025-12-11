@@ -12,10 +12,10 @@ function App() {
             <div className="flex items-center justify-between">
               <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Architecture Diagram Generator
+            Turn Your Architecture Ideas Into Professional Diagrams
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-                  Generate cloud architecture diagrams from natural language
+                  For architects and engineers who need diagrams fast
           </p>
               </div>
               <nav className="flex gap-4">

@@ -25,6 +25,7 @@ function DiagramGenerator() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(true)
+  const [showUrgencyBanner, setShowUrgencyBanner] = useState(true)
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -99,6 +100,71 @@ function DiagramGenerator() {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
+      {/* StoryBrand: Problem Statement */}
+      <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+        <p className="text-sm text-gray-700 mb-2">
+          <span className="font-semibold">Tired of spending hours manually creating architecture diagrams?</span> 
+          <span className="text-gray-600"> Struggling to visualize your cloud infrastructure?</span>
+        </p>
+        <p className="text-sm text-gray-600">
+          Our AI-powered generator understands your natural language and creates professional diagrams in seconds.
+        </p>
+      </div>
+
+      {/* StoryBrand: Urgency/Failure (Subtle) */}
+      {showUrgencyBanner && !diagramUrl && mode === 'natural-language' && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start justify-between">
+          <div className="flex-1">
+            <p className="text-xs text-amber-800">
+              <span className="font-medium">Without clear diagrams,</span> your team wastes time explaining architecture instead of building features.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowUrgencyBanner(false)}
+            className="ml-3 text-amber-600 hover:text-amber-800 flex-shrink-0"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* StoryBrand: 3-Step Process */}
+      {mode === 'natural-language' && !diagramUrl && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className={`flex-1 flex items-center ${isGenerating ? 'opacity-50' : ''}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                description.trim() ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                1
+              </div>
+              <span className="ml-2 text-sm text-gray-700">Describe</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+            <div className={`flex-1 flex items-center ${isGenerating ? '' : 'opacity-50'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                isGenerating ? 'bg-blue-600 text-white animate-pulse' : 'bg-gray-200 text-gray-600'
+              }`}>
+                2
+              </div>
+              <span className="ml-2 text-sm text-gray-700">Generate</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-200 mx-2"></div>
+            <div className={`flex-1 flex items-center ${diagramUrl ? '' : 'opacity-50'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                diagramUrl ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                3
+              </div>
+              <span className="ml-2 text-sm text-gray-700">Download</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Generate Architecture Diagram</h2>
         <div className="flex items-center gap-2">
@@ -195,9 +261,24 @@ function DiagramGenerator() {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !description.trim()}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
-                {isGenerating ? 'Generating...' : 'Generate Diagram'}
+                {isGenerating ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Generate My Diagram
+                  </>
+                )}
               </button>
               
               {isGenerating && (
@@ -222,14 +303,39 @@ function DiagramGenerator() {
           )}
 
           {message && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{message}</p>
+            <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-green-800 mb-1">Diagram generated successfully!</p>
+                  <p className="text-sm text-green-700">{message}</p>
+                  <p className="text-xs text-green-600 mt-1">Ready to share with your team.</p>
+                </div>
+              </div>
             </div>
           )}
 
           {diagramUrl && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-2">Generated Diagram</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Generated Diagram</h3>
+                <button
+                  onClick={() => {
+                    setDescription('')
+                    setDiagramUrl(null)
+                    setMessage(null)
+                    setError(null)
+                    setSessionId(null)
+                    setGenerationId(null)
+                    setGeneratedCode(null)
+                  }}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Create Another
+                </button>
+              </div>
               <div className="border rounded-lg p-4 bg-gray-50">
                 {downloadFormat === 'dot' ? (
                   <div className="w-full max-w-4xl mx-auto">
