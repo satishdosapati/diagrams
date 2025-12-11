@@ -7,6 +7,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Allow external connections in dev mode
     port: 3000,
+    allowedHosts: [
+      'draw.nebulabuild.cloud',
+      'localhost',
+      '.localhost',
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -17,6 +22,11 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0', // Allow external connections in preview mode (production)
     port: 3000,
+    allowedHosts: [
+      'draw.nebulabuild.cloud',
+      'localhost',
+      '.localhost',
+    ],
   },
 })
 
