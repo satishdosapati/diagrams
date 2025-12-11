@@ -157,6 +157,33 @@ class DiagramsEngine:
         if spec.outformat:
             spec.outformat = normalize_format_list(spec.outformat)
         
+        # Determine primary format
+        primary_format = None
+        if spec.outformat:
+            primary_format = spec.outformat[0] if isinstance(spec.outformat, list) else spec.outformat
+        
+        # For SVG format, ensure Graphviz can properly embed external icon images
+        # The diagrams library uses external PNG icon files, and Graphviz SVG needs
+        # proper configuration to embed these images
+        if primary_format and primary_format.lower() == "svg":
+            # Add SVG-specific Graphviz attributes to help with image embedding
+            if not spec.graphviz_attrs:
+                from ..models.spec import GraphvizAttributes
+                spec.graphviz_attrs = GraphvizAttributes()
+            
+            # Add graph attributes that help SVG render images properly
+            if not spec.graphviz_attrs.graph_attr:
+                spec.graphviz_attrs.graph_attr = {}
+            
+            # These attributes help Graphviz properly handle images in SVG output
+            # dpi helps with image resolution
+            spec.graphviz_attrs.graph_attr.setdefault("dpi", "96")
+            # fontname ensures text renders correctly
+            spec.graphviz_attrs.graph_attr.setdefault("fontname", "Arial")
+            # imagepath can help Graphviz find icon files (though diagrams handles this)
+            # Note: The diagrams library should handle image paths, but we ensure
+            # Graphviz has what it needs for SVG embedding
+        
         # Create resolver
         resolver = ComponentResolver(primary_provider=spec.provider)
         
@@ -605,33 +632,44 @@ class DiagramsEngine:
             expected_path = self.output_dir / f"{filename_base}.{primary_format}"
             
             # Check if expected file exists
+            output_path = None
             if expected_path.exists():
-                return str(expected_path)
+                output_path = str(expected_path)
             
             # If not found, search for files with primary format created recently (within last 5 seconds)
-            import time
-            current_time = time.time()
-            format_files = list(self.output_dir.glob(f"*.{primary_format}"))
-            
-            # Find most recently created file
-            if format_files:
-                # Sort by modification time, most recent first
-                format_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-                most_recent = format_files[0]
-                # Check if it was created recently (within last 5 seconds)
-                file_time = most_recent.stat().st_mtime
-                if current_time - file_time < 5:
-                    return str(most_recent)
-            
-            # Fallback: search for PNG files if primary format not found
-            if primary_format != "png":
-                png_files = list(self.output_dir.glob("*.png"))
-                if png_files:
-                    png_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-                    most_recent = png_files[0]
+            if not output_path:
+                import time
+                current_time = time.time()
+                format_files = list(self.output_dir.glob(f"*.{primary_format}"))
+                
+                # Find most recently created file
+                if format_files:
+                    # Sort by modification time, most recent first
+                    format_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                    most_recent = format_files[0]
+                    # Check if it was created recently (within last 5 seconds)
                     file_time = most_recent.stat().st_mtime
                     if current_time - file_time < 5:
-                        return str(most_recent)
+                        output_path = str(most_recent)
+                
+                # Fallback: search for PNG files if primary format not found
+                if not output_path and primary_format != "png":
+                    png_files = list(self.output_dir.glob("*.png"))
+                    if png_files:
+                        png_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                        most_recent = png_files[0]
+                        file_time = most_recent.stat().st_mtime
+                        if current_time - file_time < 5:
+                            output_path = str(most_recent)
+            
+            # Post-process SVG files to embed external images as base64 data URIs
+            # This fixes the issue where Graphviz SVG references external icon files
+            # that aren't accessible when the SVG is served
+            if output_path and primary_format == "svg" and output_path.endswith('.svg'):
+                output_path = self._embed_svg_images(output_path)
+            
+            if output_path:
+                return output_path
             
             # If still not found, provide detailed error
             available_files = [f.name for f in self.output_dir.glob("*.*")]
@@ -650,6 +688,118 @@ class DiagramsEngine:
             
             # Periodically cleanup old diagram files (older than 24 hours)
             self._cleanup_old_files()
+    
+    def _embed_svg_images(self, svg_path: str) -> str:
+        """
+        Post-process SVG file to embed external images as base64 data URIs.
+        
+        Graphviz SVG output references external image files, but these files
+        aren't accessible when the SVG is served. This method embeds the images
+        directly in the SVG as base64 data URIs.
+        
+        Args:
+            svg_path: Path to SVG file
+            
+        Returns:
+            Path to processed SVG file (same file, modified in place)
+        """
+        try:
+            import re
+            import base64
+            from pathlib import Path
+            
+            svg_file = Path(svg_path)
+            if not svg_file.exists():
+                logger.warning(f"SVG file not found for image embedding: {svg_path}")
+                return svg_path
+            
+            # Read SVG content
+            with open(svg_file, 'r', encoding='utf-8') as f:
+                svg_content = f.read()
+            
+            # Find all image references in the SVG
+            # Pattern: <image ... href="path/to/image.png" ... />
+            # or xlink:href="path/to/image.png"
+            image_pattern = r'(<image[^>]*(?:xlink:)?href=["\'])([^"\']+)(["\'][^>]*>)'
+            
+            def replace_image(match):
+                prefix = match.group(1)
+                image_path = match.group(2)
+                suffix = match.group(3)
+                
+                # Skip if already a data URI
+                if image_path.startswith('data:'):
+                    return match.group(0)
+                
+                # Try to resolve the image path
+                # Graphviz might use relative or absolute paths
+                resolved_path = None
+                
+                # Try as absolute path first
+                if os.path.isabs(image_path) and os.path.exists(image_path):
+                    resolved_path = Path(image_path)
+                else:
+                    # Try relative to SVG file location
+                    relative_path = svg_file.parent / image_path
+                    if relative_path.exists():
+                        resolved_path = relative_path
+                    else:
+                        # Try relative to output directory
+                        output_path = self.output_dir / image_path
+                        if output_path.exists():
+                            resolved_path = output_path
+                        else:
+                            # Try to find the image in common diagrams icon locations
+                            # The diagrams library stores icons in site-packages
+                            import site
+                            for site_packages_dir in site.getsitepackages():
+                                icon_path = Path(site_packages_dir) / image_path
+                                if icon_path.exists():
+                                    resolved_path = icon_path
+                                    break
+                
+                if resolved_path and resolved_path.exists():
+                    try:
+                        # Read image and convert to base64
+                        with open(resolved_path, 'rb') as img_file:
+                            img_data = img_file.read()
+                            img_base64 = base64.b64encode(img_data).decode('utf-8')
+                            
+                            # Determine MIME type from extension
+                            ext = resolved_path.suffix.lower()
+                            mime_types = {
+                                '.png': 'image/png',
+                                '.jpg': 'image/jpeg',
+                                '.jpeg': 'image/jpeg',
+                                '.gif': 'image/gif',
+                                '.svg': 'image/svg+xml'
+                            }
+                            mime_type = mime_types.get(ext, 'image/png')
+                            
+                            # Replace with data URI
+                            data_uri = f'data:{mime_type};base64,{img_base64}'
+                            return f'{prefix}{data_uri}{suffix}'
+                    except Exception as e:
+                        logger.warning(f"Failed to embed image {resolved_path}: {e}")
+                
+                # If we can't find or embed the image, return original
+                logger.debug(f"Could not resolve image path: {image_path}")
+                return match.group(0)
+            
+            # Replace all image references
+            processed_content = re.sub(image_pattern, replace_image, svg_content)
+            
+            # Write processed SVG back
+            with open(svg_file, 'w', encoding='utf-8') as f:
+                f.write(processed_content)
+            
+            logger.info(f"Embedded images in SVG: {svg_path}")
+            return svg_path
+            
+        except Exception as e:
+            logger.error(f"Error embedding images in SVG {svg_path}: {e}", exc_info=True)
+            # Return original path if processing fails
+            return svg_path
     
     def _cleanup_old_files(self):
         """Remove diagram files older than 24 hours."""
