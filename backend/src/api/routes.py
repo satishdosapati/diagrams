@@ -390,7 +390,19 @@ async def get_diagram(filename: str, request: Request):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Diagram not found")
     
-    return FileResponse(str(file_path))
+    # Determine media type based on file extension for proper content-type headers
+    media_type = None
+    filename_lower = filename.lower()
+    if filename_lower.endswith('.svg'):
+        media_type = "image/svg+xml"
+    elif filename_lower.endswith('.png'):
+        media_type = "image/png"
+    elif filename_lower.endswith('.pdf'):
+        media_type = "application/pdf"
+    elif filename_lower.endswith('.dot'):
+        media_type = "text/plain; charset=utf-8"
+    
+    return FileResponse(str(file_path), media_type=media_type)
 
 
 @router.post("/regenerate-format", response_model=GenerateDiagramResponse, tags=["diagrams"])

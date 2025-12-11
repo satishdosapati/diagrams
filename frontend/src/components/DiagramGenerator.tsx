@@ -431,6 +431,28 @@ function DiagramGenerator() {
                       </p>
                     </div>
                   </div>
+                ) : downloadFormat === 'svg' ? (
+                  <div className="w-full max-w-4xl mx-auto">
+                    <object
+                      data={diagramUrl}
+                      type="image/svg+xml"
+                      className="w-full"
+                      aria-label="Generated architecture diagram"
+                    >
+                      <img
+                        src={diagramUrl}
+                        alt="Generated architecture diagram"
+                        className="w-full max-w-4xl mx-auto"
+                        onError={(e) => {
+                          // Fallback: if object fails, try img directly
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== diagramUrl) {
+                            target.src = diagramUrl || '';
+                          }
+                        }}
+                      />
+                    </object>
+                  </div>
                 ) : (
                   <img
                     src={diagramUrl}
