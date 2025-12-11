@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface ProgressStage {
   progress: number
@@ -18,49 +18,39 @@ const HUMOROUS_STAGES: ProgressStage[] = [
 
 interface ProgressBarProps {
   isActive: boolean
-  onComplete?: () => void
 }
 
-export default function ProgressBar({ isActive, onComplete }: ProgressBarProps) {
+export default function ProgressBar({ isActive }: ProgressBarProps) {
   const [currentStage, setCurrentStage] = useState(0)
   const [progress, setProgress] = useState(0)
+  const stageIndexRef = useRef(0)
 
   useEffect(() => {
     if (!isActive) {
       setCurrentStage(0)
       setProgress(0)
+      stageIndexRef.current = 0
       return
     }
 
-    let stageIndex = 0
-    let currentProgress = 0
     const interval = setInterval(() => {
-      if (stageIndex < HUMOROUS_STAGES.length) {
-        const stage = HUMOROUS_STAGES[stageIndex]
-        setCurrentStage(stageIndex)
+      if (stageIndexRef.current < HUMOROUS_STAGES.length) {
+        const stage = HUMOROUS_STAGES[stageIndexRef.current]
+        setCurrentStage(stageIndexRef.current)
         setProgress(stage.progress)
-        stageIndex++
+        stageIndexRef.current++
       } else {
-        // Slow down near the end
-        if (currentProgress < 98) {
-          currentProgress += 0.5
-          setProgress(currentProgress)
-        }
+        // Hold at final stage - don't increment further
+        // Keep showing the last message until generation completes
+        setCurrentStage(HUMOROUS_STAGES.length - 1)
+        // Add a subtle pulsing effect by oscillating between 95-98%
+        const pulseProgress = 95 + (Math.sin(Date.now() / 1000) * 1.5 + 1.5) / 2 * 3
+        setProgress(Math.min(pulseProgress, 98))
       }
     }, 800) // Change stage every 800ms
 
     return () => clearInterval(interval)
   }, [isActive])
-
-  useEffect(() => {
-    if (isActive && progress >= 98 && onComplete) {
-      // Small delay before calling onComplete
-      const timer = setTimeout(() => {
-        onComplete()
-      }, 200)
-      return () => clearTimeout(timer)
-    }
-  }, [progress, isActive, onComplete])
 
   if (!isActive) return null
 
