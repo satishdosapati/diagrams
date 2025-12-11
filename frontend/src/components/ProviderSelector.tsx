@@ -34,11 +34,11 @@ export function ProviderSelector({
   onSelectionChange,
 }: ProviderSelectorProps) {
   return (
-    <div className="space-y-4">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+    <div className="space-y-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
         Select Cloud Provider
       </label>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {PROVIDER_OPTIONS.map((provider) => {
           const isSelected = selectedProvider === provider.id
 
@@ -46,7 +46,7 @@ export function ProviderSelector({
             <div
               key={provider.id}
               className={`
-                relative flex items-start space-x-3 p-4 border rounded-lg
+                relative flex items-start space-x-2 p-3 border rounded-lg
                 cursor-pointer transition-all
                 ${isSelected 
                   ? 'border-blue-500 bg-blue-50' 
@@ -83,11 +83,11 @@ export function ProviderSelector({
         })}
       </div>
       {selectedProvider && (
-        <div className="p-3 bg-gray-50 rounded-md">
+        <div className="p-2 bg-gray-50 rounded-md">
           <p className="text-sm font-medium text-gray-700">
             Selected: {PROVIDER_OPTIONS.find(p => p.id === selectedProvider)?.label}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-0.5">
             All components will use {selectedProvider.toUpperCase()} icons only
           </p>
         </div>

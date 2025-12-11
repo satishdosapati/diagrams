@@ -100,10 +100,10 @@ function DiagramGenerator() {
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-white shadow rounded-lg p-4">
       {/* StoryBrand: Problem Statement */}
-      <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
-        <p className="text-sm text-gray-700 mb-2">
+      <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+        <p className="text-sm text-gray-700 mb-1.5">
           <span className="font-semibold">Tired of spending hours manually creating architecture diagrams?</span> 
           <span className="text-gray-600"> Struggling to visualize your cloud infrastructure?</span>
         </p>
@@ -114,7 +114,7 @@ function DiagramGenerator() {
 
       {/* StoryBrand: Urgency/Failure (Subtle) */}
       {showUrgencyBanner && !diagramUrl && mode === 'natural-language' && (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start justify-between">
+        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start justify-between">
           <div className="flex-1">
             <p className="text-xs text-amber-800">
               <span className="font-medium">Without clear diagrams,</span> your team wastes time explaining architecture instead of building features.
@@ -134,7 +134,7 @@ function DiagramGenerator() {
 
       {/* StoryBrand: 3-Step Process */}
       {mode === 'natural-language' && (
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <div className={`flex-1 flex items-center transition-all duration-300 ${isGenerating ? 'opacity-50' : ''}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
@@ -194,8 +194,8 @@ function DiagramGenerator() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Generate Architecture Diagram</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold">Generate Architecture Diagram</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowExamples(!showExamples)}
@@ -207,7 +207,7 @@ function DiagramGenerator() {
       </div>
 
       {/* Mode Toggle */}
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="flex border rounded-md p-1 bg-gray-50">
           <button
             onClick={() => setMode('natural-language')}
@@ -235,7 +235,7 @@ function DiagramGenerator() {
       {/* Main Content with Sidebar */}
       <div className="flex gap-4">
         {/* Main Content Area */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-3">
           <ProviderSelector
             selectedProvider={selectedProvider}
             onSelectionChange={setSelectedProvider}
@@ -268,9 +268,9 @@ function DiagramGenerator() {
 
           {/* Natural Language Mode */}
           {mode === 'natural-language' && (
-            <>
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              <>
+                <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Describe your {selectedProvider.toUpperCase()} architecture
                 </label>
                 <textarea
@@ -278,11 +278,11 @@ function DiagramGenerator() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
-                  rows={4}
+                  rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   disabled={isGenerating}
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-xs text-gray-500">
                   Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
                 </p>
               </div>
@@ -290,7 +290,7 @@ function DiagramGenerator() {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !description.trim()}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white py-2.5 px-6 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -332,22 +332,22 @@ function DiagramGenerator() {
           )}
 
           {message && (
-            <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
-              <div className="flex items-start gap-3">
+            <div className="p-3 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
+              <div className="flex items-start gap-2">
                 <div className="flex-shrink-0 mt-0.5">
-                  <svg className="w-6 h-6 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-green-800 mb-1">Diagram generated successfully!</p>
+                  <p className="text-sm font-semibold text-green-800 mb-0.5">Diagram generated successfully!</p>
                   <p className="text-sm text-green-700">{message}</p>
-                  <p className="text-xs text-green-600 mt-1">Ready to share with your team.</p>
+                  <p className="text-xs text-green-600 mt-0.5">Ready to share with your team.</p>
                   
                   {/* Success Metrics */}
                   {showSuccessMetrics && (
-                    <div className="mt-3 pt-3 border-t border-green-200">
-                      <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="mt-2 pt-2 border-t border-green-200">
+                      <div className="grid grid-cols-3 gap-2 text-center">
                         <div>
                           <p className="text-lg font-bold text-green-800">2+ hrs</p>
                           <p className="text-xs text-green-600">Time saved</p>
@@ -369,12 +369,12 @@ function DiagramGenerator() {
           )}
 
           {diagramUrl && (
-            <div className="mt-6 animate-fade-in">
+            <div className="mt-4 animate-fade-in">
               {/* Success Celebration Banner */}
-              <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg flex items-center gap-3">
+              <div className="mb-3 p-2 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg flex items-center gap-2">
                 <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-checkmark">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center animate-checkmark">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -385,8 +385,8 @@ function DiagramGenerator() {
                 </div>
               </div>
               
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Generated Diagram</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold">Generated Diagram</h3>
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
@@ -419,7 +419,7 @@ function DiagramGenerator() {
                   </button>
                 </div>
               </div>
-              <div className="border rounded-lg p-4 bg-gray-50 animate-slide-up">
+              <div className="border rounded-lg p-3 bg-gray-50 animate-slide-up">
                 {downloadFormat === 'dot' ? (
                   <div className="w-full max-w-4xl mx-auto">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -439,7 +439,7 @@ function DiagramGenerator() {
                   />
                 )}
               </div>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-2">
                 <div className="flex items-center gap-3">
                   <label htmlFor="downloadFormat" className="text-sm font-medium text-gray-700">
                     Download as:
