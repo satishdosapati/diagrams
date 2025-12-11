@@ -4,6 +4,7 @@ import ProviderSelector from './ProviderSelector'
 import ExamplesPanel from './ExamplesPanel'
 import AdvancedCodeMode from './AdvancedCodeMode'
 import FeedbackWidget from './FeedbackWidget'
+import ProgressBar from './ProgressBar'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -198,6 +199,10 @@ function DiagramGenerator() {
               >
                 {isGenerating ? 'Generating...' : 'Generate Diagram'}
               </button>
+              
+              {isGenerating && (
+                <ProgressBar isActive={isGenerating} />
+              )}
             </>
           )}
 
