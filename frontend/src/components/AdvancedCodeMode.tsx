@@ -211,15 +211,20 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
       
       setErrors([errorMessage])
       
-      // Only show report button for unexpected backend failures (500), not validation errors (400)
+      // Only show ErrorDisplay for unexpected backend failures (500), not validation errors (400)
       const isUnexpectedError = statusCode >= 500
-      setErrorContext({
-        requestId,
-        prompt: code,
-        provider: provider,
-        errorType: 'execution',
-        showReportButton: isUnexpectedError
-      })
+      if (isUnexpectedError) {
+        setErrorContext({
+          requestId,
+          prompt: code,
+          provider: provider,
+          errorType: 'execution',
+          showReportButton: true
+        })
+      } else {
+        // Validation errors - don't set errorContext, will show simple error message
+        setErrorContext(null)
+      }
     } finally {
       setIsExecuting(false)
     }
@@ -321,14 +326,27 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
 
       {/* Errors and Warnings */}
       {errors.length > 0 && (
-        <ErrorDisplay
-          error={errors.join('; ')}
-          requestId={errorContext?.requestId || null}
-          prompt={errorContext?.prompt || null}
-          provider={errorContext?.provider || null}
-          errorType={errorContext?.errorType || 'execution'}
-          showReportButton={errorContext?.showReportButton !== false}
-        />
+        errorContext ? (
+          // Unexpected errors (500+) - show friendly ErrorDisplay with report button
+          <ErrorDisplay
+            error={errors.join('; ')}
+            requestId={errorContext.requestId}
+            prompt={errorContext.prompt}
+            provider={errorContext.provider}
+            errorType={errorContext.errorType}
+            showReportButton={errorContext.showReportButton !== false}
+          />
+        ) : (
+          // Validation errors (400) or frontend validation - show simple error message without wrapper
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <h4 className="font-semibold text-red-800 mb-2">Errors:</h4>
+            <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+              {errors.map((error, idx) => (
+                <li key={idx}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )
       )}
 
       {warnings.length > 0 && (
