@@ -86,9 +86,24 @@ Essential documentation:
 
 ## Testing
 
+Quick test run:
 ```bash
 cd backend
-pytest tests/
+pytest tests/ -v
+```
+
+For comprehensive test reports and detailed instructions, see [Test Instructions](backend/tests/TEST_INSTRUCTIONS.md).
+
+Quick reference:
+```bash
+# Full test suite with reports
+python tests/run_tests.py --all-reports --verbose
+
+# Run specific test file
+pytest tests/test_api.py -v
+
+# Run with coverage
+python tests/run_tests.py --coverage
 ```
 
 ## Deployment
