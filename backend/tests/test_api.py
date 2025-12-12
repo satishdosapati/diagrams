@@ -1040,6 +1040,57 @@ class TestFeedbackEndpoints:
         assert response.status_code in [200, 400, 422]
 
 
+class TestErrorLogsEndpoints:
+    """Test error logs endpoints."""
+    
+    def test_get_error_logs_with_request_id(self):
+        """Test getting error logs for a specific request ID."""
+        # First make a request to get a request ID
+        response = client.get("/health")
+        request_id = response.headers.get("X-Request-ID")
+        assert request_id is not None
+        
+        # Get error logs for this request
+        logs_response = client.get(f"/api/error-logs/{request_id}")
+        assert logs_response.status_code == 200
+        data = logs_response.json()
+        assert "request_id" in data
+        assert "logs" in data
+        assert isinstance(data["logs"], list)
+        assert data["request_id"] == request_id
+    
+    def test_get_error_logs_nonexistent_request_id(self):
+        """Test getting error logs for non-existent request ID."""
+        # Use a fake request ID
+        fake_request_id = "00000000-0000-0000-0000-000000000000"
+        logs_response = client.get(f"/api/error-logs/{fake_request_id}")
+        assert logs_response.status_code == 200
+        data = logs_response.json()
+        assert "request_id" in data
+        assert "logs" in data
+        # Should return last 50 logs as fallback
+        assert isinstance(data["logs"], list)
+        assert "last_50_lines" in data
+    
+    def test_get_error_logs_format(self):
+        """Test error logs response format."""
+        # Make a request to generate logs
+        response = client.get("/health")
+        request_id = response.headers.get("X-Request-ID")
+        
+        # Get logs
+        logs_response = client.get(f"/api/error-logs/{request_id}")
+        assert logs_response.status_code == 200
+        data = logs_response.json()
+        
+        # Verify structure
+        assert isinstance(data, dict)
+        assert "request_id" in data
+        assert "logs" in data
+        assert "last_50_lines" in data
+        assert isinstance(data["last_50_lines"], bool)
+
+
 class TestEndToEndWorkflows:
     """Test complete end-to-end workflows."""
     
