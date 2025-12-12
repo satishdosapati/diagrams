@@ -80,20 +80,15 @@ function DiagramGenerator() {
       
       setError(errorMessage)
       
-      // Only show ErrorDisplay for unexpected backend failures (500), not validation errors (400)
+      // Set errorContext for all errors, but only show report button for unexpected errors (500+)
       const isUnexpectedError = statusCode >= 500
-      if (isUnexpectedError) {
-        setErrorContext({
-          requestId,
-          prompt: description,
-          provider: selectedProvider,
-          errorType: 'generation',
-          showReportButton: true
-        })
-      } else {
-        // Validation errors - don't set errorContext, will show simple error message
-        setErrorContext(null)
-      }
+      setErrorContext({
+        requestId,
+        prompt: description,
+        provider: selectedProvider,
+        errorType: 'generation',
+        showReportButton: isUnexpectedError
+      })
     } finally {
       setIsGenerating(false)
     }
@@ -129,20 +124,15 @@ function DiagramGenerator() {
       
       setError(errorMessage)
       
-      // Only show ErrorDisplay for unexpected backend failures (500), not validation errors (400)
+      // Set errorContext for all errors, but only show report button for unexpected errors (500+)
       const isUnexpectedError = statusCode >= 500
-      if (isUnexpectedError) {
-        setErrorContext({
-          requestId,
-          prompt: description,
-          provider: selectedProvider,
-          errorType: 'generation',
-          showReportButton: true
-        })
-      } else {
-        // Validation errors - don't set errorContext, will show simple error message
-        setErrorContext(null)
-      }
+      setErrorContext({
+        requestId,
+        prompt: description,
+        provider: selectedProvider,
+        errorType: 'generation',
+        showReportButton: isUnexpectedError
+      })
     } finally {
       setIsRegenerating(false)
     }
@@ -375,22 +365,14 @@ function DiagramGenerator() {
           )}
 
           {error && (
-            errorContext ? (
-              // Unexpected errors (500+) - show friendly ErrorDisplay with report button
-              <ErrorDisplay
-                error={error}
-                requestId={errorContext.requestId}
-                prompt={errorContext.prompt}
-                provider={errorContext.provider}
-                errorType={errorContext.errorType}
-                showReportButton={errorContext.showReportButton !== false}
-              />
-            ) : (
-              // Validation errors (400) - show simple error message without wrapper
-              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600 whitespace-pre-line">{error}</p>
-              </div>
-            )
+            <ErrorDisplay
+              error={error}
+              requestId={errorContext?.requestId || null}
+              prompt={errorContext?.prompt || description}
+              provider={errorContext?.provider || selectedProvider}
+              errorType={errorContext?.errorType || 'generation'}
+              showReportButton={errorContext?.showReportButton !== false}
+            />
           )}
 
           {message && (
