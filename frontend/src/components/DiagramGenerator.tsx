@@ -5,6 +5,7 @@ import ExamplesPanel from './ExamplesPanel'
 import AdvancedCodeMode from './AdvancedCodeMode'
 import FeedbackWidget from './FeedbackWidget'
 import ProgressBar from './ProgressBar'
+import { ErrorDisplay } from './ErrorDisplay'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -23,6 +24,12 @@ function DiagramGenerator() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorContext, setErrorContext] = useState<{
+    requestId: string | null;
+    prompt: string | null;
+    provider: string | null;
+    errorType: 'generation' | 'execution' | 'validation' | 'other';
+  } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(true)
   const [showUrgencyBanner, setShowUrgencyBanner] = useState(true)
@@ -41,6 +48,7 @@ function DiagramGenerator() {
 
     setIsGenerating(true)
     setError(null)
+    setErrorContext(null)
     setMessage(null)
     setDiagramUrl(null)
 
@@ -65,7 +73,15 @@ function DiagramGenerator() {
         setDiagramUrl(url)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate diagram')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate diagram'
+      const requestId = (err as any).requestId || null
+      setError(errorMessage)
+      setErrorContext({
+        requestId,
+        prompt: description,
+        provider: selectedProvider,
+        errorType: 'generation'
+      })
     } finally {
       setIsGenerating(false)
     }
@@ -84,6 +100,8 @@ function DiagramGenerator() {
     
     setDownloadFormat(newFormat)
     setIsRegenerating(true)
+    setError(null)
+    setErrorContext(null)
     
     try {
       const response = await regenerateFormat(sessionId, newFormat)
@@ -93,7 +111,15 @@ function DiagramGenerator() {
         setDiagramUrl(url)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to regenerate format')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate format'
+      const requestId = (err as any).requestId || null
+      setError(errorMessage)
+      setErrorContext({
+        requestId,
+        prompt: description,
+        provider: selectedProvider,
+        errorType: 'generation'
+      })
     } finally {
       setIsRegenerating(false)
     }
@@ -326,9 +352,13 @@ function DiagramGenerator() {
           )}
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
+            <ErrorDisplay
+              error={error}
+              requestId={errorContext?.requestId || null}
+              prompt={errorContext?.prompt || null}
+              provider={errorContext?.provider || null}
+              errorType={errorContext?.errorType || 'other'}
+            />
           )}
 
           {message && (
@@ -421,6 +451,7 @@ function DiagramGenerator() {
                       setDiagramUrl(null)
                       setMessage(null)
                       setError(null)
+                      setErrorContext(null)
                       setSessionId(null)
                       setGenerationId(null)
                       setGeneratedCode(null)

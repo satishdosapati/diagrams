@@ -17,6 +17,7 @@ from ..agents.diagram_agent import DiagramAgent
 from ..generators.universal_generator import UniversalGenerator
 from ..models.spec import ArchitectureSpec, GraphvizAttributes
 from ..storage.feedback_storage import FeedbackStorage
+from ..services.log_capture import get_log_capture
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -800,6 +801,35 @@ async def submit_feedback(request: SubmitFeedbackRequest):
             status_code=500,
             detail=f"Failed to submit feedback: {str(e)}"
         )
+
+
+@router.get("/error-logs/{request_id}", tags=["errors"])
+async def get_error_logs(request_id: str):
+    """
+    Get logs for a specific request ID.
+    Used for error reporting.
+    
+    Args:
+        request_id: Request identifier from X-Request-ID header
+        
+    Returns:
+        JSON with request_id and logs array
+    """
+    log_capture = get_log_capture()
+    
+    # Try to get logs for this specific request
+    logs = log_capture.get_logs(request_id)
+    
+    # If no logs found for this request, return last 50 logs as fallback
+    if not logs:
+        logs = log_capture.get_last_n_logs(50)
+        logger.warning(f"No logs found for request_id {request_id}, returning last 50 logs")
+    
+    return {
+        "request_id": request_id,
+        "logs": logs,
+        "last_50_lines": len(logs) <= 50
+    }
 
 
 @router.get("/feedback/stats", tags=["feedback"])

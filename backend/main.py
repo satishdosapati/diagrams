@@ -21,6 +21,12 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+# Add log capture handler for error reporting
+from src.services.log_capture import LogCaptureHandler
+log_capture_handler = LogCaptureHandler()
+log_capture_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(log_capture_handler)
+
 logger = logging.getLogger(__name__)
 logger.info(f"Environment loaded. USE_MCP_DIAGRAM_SERVER={os.getenv('USE_MCP_DIAGRAM_SERVER', 'not set')}")
 
@@ -134,21 +140,33 @@ async def add_request_id(request: Request, call_next):
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
     
+    # Add request_id to logging context
+    old_factory = logging.getLogRecordFactory()
+    def record_factory(*args, **kwargs):
+        record = old_factory(*args, **kwargs)
+        record.request_id = request_id
+        return record
+    logging.setLogRecordFactory(record_factory)
+    
     # Add request ID to response headers
     start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    
-    response.headers["X-Request-ID"] = request_id
-    response.headers["X-Process-Time"] = f"{process_time:.4f}"
-    
-    # Log request with ID
-    logger.info(
-        f"Request {request_id}: {request.method} {request.url.path} - "
-        f"Status: {response.status_code} - Time: {process_time:.4f}s"
-    )
-    
-    return response
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Process-Time"] = f"{process_time:.4f}"
+        
+        # Log request with ID
+        logger.info(
+            f"Request {request_id}: {request.method} {request.url.path} - "
+            f"Status: {response.status_code} - Time: {process_time:.4f}s"
+        )
+        
+        return response
+    finally:
+        # Restore original factory
+        logging.setLogRecordFactory(old_factory)
 
 # Include API routes
 app.include_router(router, prefix="/api", tags=["diagrams"])

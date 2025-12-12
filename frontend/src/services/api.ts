@@ -57,7 +57,10 @@ export async function generateDiagram(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to generate diagram');
+    const requestId = response.headers.get('X-Request-ID');
+    const errorWithRequestId = new Error(error.detail || 'Failed to generate diagram');
+    (errorWithRequestId as any).requestId = requestId;
+    throw errorWithRequestId;
   }
 
   return response.json();
@@ -114,7 +117,10 @@ export async function executeCode(request: ExecuteCodeRequest): Promise<ExecuteC
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to execute code');
+    const requestId = response.headers.get('X-Request-ID');
+    const errorWithRequestId = new Error(error.detail || 'Failed to execute code');
+    (errorWithRequestId as any).requestId = requestId;
+    throw errorWithRequestId;
   }
 
   return response.json();
@@ -204,6 +210,25 @@ export async function getFeedbackStats(days: number = 30): Promise<FeedbackStats
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to get feedback stats');
+  }
+
+  return response.json();
+}
+
+export interface ErrorLogsResponse {
+  request_id: string;
+  logs: string[];
+  last_50_lines: boolean;
+}
+
+export async function getErrorLogs(requestId: string): Promise<ErrorLogsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/error-logs/${requestId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to retrieve error logs');
   }
 
   return response.json();

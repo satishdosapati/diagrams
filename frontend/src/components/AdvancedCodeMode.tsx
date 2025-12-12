@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react'
 import { executeCode, getCompletions, validateCode, getDiagramUrl, type CompletionsResponse } from '../services/api'
 import type { editor } from 'monaco-editor'
 import * as monaco from 'monaco-editor'
+import { ErrorDisplay } from './ErrorDisplay'
 
 type OutputFormat = 'png' | 'svg' | 'pdf' | 'dot'
 
@@ -20,6 +21,12 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
   const [errors, setErrors] = useState<string[]>([])
   const [warnings, setWarnings] = useState<string[]>([])
   const [completions, setCompletions] = useState<CompletionsResponse | null>(null)
+  const [errorContext, setErrorContext] = useState<{
+    requestId: string | null;
+    prompt: string | null;
+    provider: string | null;
+    errorType: 'generation' | 'execution' | 'validation' | 'other';
+  } | null>(null)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
   // Load completions on mount
@@ -148,6 +155,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
     setIsExecuting(true)
     setErrors([])
     setWarnings([])
+    setErrorContext(null)
 
     try {
       // Validate code first
@@ -170,6 +178,12 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
 
       if (result.errors && result.errors.length > 0) {
         setErrors(result.errors)
+        setErrorContext({
+          requestId: null,
+          prompt: code,
+          provider: provider,
+          errorType: 'execution'
+        })
       } else {
         const url = getDiagramUrl(result.diagram_url.split('/').pop() || '')
         setDiagramUrl(url)
@@ -180,7 +194,15 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
         setWarnings(result.warnings)
       }
     } catch (error) {
-      setErrors([error instanceof Error ? error.message : 'Failed to execute code'])
+      const errorMessage = error instanceof Error ? error.message : 'Failed to execute code'
+      const requestId = (error as any).requestId || null
+      setErrors([errorMessage])
+      setErrorContext({
+        requestId,
+        prompt: code,
+        provider: provider,
+        errorType: 'execution'
+      })
     } finally {
       setIsExecuting(false)
     }
@@ -282,14 +304,13 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
 
       {/* Errors and Warnings */}
       {errors.length > 0 && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <h4 className="font-semibold text-red-800 mb-2">Errors:</h4>
-          <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
-            {errors.map((error, idx) => (
-              <li key={idx}>{error}</li>
-            ))}
-          </ul>
-        </div>
+        <ErrorDisplay
+          error={errors.join('; ')}
+          requestId={errorContext?.requestId || null}
+          prompt={errorContext?.prompt || null}
+          provider={errorContext?.provider || null}
+          errorType={errorContext?.errorType || 'execution'}
+        />
       )}
 
       {warnings.length > 0 && (
