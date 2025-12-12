@@ -76,18 +76,16 @@ function DiagramGenerator() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate diagram'
       const requestId = (err as any).requestId || null
-      const statusCode = (err as any).statusCode || 500
       
       setError(errorMessage)
       
-      // Set errorContext for all errors, but only show report button for unexpected errors (500+)
-      const isUnexpectedError = statusCode >= 500
+      // Set errorContext for all errors - show report button for all errors
       setErrorContext({
         requestId,
         prompt: description,
         provider: selectedProvider,
         errorType: 'generation',
-        showReportButton: isUnexpectedError
+        showReportButton: true
       })
     } finally {
       setIsGenerating(false)
@@ -120,18 +118,16 @@ function DiagramGenerator() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate format'
       const requestId = (err as any).requestId || null
-      const statusCode = (err as any).statusCode || 500
       
       setError(errorMessage)
       
-      // Set errorContext for all errors, but only show report button for unexpected errors (500+)
-      const isUnexpectedError = statusCode >= 500
+      // Set errorContext for all errors - show report button for all errors
       setErrorContext({
         requestId,
         prompt: description,
         provider: selectedProvider,
         errorType: 'generation',
-        showReportButton: isUnexpectedError
+        showReportButton: true
       })
     } finally {
       setIsRegenerating(false)

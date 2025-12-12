@@ -165,13 +165,13 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
       if (!validation.valid && validation.errors.length > 0) {
         setErrors(validation.errors)
         setWarnings(validation.suggestions)
-        // Validation errors are expected - don't show report button
+        // Show report button for all errors
         setErrorContext({
           requestId: null,
           prompt: code,
           provider: provider,
           errorType: 'validation',
-          showReportButton: false
+          showReportButton: true
         })
         setIsExecuting(false)
         return
@@ -187,7 +187,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
 
       if (result.errors && result.errors.length > 0) {
         setErrors(result.errors)
-        // Code execution errors from backend are unexpected failures - show report button
+        // Show report button for all errors
         setErrorContext({
           requestId: null,
           prompt: code,
@@ -207,18 +207,16 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to execute code'
       const requestId = (error as any).requestId || null
-      const statusCode = (error as any).statusCode || 500
       
       setErrors([errorMessage])
       
-      // Set errorContext for all errors, but only show report button for unexpected errors (500+)
-      const isUnexpectedError = statusCode >= 500
+      // Set errorContext for all errors - show report button for all errors
       setErrorContext({
         requestId,
         prompt: code,
         provider: provider,
         errorType: 'execution',
-        showReportButton: isUnexpectedError
+        showReportButton: true
       })
     } finally {
       setIsExecuting(false)
