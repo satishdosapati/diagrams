@@ -26,6 +26,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
     prompt: string | null;
     provider: string | null;
     errorType: 'generation' | 'execution' | 'validation' | 'other';
+    showReportButton?: boolean;
   } | null>(null)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
@@ -164,6 +165,14 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
       if (!validation.valid && validation.errors.length > 0) {
         setErrors(validation.errors)
         setWarnings(validation.suggestions)
+        // Validation errors are expected - don't show report button
+        setErrorContext({
+          requestId: null,
+          prompt: code,
+          provider: provider,
+          errorType: 'validation',
+          showReportButton: false
+        })
         setIsExecuting(false)
         return
       }
@@ -178,11 +187,13 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
 
       if (result.errors && result.errors.length > 0) {
         setErrors(result.errors)
+        // Code execution errors from backend are unexpected failures - show report button
         setErrorContext({
           requestId: null,
           prompt: code,
           provider: provider,
-          errorType: 'execution'
+          errorType: 'execution',
+          showReportButton: true
         })
       } else {
         const url = getDiagramUrl(result.diagram_url.split('/').pop() || '')
@@ -196,12 +207,18 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to execute code'
       const requestId = (error as any).requestId || null
+      const statusCode = (error as any).statusCode || 500
+      
       setErrors([errorMessage])
+      
+      // Only show report button for unexpected backend failures (500), not validation errors (400)
+      const isUnexpectedError = statusCode >= 500
       setErrorContext({
         requestId,
         prompt: code,
         provider: provider,
-        errorType: 'execution'
+        errorType: 'execution',
+        showReportButton: isUnexpectedError
       })
     } finally {
       setIsExecuting(false)
@@ -310,6 +327,7 @@ function AdvancedCodeMode({ provider, initialCode, onDiagramGenerated }: Advance
           prompt={errorContext?.prompt || null}
           provider={errorContext?.provider || null}
           errorType={errorContext?.errorType || 'execution'}
+          showReportButton={errorContext?.showReportButton !== false}
         />
       )}
 

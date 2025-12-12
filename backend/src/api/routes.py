@@ -305,8 +305,18 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
             generated_code=generated_code
         )
     
+    except ValueError as e:
+        # Validation errors (non-cloud requests, invalid input) - return 400
+        request_id = getattr(http_request.state, 'request_id', 'unknown') if http_request else 'unknown'
+        logger.info(f"[{request_id}] Validation error: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
     except Exception as e:
-        logger.error(f"Error generating diagram: {str(e)}", exc_info=True)
+        # Unexpected backend failures - return 500
+        request_id = getattr(http_request.state, 'request_id', 'unknown') if http_request else 'unknown'
+        logger.error(f"[{request_id}] Error generating diagram: {str(e)}", exc_info=True)
         error_detail = str(e)
         # Include traceback in detail for debugging (can be removed in production)
         if os.getenv("DEBUG", "false").lower() == "true":

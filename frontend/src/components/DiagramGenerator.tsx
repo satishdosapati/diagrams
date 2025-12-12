@@ -29,6 +29,7 @@ function DiagramGenerator() {
     prompt: string | null;
     provider: string | null;
     errorType: 'generation' | 'execution' | 'validation' | 'other';
+    showReportButton?: boolean;
   } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(true)
@@ -75,12 +76,18 @@ function DiagramGenerator() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate diagram'
       const requestId = (err as any).requestId || null
+      const statusCode = (err as any).statusCode || 500
+      
       setError(errorMessage)
+      
+      // Only show report button for unexpected backend failures (500), not validation errors (400)
+      const isUnexpectedError = statusCode >= 500
       setErrorContext({
         requestId,
         prompt: description,
         provider: selectedProvider,
-        errorType: 'generation'
+        errorType: 'generation',
+        showReportButton: isUnexpectedError
       })
     } finally {
       setIsGenerating(false)
@@ -113,12 +120,18 @@ function DiagramGenerator() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate format'
       const requestId = (err as any).requestId || null
+      const statusCode = (err as any).statusCode || 500
+      
       setError(errorMessage)
+      
+      // Only show report button for unexpected backend failures (500), not validation errors (400)
+      const isUnexpectedError = statusCode >= 500
       setErrorContext({
         requestId,
         prompt: description,
         provider: selectedProvider,
-        errorType: 'generation'
+        errorType: 'generation',
+        showReportButton: isUnexpectedError
       })
     } finally {
       setIsRegenerating(false)
@@ -358,6 +371,7 @@ function DiagramGenerator() {
               prompt={errorContext?.prompt || null}
               provider={errorContext?.provider || null}
               errorType={errorContext?.errorType || 'other'}
+              showReportButton={errorContext?.showReportButton !== false}
             />
           )}
 

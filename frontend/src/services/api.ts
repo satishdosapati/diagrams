@@ -60,6 +60,7 @@ export async function generateDiagram(
     const requestId = response.headers.get('X-Request-ID');
     const errorWithRequestId = new Error(error.detail || 'Failed to generate diagram');
     (errorWithRequestId as any).requestId = requestId;
+    (errorWithRequestId as any).statusCode = response.status; // Add status code
     throw errorWithRequestId;
   }
 
@@ -83,7 +84,11 @@ export async function regenerateFormat(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to regenerate format');
+    const requestId = response.headers.get('X-Request-ID');
+    const errorWithRequestId = new Error(error.detail || 'Failed to regenerate format');
+    (errorWithRequestId as any).requestId = requestId;
+    (errorWithRequestId as any).statusCode = response.status; // Add status code
+    throw errorWithRequestId;
   }
 
   return response.json();
@@ -120,6 +125,7 @@ export async function executeCode(request: ExecuteCodeRequest): Promise<ExecuteC
     const requestId = response.headers.get('X-Request-ID');
     const errorWithRequestId = new Error(error.detail || 'Failed to execute code');
     (errorWithRequestId as any).requestId = requestId;
+    (errorWithRequestId as any).statusCode = response.status; // Add status code
     throw errorWithRequestId;
   }
 

@@ -110,11 +110,14 @@ class LogCaptureHandler(logging.Handler):
         """Emit a log record."""
         try:
             # Extract request_id from log record if available
+            # The request_id is set by the logging factory in middleware
             request_id = getattr(record, 'request_id', None)
             if request_id:
+                # Format the log message (includes timestamp, logger name, level, message)
                 message = self.format(record)
                 _log_capture.add_log(request_id, record.levelname, message)
-        except Exception:
+        except Exception as e:
             # Don't let logging errors break the app
+            # Silently fail to avoid infinite recursion if logging itself fails
             pass
 
