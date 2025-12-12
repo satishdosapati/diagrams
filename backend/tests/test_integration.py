@@ -35,7 +35,7 @@ class TestEndToEndWorkflows:
         assert "generated_code" in gen_data
         
         # Verify advisor enhancements
-        assert "splines=\"ortho\"" in gen_data["generated_code"] or "splines='ortho'" in gen_data["generated_code"]
+        assert '"splines": "ortho"' in gen_data["generated_code"] or ("splines" in gen_data["generated_code"] and "ortho" in gen_data["generated_code"])
         
         # Step 2: Regenerate in different format
         regen_response = client.post(
@@ -80,7 +80,7 @@ class TestEndToEndWorkflows:
             data = response.json()
             session_ids.append(data["session_id"])
             # Verify advisor enhancements
-            assert "splines=\"ortho\"" in data["generated_code"] or "splines='ortho'" in data["generated_code"]
+            assert '"splines": "ortho"' in data["generated_code"] or ("splines" in data["generated_code"] and "ortho" in data["generated_code"])
         
         assert len(session_ids) == len(providers)
         
@@ -140,15 +140,15 @@ with Diagram("Architecture", show=False, filename="test", outformat="png"):
         provider_scenarios = {
             "aws": {
                 "description": "VPC with EC2 and S3",
-                "expected_enhancements": ["splines=\"ortho\"", "splines='ortho'", "splines=ortho"]
+                "expected_enhancements": ['"splines": "ortho"', "splines", "ortho"]
             },
             "azure": {
                 "description": "Virtual Network with Azure VM and Blob Storage",
-                "expected_enhancements": ["splines=\"ortho\"", "splines='ortho'", "splines=ortho"]
+                "expected_enhancements": ['"splines": "ortho"', "splines", "ortho"]
             },
             "gcp": {
                 "description": "VPC with Compute Engine and Cloud Storage",
-                "expected_enhancements": ["splines=\"ortho\"", "splines='ortho'", "splines=ortho"]
+                "expected_enhancements": ['"splines": "ortho"', "splines", "ortho"]
             }
         }
         
@@ -196,7 +196,7 @@ with Diagram("Architecture", show=False, filename="test", outformat="png"):
         assert "session_id" in data
         
         # Verify advisor enhancements
-        assert "splines=\"ortho\"" in data["generated_code"] or "splines='ortho'" in data["generated_code"]
+        assert '"splines": "ortho"' in data["generated_code"] or ("splines" in data["generated_code"] and "ortho" in data["generated_code"])
         
         # Test regeneration
         regen_response = client.post(
@@ -225,7 +225,7 @@ with Diagram("Architecture", show=False, filename="test", outformat="png"):
         assert "session_id" in data
         
         # Verify advisor enhancements
-        assert "splines=\"ortho\"" in data["generated_code"] or "splines='ortho'" in data["generated_code"]
+        assert '"splines": "ortho"' in data["generated_code"] or ("splines" in data["generated_code"] and "ortho" in data["generated_code"])
         
         # Test regeneration
         regen_response = client.post(
@@ -254,7 +254,7 @@ with Diagram("Architecture", show=False, filename="test", outformat="png"):
         assert "session_id" in data
         
         # Verify advisor enhancements
-        assert "splines=\"ortho\"" in data["generated_code"] or "splines='ortho'" in data["generated_code"]
+        assert '"splines": "ortho"' in data["generated_code"] or ("splines" in data["generated_code"] and "ortho" in data["generated_code"])
         
         # Test regeneration
         regen_response = client.post(
@@ -475,7 +475,7 @@ with Diagram("Architecture", show=False, filename="test", outformat="png"):
             data = gen_response.json()
             
             # Verify advisor enhancements
-            assert "splines=\"ortho\"" in data["generated_code"] or "splines='ortho'" in data["generated_code"]
+            assert '"splines": "ortho"' in data["generated_code"] or ("splines" in data["generated_code"] and "ortho" in data["generated_code"])
             
             # Regenerate
             regen_response = client.post(

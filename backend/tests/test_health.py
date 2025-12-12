@@ -151,7 +151,7 @@ class TestComponentResolution:
         from src.models.spec import Component, NodeType
         
         resolver = ComponentResolver(primary_provider="gcp")
-        comp = Component(id="compute", name="Compute", type=NodeType.GCP_COMPUTE_ENGINE)
+        comp = Component(id="compute", name="Compute", type=NodeType.COMPUTE_ENGINE)
         
         try:
             node_class = resolver.resolve_component_class(comp)

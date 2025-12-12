@@ -135,7 +135,7 @@ class AzureArchitecturalAdvisor:
     
     def get_layer_order(self, component_type: str) -> int:
         """Get the layer order for a component type."""
-        node_id = component_type.lower().replace("_", "")
+        node_id = component_type.lower()
         return self.LAYER_ORDER.get(node_id, 5)  # Default to compute layer
     
     def sort_components_by_layer(self, components: List[Component]) -> List[Component]:

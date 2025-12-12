@@ -452,12 +452,28 @@ async def regenerate_format(request: RegenerateFormatRequest):
             - 500: Regeneration failed
     """
     try:
-        current_spec = _get_session_spec(request.session_id)
-        if not current_spec:
+        # Get session data (not just spec) to retrieve generation_id
+        session_data = current_specs.get(request.session_id)
+        if not session_data:
             raise HTTPException(
                 status_code=404,
                 detail="Session not found or expired"
             )
+        
+        # Check if session expired
+        current_time = time.time()
+        if current_time - session_data.get("last_accessed", 0) > SESSION_EXPIRY_SECONDS:
+            del current_specs[request.session_id]
+            logger.info(f"Session expired: {request.session_id}")
+            raise HTTPException(
+                status_code=404,
+                detail="Session not found or expired"
+            )
+        
+        # Update last accessed time
+        session_data["last_accessed"] = current_time
+        current_spec = session_data["spec"]
+        generation_id = session_data.get("generation_id", str(uuid.uuid4()))  # Fallback to new ID if missing
         
         # Create a copy of the spec with new format (normalize invalid formats)
         from copy import deepcopy
@@ -476,6 +492,7 @@ async def regenerate_format(request: RegenerateFormatRequest):
             diagram_url=diagram_url,
             message=f"Diagram regenerated in {request.outformat.upper()} format",
             session_id=request.session_id,
+            generation_id=generation_id,
             generated_code=None  # Don't regenerate code, just the diagram
         )
     
