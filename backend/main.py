@@ -106,38 +106,38 @@ async def security_middleware(request: Request, call_next):
     """Security middleware to prevent path traversal attacks."""
     path = str(request.url.path)
     
-        # Check for path traversal patterns in diagrams endpoint
-        if '/api/diagrams/' in path or path.startswith('/api/diagrams/'):
-            # Check for path traversal patterns (including URL-encoded)
-            import urllib.parse
-            decoded_path = urllib.parse.unquote(path)
-            
-            # Check for .. patterns (including URL-encoded %2E%2E)
-            if '..' in path or '..' in decoded_path or '%2E%2E' in path.upper() or '%2e%2e' in path.lower():
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Invalid file path: path traversal detected"}
-                )
-            
-            # Check for null bytes
-            if '\x00' in decoded_path:
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Invalid file path: null byte detected"}
-                )
-            
-            # Check for excessive path depth (more than /api/diagrams/{filename})
-            # Split path and count non-empty segments
-            path_segments = [seg for seg in path.split('/') if seg]
-            # Expected: ['api', 'diagrams', '{filename}'] = 3 segments
-            if len(path_segments) != 3 or path_segments[0] != 'api' or path_segments[1] != 'diagrams':
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Invalid file path: path traversal detected"}
-                )
+    # Check for path traversal patterns in diagrams endpoint
+    if '/api/diagrams/' in path or path.startswith('/api/diagrams/'):
+        # Check for path traversal patterns (including URL-encoded)
+        import urllib.parse
+        decoded_path = urllib.parse.unquote(path)
+        
+        # Check for .. patterns (including URL-encoded %2E%2E)
+        if '..' in path or '..' in decoded_path or '%2E%2E' in path.upper() or '%2e%2e' in path.lower():
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid file path: path traversal detected"}
+            )
+        
+        # Check for null bytes
+        if '\x00' in decoded_path:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid file path: null byte detected"}
+            )
+        
+        # Check for excessive path depth (more than /api/diagrams/{filename})
+        # Split path and count non-empty segments
+        path_segments = [seg for seg in path.split('/') if seg]
+        # Expected: ['api', 'diagrams', '{filename}'] = 3 segments
+        if len(path_segments) != 3 or path_segments[0] != 'api' or path_segments[1] != 'diagrams':
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid file path: path traversal detected"}
+            )
     
     return await call_next(request)
 
