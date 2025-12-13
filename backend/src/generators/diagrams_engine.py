@@ -188,24 +188,6 @@ class DiagramsEngine:
             # Note: The diagrams library should handle image paths, but we ensure
             # Graphviz has what it needs for SVG embedding
         
-        # Add default node attributes for consistent icon sizing across all formats
-        # This ensures all icons are rendered at a uniform size regardless of their source dimensions
-        if not spec.graphviz_attrs:
-            from ..models.spec import GraphvizAttributes
-            spec.graphviz_attrs = GraphvizAttributes()
-        
-        if not spec.graphviz_attrs.node_attr:
-            spec.graphviz_attrs.node_attr = {}
-        
-        # Standardize icon sizes - these attributes control how Graphviz scales icons
-        # imagescale: Scale icons proportionally to fit the fixed size
-        # fixedsize: Use fixed size instead of scaling based on content
-        # width/height: Fixed dimensions in inches (2.0" = ~144px at 72 DPI)
-        spec.graphviz_attrs.node_attr.setdefault("imagescale", "true")  # Scale icons proportionally
-        spec.graphviz_attrs.node_attr.setdefault("fixedsize", "true")    # Use fixed size
-        spec.graphviz_attrs.node_attr.setdefault("width", "2.0")         # Width in inches
-        spec.graphviz_attrs.node_attr.setdefault("height", "2.0")        # Height in inches
-        
         # Create resolver
         resolver = ComponentResolver(primary_provider=spec.provider)
         
