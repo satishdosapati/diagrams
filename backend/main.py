@@ -116,7 +116,7 @@ async def security_middleware(request: Request, call_next):
         if '..' in path or '..' in decoded_path or '%2E%2E' in path.upper() or '%2e%2e' in path.lower():
             from fastapi.responses import JSONResponse
             return JSONResponse(
-                status_code=403,
+                status_code=400,
                 content={"detail": "Invalid file path: path traversal detected"}
             )
         
@@ -127,7 +127,7 @@ async def security_middleware(request: Request, call_next):
         if len(path_segments) != 3 or path_segments[0] != 'api' or path_segments[1] != 'diagrams':
             from fastapi.responses import JSONResponse
             return JSONResponse(
-                status_code=403,
+                status_code=400,
                 content={"detail": "Invalid file path: path traversal detected"}
             )
     

@@ -139,7 +139,7 @@ class TestDiagramsEngine:
                 Component(id="ec2", name="EC2", type=NodeType.EC2),
             ],
             clusters=[
-                Cluster(name="Network", component_ids=["ec2"])
+                Cluster(id="network", name="Network", component_ids=["ec2"])
             ]
         )
         
@@ -246,7 +246,7 @@ class TestUniversalGenerator:
         assert "data_pipeline" in generator.engines
         assert "c4_model" in generator.engines
     
-    @patch('src.generators.universal_generator.DiagramsEngine.render')
+    @patch('src.generators.diagrams_engine.DiagramsEngine.render')
     def test_generate_cloud_architecture(self, mock_render, generator, simple_spec):
         """Test generating cloud architecture diagram."""
         mock_render.return_value = "/path/to/output.png"
@@ -257,7 +257,7 @@ class TestUniversalGenerator:
         assert result == "/path/to/output.png"
         mock_render.assert_called_once_with(simple_spec)
     
-    @patch('src.generators.universal_generator.DiagramsEngine.render')
+    @patch('src.generators.diagrams_engine.DiagramsEngine.render')
     def test_generate_system_architecture(self, mock_render, generator, simple_spec):
         """Test generating system architecture diagram."""
         mock_render.return_value = "/path/to/output.png"
@@ -268,7 +268,7 @@ class TestUniversalGenerator:
         assert result == "/path/to/output.png"
         mock_render.assert_called_once_with(simple_spec)
     
-    @patch('src.generators.universal_generator.DiagramsEngine.render')
+    @patch('src.generators.diagrams_engine.DiagramsEngine.render')
     def test_generate_default_type(self, mock_render, generator, simple_spec):
         """Test generating with default diagram type."""
         mock_render.return_value = "/path/to/output.png"
@@ -279,7 +279,7 @@ class TestUniversalGenerator:
         assert result == "/path/to/output.png"
         mock_render.assert_called_once_with(simple_spec)
     
-    @patch('src.generators.universal_generator.DiagramsEngine.render')
+    @patch('src.generators.diagrams_engine.DiagramsEngine.render')
     def test_generate_unknown_type_defaults(self, mock_render, generator, simple_spec):
         """Test generating with unknown diagram type defaults to cloud_architecture."""
         mock_render.return_value = "/path/to/output.png"

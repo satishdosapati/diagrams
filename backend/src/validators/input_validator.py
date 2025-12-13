@@ -118,12 +118,14 @@ class InputValidator:
             return False, error_message
         
         # If no cloud keywords at all, might still be valid (generic architecture terms)
-        # But if it's very short and has no technical terms, warn
-        if len(description.strip()) < 10 and not has_cloud_keywords:
-            return False, (
-                "Your request seems too short or unclear. "
-                "Please provide more details about the cloud architecture you want to create."
-            )
+        # But if it's very short and has no technical terms, reject
+        # Minimum length: 10 characters (unless it contains cloud keywords)
+        if len(description.strip()) < 10:
+            if not has_cloud_keywords:
+                return False, (
+                    "Your request seems too short or unclear. "
+                    "Please provide more details about the cloud architecture you want to create."
+                )
         
         return True, None
     

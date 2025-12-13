@@ -113,6 +113,7 @@ class NodeType(str, Enum):
     
     # Azure - Storage
     BLOB_STORAGE = "blob_storage"
+    AZURE_BLOB_STORAGE = "blob_storage"  # Alias for backward compatibility
     FILE_STORAGE = "file_storage"
     DATA_LAKE = "data_lake"
     DISK_STORAGE = "disk_storage"
@@ -174,7 +175,9 @@ class NodeType(str, Enum):
     
     # GCP - Compute
     CLOUD_FUNCTION = "cloud_function"
+    GCP_CLOUD_FUNCTION = "cloud_function"  # Alias for backward compatibility
     COMPUTE_ENGINE = "compute_engine"
+    GCP_COMPUTE_ENGINE = "compute_engine"  # Alias for backward compatibility
     APP_ENGINE = "app_engine"
     CLOUD_RUN = "cloud_run"
     GKE = "gke"
@@ -183,6 +186,7 @@ class NodeType(str, Enum):
     
     # GCP - Storage
     CLOUD_STORAGE = "cloud_storage"
+    GCP_CLOUD_STORAGE = "cloud_storage"  # Alias for backward compatibility
     FILESTORE = "filestore"
     PERSISTENT_DISK = "persistent_disk"
     STORAGE_TRANSFER = "storage_transfer"
@@ -229,6 +233,7 @@ class NodeType(str, Enum):
     
     # GCP - Analytics
     BIGQUERY = "bigquery"
+    GCP_BIGQUERY = "bigquery"  # Alias for backward compatibility
     DATAFLOW = "dataflow"
     DATAPROC = "dataproc"
     DATAPREP = "dataprep"

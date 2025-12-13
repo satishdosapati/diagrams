@@ -143,6 +143,10 @@ class DiagramsEngine:
         # Cleanup old files on initialization
         self._cleanup_old_files()
     
+    def _sanitize_variable_name(self, name: str) -> str:
+        """Instance method wrapper for sanitize_variable_name."""
+        return sanitize_variable_name(name)
+    
     def render(self, spec: ArchitectureSpec) -> str:
         """
         Render diagram from ArchitectureSpec.

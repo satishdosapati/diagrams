@@ -46,10 +46,14 @@ class LogCapture:
             self._request_order.append(request_id)
             
             # Cleanup old requests if we exceed max
-            if len(self._log_buffer) > self.max_requests:
-                oldest_request = self._request_order.popleft()
-                if oldest_request in self._log_buffer:
-                    del self._log_buffer[oldest_request]
+            # Note: _request_order is a deque with maxlen, so popleft() removes oldest
+            while len(self._log_buffer) > self.max_requests:
+                if self._request_order:
+                    oldest_request = self._request_order.popleft()
+                    if oldest_request in self._log_buffer:
+                        del self._log_buffer[oldest_request]
+                else:
+                    break
         
         # Format log entry
         timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
@@ -81,13 +85,16 @@ class LogCapture:
             n: Number of log entries to return
             
         Returns:
-            List of log entries
+            List of log entries (most recent first)
         """
         all_logs = []
+        # Iterate in reverse order (most recent requests first)
         for request_id in reversed(list(self._request_order)):
             if request_id in self._log_buffer:
+                # Add logs from this request (they're already in chronological order)
                 all_logs.extend(self._log_buffer[request_id])
                 if len(all_logs) >= n:
+                    # Return last n logs (most recent)
                     return all_logs[-n:]
         
         return all_logs

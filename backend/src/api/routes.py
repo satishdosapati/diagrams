@@ -154,9 +154,17 @@ class SubmitFeedbackRequest(BaseModel):
     """Request model for submitting feedback."""
     generation_id: str
     session_id: str
-    thumbs_up: bool
+    thumbs_up: bool = Field(..., description="Thumbs up (true) or thumbs down (false)")
     code_hash: Optional[str] = None
     code: Optional[str] = None  # Optional: include code for pattern extraction
+    
+    @field_validator('thumbs_up')
+    @classmethod
+    def validate_thumbs_up(cls, v):
+        """Validate thumbs_up is a boolean."""
+        if not isinstance(v, bool):
+            raise ValueError("thumbs_up must be a boolean (true or false)")
+        return v
 
 
 class FeedbackResponse(BaseModel):
@@ -362,20 +370,20 @@ async def get_diagram(filename: str, request: Request):
     raw_path = str(request.url.path)
     # Check for path traversal patterns in the raw URL path
     if '..' in raw_path or '/../' in raw_path or raw_path.endswith('/..'):
-        raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+        raise HTTPException(status_code=400, detail="Invalid file path: path traversal detected")
     
     # Check for excessive path depth (more than /api/diagrams/{filename})
     # Normalized paths should have exactly 3 path segments: ['api', 'diagrams', '{filename}']
     path_parts = [p for p in raw_path.split('/') if p]
     if len(path_parts) != 3 or path_parts[0] != 'api' or path_parts[1] != 'diagrams':
         # Path structure is wrong - could be path traversal attempt
-        raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+        raise HTTPException(status_code=400, detail="Invalid file path: path traversal detected")
     
     # Prevent directory traversal attacks - check filename for dangerous patterns FIRST
     # This catches cases where FastAPI might have normalized the path parameter
     dangerous_patterns = ['..', '/', '\\']
     if any(pattern in filename for pattern in dangerous_patterns):
-        raise HTTPException(status_code=403, detail="Invalid file path: path traversal detected")
+        raise HTTPException(status_code=400, detail="Invalid file path: path traversal detected")
     
     # Prevent absolute paths and hidden files
     if filename.startswith('.') or filename.startswith('/') or (len(filename) > 1 and filename[1] == ':'):
@@ -530,6 +538,57 @@ async def execute_code(request: ExecuteCodeRequest):
         Response with diagram URL or errors
     """
     try:
+        # Security: Check for dangerous patterns
+        dangerous_patterns = [
+            'eval(',
+            'exec(',
+            '__import__',
+            'open(',
+            'file(',
+            'input(',
+            'raw_input(',
+            'compile(',
+            'reload(',
+            'execfile(',
+            'subprocess',
+            'os.system',
+            'os.popen',
+            'os.spawn',
+            'os.exec',
+            'popen2',
+            'commands',
+            'urllib.urlopen',
+            'urllib2.urlopen',
+            'httplib',
+            'socket',
+            'sys.exit',
+        ]
+        
+        code_lower = request.code.lower()
+        security_warnings = []
+        security_errors = []
+        
+        for pattern in dangerous_patterns:
+            if pattern in code_lower:
+                security_warnings.append(f"Potentially dangerous pattern detected: {pattern}")
+        
+        # Check for SSRF patterns (URLs with localhost/internal IPs)
+        import re
+        url_patterns = re.findall(r'https?://[^\s\'"]+', request.code, re.IGNORECASE)
+        for url in url_patterns:
+            url_lower = url.lower()
+            if any(blocked in url_lower for blocked in ['localhost', '127.0.0.1', '0.0.0.0', '192.168.', '10.', '172.']):
+                security_errors.append(f"SSRF attempt detected: {url}")
+        
+        # If critical security errors found, reject
+        if security_errors:
+            return ExecuteCodeResponse(
+                diagram_url="",
+                message="Code execution blocked due to security concerns",
+                errors=security_errors,
+                warnings=security_warnings
+            )
+        
         from ..generators.diagrams_engine import DiagramsEngine
         
         engine = DiagramsEngine()
@@ -549,7 +608,7 @@ async def execute_code(request: ExecuteCodeRequest):
             diagram_url=diagram_url,
             message="Code executed successfully",
             errors=[],
-            warnings=[]
+            warnings=security_warnings if security_warnings else []
         )
     
     except Exception as e:
