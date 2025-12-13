@@ -117,15 +117,13 @@ class InputValidator:
             logger.info(f"Rejected out-of-context input: {description[:50]}...")
             return False, error_message
         
-        # If no cloud keywords at all, might still be valid (generic architecture terms)
-        # But if it's very short and has no technical terms, reject
-        # Minimum length: 10 characters (unless it contains cloud keywords)
+        # Minimum length: 10 characters (strict requirement)
+        # Even if it contains cloud keywords, very short descriptions are not useful
         if len(description.strip()) < 10:
-            if not has_cloud_keywords:
-                return False, (
-                    "Your request seems too short or unclear. "
-                    "Please provide more details about the cloud architecture you want to create."
-                )
+            return False, (
+                "Your request seems too short or unclear. "
+                "Please provide more details about the cloud architecture you want to create."
+            )
         
         return True, None
     

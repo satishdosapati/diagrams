@@ -260,33 +260,41 @@ class DiagramsEngine:
             components_in_clusters.update(cluster.component_ids)
         
         # Generate standalone components (not in any cluster)
+        logger.debug(f"[DIAGRAMS_ENGINE] Generating {len(spec.components)} components for provider={spec.provider}")
         for comp in spec.components:
             if comp.id not in components_in_clusters:
-                var_name = sanitize_variable_name(comp.id)
-                
-                # Handle blank/placeholder nodes
-                if comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"]):
-                    # Generate blank node: Node("", shape="plaintext", width="0", height="0")
-                    blank_attrs = comp.graphviz_attrs or {}
-                    blank_attrs.setdefault("shape", "plaintext")
-                    blank_attrs.setdefault("width", "0")
-                    blank_attrs.setdefault("height", "0")
-                    attrs_str = self._format_attr_dict(blank_attrs)
-                    lines.append(f'{indent}{var_name} = Node("", **{attrs_str})')
-                    component_vars[comp.id] = var_name
-                else:
-                    node_class = resolver.resolve_component_class(comp)
+                try:
+                    var_name = sanitize_variable_name(comp.id)
                     
-                    module = node_class.__module__
-                    class_name = node_class.__name__
-                    
-                    # Check if component has custom Graphviz attributes
-                    if comp.graphviz_attrs:
-                        attrs_str = self._format_attr_dict(comp.graphviz_attrs)
-                        lines.append(f'{indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                    # Handle blank/placeholder nodes
+                    if comp.is_blank_node or (isinstance(comp.type, str) and comp.type.lower() in ["blank", "placeholder"]):
+                        # Generate blank node: Node("", shape="plaintext", width="0", height="0")
+                        blank_attrs = comp.graphviz_attrs or {}
+                        blank_attrs.setdefault("shape", "plaintext")
+                        blank_attrs.setdefault("width", "0")
+                        blank_attrs.setdefault("height", "0")
+                        attrs_str = self._format_attr_dict(blank_attrs)
+                        lines.append(f'{indent}{var_name} = Node("", **{attrs_str})')
+                        component_vars[comp.id] = var_name
                     else:
-                        lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
-                    component_vars[comp.id] = var_name
+                        logger.debug(f"[DIAGRAMS_ENGINE] Resolving component: id={comp.id}, name={comp.name}, node_id={comp.get_node_id()}, provider={comp.provider or spec.provider}")
+                        node_class = resolver.resolve_component_class(comp)
+                        
+                        module = node_class.__module__
+                        class_name = node_class.__name__
+                        logger.debug(f"[DIAGRAMS_ENGINE] Resolved to: {module}.{class_name}")
+                        
+                        # Check if component has custom Graphviz attributes
+                        if comp.graphviz_attrs:
+                            attrs_str = self._format_attr_dict(comp.graphviz_attrs)
+                            lines.append(f'{indent}{var_name} = {class_name}("{comp.name}", **{attrs_str})')
+                        else:
+                            lines.append(f'{indent}{var_name} = {class_name}("{comp.name}")')
+                        component_vars[comp.id] = var_name
+                except Exception as comp_error:
+                    logger.error(f"[DIAGRAMS_ENGINE] ERROR generating component: id={comp.id}, name={comp.name}, node_id={comp.get_node_id()}", exc_info=True)
+                    logger.error(f"[DIAGRAMS_ENGINE] Component details: provider={comp.provider or spec.provider}, type={comp.type}")
+                    raise ValueError(f"Failed to generate component '{comp.name}' (id: {comp.id}): {str(comp_error)}") from comp_error
         
         # Generate clusters (with parent_id-based nesting support)
         if spec.clusters:

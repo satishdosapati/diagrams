@@ -245,24 +245,57 @@ Return a valid ArchitectureSpec JSON with components and connections."""
         response = self.agent(prompt)
         
         # Get structured output
-        spec = response.structured_output
+        logger.debug(f"[DIAGRAM_AGENT] Getting structured output from agent, provider={final_provider}")
+        try:
+            spec = response.structured_output
+            logger.debug(f"[DIAGRAM_AGENT] Structured output received: {len(spec.components)} components, provider={spec.provider}")
+        except Exception as spec_error:
+            logger.error(f"[DIAGRAM_AGENT] ERROR getting structured output: {spec_error}", exc_info=True)
+            logger.error(f"[DIAGRAM_AGENT] Provider: {final_provider}, Description: {description[:100]}")
+            raise
         
         # Set diagram type in metadata
         spec.metadata["diagram_type"] = classification.diagram_type
         
         # Set provider (UI selection takes precedence)
+        logger.debug(f"[DIAGRAM_AGENT] Setting provider: {final_provider} (was {spec.provider})")
         spec.provider = final_provider
+        
+        # Validate spec before enhancement
+        logger.debug(f"[DIAGRAM_AGENT] Spec before enhancement - Provider: {spec.provider}, Components: {len(spec.components)}")
+        if spec.components:
+            logger.debug(f"[DIAGRAM_AGENT] Component types: {[c.get_node_id() for c in spec.components[:5]]}")
         
         # Enhance spec with provider-specific architectural guidance
         if final_provider == "aws":
             logger.info("[DIAGRAM_AGENT] Enhancing spec with AWS architectural advisor")
-            spec = self.aws_advisor.enhance_spec(spec)
+            try:
+                spec = self.aws_advisor.enhance_spec(spec)
+                logger.debug(f"[DIAGRAM_AGENT] AWS enhancement complete: {len(spec.components)} components")
+            except Exception as e:
+                logger.error(f"[DIAGRAM_AGENT] ERROR in AWS advisor enhancement: {e}", exc_info=True)
+                raise
         elif final_provider == "azure":
             logger.info("[DIAGRAM_AGENT] Enhancing spec with Azure architectural advisor")
-            spec = self.azure_advisor.enhance_spec(spec)
+            try:
+                spec = self.azure_advisor.enhance_spec(spec)
+                logger.debug(f"[DIAGRAM_AGENT] Azure enhancement complete: {len(spec.components)} components")
+            except Exception as e:
+                logger.error(f"[DIAGRAM_AGENT] ERROR in Azure advisor enhancement: {e}", exc_info=True)
+                raise
         elif final_provider == "gcp":
             logger.info("[DIAGRAM_AGENT] Enhancing spec with GCP architectural advisor")
-            spec = self.gcp_advisor.enhance_spec(spec)
+            try:
+                logger.debug(f"[DIAGRAM_AGENT] GCP spec before enhancement - Components: {len(spec.components)}, Provider: {spec.provider}")
+                spec = self.gcp_advisor.enhance_spec(spec)
+                logger.debug(f"[DIAGRAM_AGENT] GCP enhancement complete: {len(spec.components)} components")
+                logger.debug(f"[DIAGRAM_AGENT] GCP spec after enhancement - Provider: {spec.provider}, Components: {[(c.id, c.get_node_id()) for c in spec.components[:5]]}")
+            except Exception as e:
+                logger.error(f"[DIAGRAM_AGENT] ERROR in GCP advisor enhancement: {e}", exc_info=True)
+                logger.error(f"[DIAGRAM_AGENT] GCP spec at error - Provider: {spec.provider}, Components: {len(spec.components)}")
+                if spec.components:
+                    logger.error(f"[DIAGRAM_AGENT] Component details: {[(c.id, c.name, c.get_node_id(), c.provider) for c in spec.components]}")
+                raise
         
         # Optional: Post-process with MCP tools if enabled
         # This allows MCP server to validate/enhance the generated ArchitectureSpec

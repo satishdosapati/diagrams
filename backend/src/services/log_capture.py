@@ -41,19 +41,19 @@ class LogCapture:
             message: Log message
         """
         if request_id not in self._log_buffer:
-            # Initialize deque for this request
-            self._log_buffer[request_id] = deque(maxlen=self.max_logs_per_request)
-            self._request_order.append(request_id)
-            
-            # Cleanup old requests if we exceed max
-            # Note: _request_order is a deque with maxlen, so popleft() removes oldest
-            while len(self._log_buffer) > self.max_requests:
+            # Cleanup old requests BEFORE adding new one if we're at max
+            # This ensures we always have room for the new request
+            while len(self._log_buffer) >= self.max_requests:
                 if self._request_order:
                     oldest_request = self._request_order.popleft()
                     if oldest_request in self._log_buffer:
                         del self._log_buffer[oldest_request]
                 else:
                     break
+            
+            # Initialize deque for this request
+            self._log_buffer[request_id] = deque(maxlen=self.max_logs_per_request)
+            self._request_order.append(request_id)
         
         # Format log entry
         timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
@@ -92,10 +92,11 @@ class LogCapture:
         for request_id in reversed(list(self._request_order)):
             if request_id in self._log_buffer:
                 # Add logs from this request (they're already in chronological order)
-                all_logs.extend(self._log_buffer[request_id])
+                # Prepend to maintain reverse chronological order (newest first)
+                all_logs = list(self._log_buffer[request_id]) + all_logs
                 if len(all_logs) >= n:
-                    # Return last n logs (most recent)
-                    return all_logs[-n:]
+                    # Return first n logs (most recent)
+                    return all_logs[:n]
         
         return all_logs
 

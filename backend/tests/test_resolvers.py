@@ -36,7 +36,7 @@ class TestComponentResolver:
     def test_resolve_gcp_component(self):
         """Test resolving GCP component."""
         resolver = ComponentResolver(primary_provider="gcp")
-        comp = Component(id="compute", name="Compute Engine", type=NodeType.GCP_COMPUTE_ENGINE)
+        comp = Component(id="compute", name="Compute Engine", type=NodeType.COMPUTE_ENGINE)
         
         node_class = resolver.resolve_component_class(comp)
         assert node_class is not None
@@ -71,7 +71,7 @@ class TestComponentResolver:
     def test_resolve_azure_blob_storage(self):
         """Test resolving Azure Blob Storage component."""
         resolver = ComponentResolver(primary_provider="azure")
-        comp = Component(id="blob", name="Blob Storage", type=NodeType.AZURE_BLOB_STORAGE)
+        comp = Component(id="blob", name="Blob Storage", type=NodeType.BLOB_STORAGE)
         
         node_class = resolver.resolve_component_class(comp)
         assert node_class is not None
@@ -79,7 +79,7 @@ class TestComponentResolver:
     def test_resolve_gcp_cloud_function(self):
         """Test resolving GCP Cloud Function component."""
         resolver = ComponentResolver(primary_provider="gcp")
-        comp = Component(id="function", name="Cloud Function", type=NodeType.GCP_CLOUD_FUNCTION)
+        comp = Component(id="function", name="Cloud Function", type=NodeType.CLOUD_FUNCTION)
         
         node_class = resolver.resolve_component_class(comp)
         assert node_class is not None
@@ -87,7 +87,7 @@ class TestComponentResolver:
     def test_resolve_gcp_cloud_storage(self):
         """Test resolving GCP Cloud Storage component."""
         resolver = ComponentResolver(primary_provider="gcp")
-        comp = Component(id="storage", name="Cloud Storage", type=NodeType.GCP_CLOUD_STORAGE)
+        comp = Component(id="storage", name="Cloud Storage", type=NodeType.CLOUD_STORAGE)
         
         node_class = resolver.resolve_component_class(comp)
         assert node_class is not None
@@ -95,7 +95,7 @@ class TestComponentResolver:
     def test_resolve_gcp_bigquery(self):
         """Test resolving GCP BigQuery component."""
         resolver = ComponentResolver(primary_provider="gcp")
-        comp = Component(id="bigquery", name="BigQuery", type=NodeType.GCP_BIGQUERY)
+        comp = Component(id="bigquery", name="BigQuery", type=NodeType.BIGQUERY)
         
         node_class = resolver.resolve_component_class(comp)
         assert node_class is not None

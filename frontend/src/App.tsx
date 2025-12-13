@@ -9,25 +9,25 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             Turn Your Architecture Ideas Into Professional Diagrams
           </h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <p className="mt-0.5 text-xs sm:text-sm text-gray-500">
                   For architects and engineers who need diagrams fast
           </p>
               </div>
-              <nav className="flex gap-4">
+              <nav className="flex gap-2 sm:gap-4">
                 <Link
                   to="/"
-                  className="px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 hover:text-blue-600 transition-colors"
                 >
                   Home
                 </Link>
                 <Link
                   to="/help"
-                  className="px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 hover:text-blue-600 transition-colors"
                 >
                   Help
                 </Link>
@@ -36,7 +36,7 @@ function App() {
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto py-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<DiagramGenerator />} />
             <Route path="/help" element={<HelpPage />} />

@@ -236,8 +236,17 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
         
         # Generate spec from description (pass provider from UI)
         # Provider from UI takes precedence - no need to detect or override
-        spec = agent.generate_spec(request.description, provider=request.provider)
-        logger.info(f"[{request_id}] Spec generated: {len(spec.components)} components, {len(spec.connections)} connections")
+        logger.debug(f"[{request_id}] Calling agent.generate_spec with provider={request.provider}")
+        try:
+            spec = agent.generate_spec(request.description, provider=request.provider)
+            logger.info(f"[{request_id}] Spec generated: {len(spec.components)} components, {len(spec.connections)} connections")
+            logger.debug(f"[{request_id}] Spec provider: {spec.provider}, title: {spec.title}")
+            if spec.components:
+                logger.debug(f"[{request_id}] Component types: {[c.get_node_id() for c in spec.components[:5]]}")
+        except Exception as spec_error:
+            logger.error(f"[{request_id}] ERROR in spec generation: {spec_error}", exc_info=True)
+            logger.error(f"[{request_id}] Provider: {request.provider}, Description: {request.description[:100]}")
+            raise
         
         # Apply Graphviz attributes if provided
         if request.graphviz_attrs:
@@ -258,7 +267,16 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
             spec.outformat = normalize_format_list(request.outformat)
         
         # Generate diagram using universal generator
-        diagram_path = generator.generate(spec)
+        logger.debug(f"[{request_id}] Calling generator.generate with provider={spec.provider}")
+        try:
+            diagram_path = generator.generate(spec)
+            logger.info(f"[{request_id}] Diagram generated successfully: {diagram_path}")
+        except Exception as gen_error:
+            logger.error(f"[{request_id}] ERROR in diagram generation: {gen_error}", exc_info=True)
+            logger.error(f"[{request_id}] Spec details - Provider: {spec.provider}, Components: {len(spec.components)}, Connections: {len(spec.connections)}")
+            if spec.components:
+                logger.error(f"[{request_id}] Component details: {[(c.id, c.get_node_id(), c.provider) for c in spec.components]}")
+            raise
         
         # Generate Python code for Advanced Code Mode (use cached instances)
         from ..generators.diagrams_engine import DiagramsEngine
@@ -285,7 +303,16 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
                 )
         
         resolver = _engine_cache[spec.provider]["resolver"]
-        generated_code = engine._generate_code(spec, resolver)
+        logger.debug(f"[{request_id}] Generating code with resolver for provider={spec.provider}")
+        try:
+            generated_code = engine._generate_code(spec, resolver)
+            logger.debug(f"[{request_id}] Code generated successfully, length: {len(generated_code)}")
+        except Exception as code_error:
+            logger.error(f"[{request_id}] ERROR in code generation: {code_error}", exc_info=True)
+            logger.error(f"[{request_id}] Failed to generate code for provider={spec.provider}")
+            if spec.components:
+                logger.error(f"[{request_id}] Problematic components: {[(c.id, c.name, c.get_node_id()) for c in spec.components]}")
+            raise
         
         # Create session and store spec with timestamp
         session_id = str(uuid.uuid4())
@@ -316,10 +343,16 @@ async def generate_diagram(request: GenerateDiagramRequest, http_request: Reques
     except ValueError as e:
         # Validation errors (non-cloud requests, invalid input) - return 400
         request_id = getattr(http_request.state, 'request_id', 'unknown') if http_request else 'unknown'
-        logger.info(f"[{request_id}] Validation error: {str(e)}")
+        error_msg = str(e)
+        logger.error(f"[{request_id}] Validation error (400): {error_msg}")
+        logger.error(f"[{request_id}] Request details - Provider: {request.provider if hasattr(request, 'provider') else 'N/A'}, Description length: {len(request.description) if hasattr(request, 'description') else 'N/A'}")
+        # Include more context in error for debugging
+        if os.getenv("DEBUG", "false").lower() == "true":
+            import traceback
+            logger.error(f"[{request_id}] Validation error traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=400,
-            detail=str(e)
+            detail=error_msg
         )
     except Exception as e:
         # Unexpected backend failures - return 500
@@ -379,15 +412,19 @@ async def get_diagram(filename: str, request: Request):
         # Path structure is wrong - could be path traversal attempt
         raise HTTPException(status_code=400, detail="Invalid file path: path traversal detected")
     
+    # Validate filename length (prevent filesystem errors)
+    if len(filename) > 255:  # Common filesystem limit
+        raise HTTPException(status_code=400, detail="Filename too long (maximum 255 characters)")
+    
     # Prevent directory traversal attacks - check filename for dangerous patterns FIRST
     # This catches cases where FastAPI might have normalized the path parameter
-    dangerous_patterns = ['..', '/', '\\']
+    dangerous_patterns = ['..', '/', '\\', '\x00']
     if any(pattern in filename for pattern in dangerous_patterns):
         raise HTTPException(status_code=400, detail="Invalid file path: path traversal detected")
     
     # Prevent absolute paths and hidden files
     if filename.startswith('.') or filename.startswith('/') or (len(filename) > 1 and filename[1] == ':'):
-        raise HTTPException(status_code=403, detail="Invalid file path")
+        raise HTTPException(status_code=400, detail="Invalid file path")
     
     # Validate filename format (alphanumeric, dots, underscores, hyphens only)
     # Note: dots are allowed for file extensions, but we've already checked for '..' above
@@ -570,7 +607,11 @@ async def execute_code(request: ExecuteCodeRequest):
         
         for pattern in dangerous_patterns:
             if pattern in code_lower:
-                security_warnings.append(f"Potentially dangerous pattern detected: {pattern}")
+                # Critical patterns should be errors, not warnings
+                if pattern in ['eval(', 'exec(', '__import__', 'os.system', 'os.popen', 'os.spawn', 'os.exec', 'subprocess']:
+                    security_errors.append(f"Dangerous pattern detected: {pattern}")
+                else:
+                    security_warnings.append(f"Potentially dangerous pattern detected: {pattern}")
         
         # Check for SSRF patterns (URLs with localhost/internal IPs)
         import re

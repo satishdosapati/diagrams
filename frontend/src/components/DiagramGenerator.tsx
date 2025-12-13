@@ -135,14 +135,14 @@ function DiagramGenerator() {
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-4">
+    <div className="bg-white shadow rounded-lg p-3 sm:p-4">
       {/* StoryBrand: Problem Statement */}
-      <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
-        <p className="text-sm text-gray-700 mb-1.5">
+      <div className="mb-4 p-2 sm:p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+        <p className="text-xs sm:text-sm text-gray-700 mb-1.5">
           <span className="font-semibold">Tired of spending hours manually creating architecture diagrams?</span> 
           <span className="text-gray-600"> Struggling to visualize your cloud infrastructure?</span>
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-xs sm:text-sm text-gray-600">
           Our AI-powered generator understands your natural language and creates professional diagrams in seconds.
         </p>
       </div>
@@ -170,58 +170,58 @@ function DiagramGenerator() {
       {/* StoryBrand: 3-Step Process */}
       {mode === 'natural-language' && (
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-2 gap-2 sm:gap-0">
             <div className={`flex-1 flex items-center transition-all duration-300 ${isGenerating ? 'opacity-50' : ''}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
                 description.trim() ? 'bg-blue-600 text-white shadow-md scale-110' : 'bg-gray-200 text-gray-600'
               }`}>
                 {description.trim() && !isGenerating && !diagramUrl ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
                   '1'
                 )}
               </div>
-              <span className={`ml-2 text-sm transition-colors duration-300 ${
+              <span className={`ml-2 text-xs sm:text-sm transition-colors duration-300 ${
                 description.trim() ? 'text-gray-900 font-medium' : 'text-gray-700'
               }`}>Describe</span>
             </div>
-            <div className={`flex-1 h-0.5 mx-2 transition-colors duration-300 ${
+            <div className={`hidden sm:block flex-1 h-0.5 mx-2 transition-colors duration-300 ${
               description.trim() ? 'bg-blue-300' : 'bg-gray-200'
             }`}></div>
             <div className={`flex-1 flex items-center transition-all duration-300 ${isGenerating ? '' : 'opacity-50'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
                 isGenerating ? 'bg-blue-600 text-white shadow-md animate-pulse scale-110' : diagramUrl ? 'bg-green-600 text-white shadow-md scale-110' : 'bg-gray-200 text-gray-600'
               }`}>
                 {diagramUrl ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
                   '2'
                 )}
               </div>
-              <span className={`ml-2 text-sm transition-colors duration-300 ${
+              <span className={`ml-2 text-xs sm:text-sm transition-colors duration-300 ${
                 (isGenerating || diagramUrl) ? 'text-gray-900 font-medium' : 'text-gray-700'
               }`}>Generate</span>
             </div>
-            <div className={`flex-1 h-0.5 mx-2 transition-colors duration-300 ${
+            <div className={`hidden sm:block flex-1 h-0.5 mx-2 transition-colors duration-300 ${
               (isGenerating || diagramUrl) ? 'bg-blue-300' : 'bg-gray-200'
             }`}></div>
             <div className={`flex-1 flex items-center transition-all duration-300 ${diagramUrl ? '' : 'opacity-50'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
                 diagramUrl ? 'bg-green-600 text-white shadow-md scale-110' : 'bg-gray-200 text-gray-600'
               }`}>
                 {diagramUrl ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
                   '3'
                 )}
               </div>
-              <span className={`ml-2 text-sm transition-colors duration-300 ${
+              <span className={`ml-2 text-xs sm:text-sm transition-colors duration-300 ${
                 diagramUrl ? 'text-gray-900 font-medium' : 'text-gray-700'
               }`}>Download</span>
             </div>
@@ -229,12 +229,12 @@ function DiagramGenerator() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Generate Architecture Diagram</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
+        <h2 className="text-base sm:text-lg font-semibold">Generate Architecture Diagram</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowExamples(!showExamples)}
-            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50"
+            className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-50"
           >
             {showExamples ? 'Hide' : 'Show'} Examples
           </button>
@@ -246,7 +246,7 @@ function DiagramGenerator() {
         <div className="flex border rounded-md p-1 bg-gray-50">
           <button
             onClick={() => setMode('natural-language')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
               mode === 'natural-language'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
@@ -256,7 +256,7 @@ function DiagramGenerator() {
           </button>
           <button
             onClick={() => setMode('advanced-code')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
               mode === 'advanced-code'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
@@ -268,7 +268,7 @@ function DiagramGenerator() {
       </div>
       
       {/* Main Content with Sidebar */}
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* Main Content Area */}
         <div className="flex-1 space-y-3">
           <ProviderSelector
@@ -391,15 +391,15 @@ function DiagramGenerator() {
                         <div className="mt-2 pt-2 border-t border-green-200">
                           <div className="grid grid-cols-3 gap-2 text-center">
                             <div>
-                              <p className="text-lg font-bold text-green-800">2+ hrs</p>
+                              <p className="text-base sm:text-lg font-bold text-green-800">2+ hrs</p>
                               <p className="text-xs text-green-600">Time saved</p>
                             </div>
                             <div>
-                              <p className="text-lg font-bold text-green-800">100%</p>
+                              <p className="text-base sm:text-lg font-bold text-green-800">100%</p>
                               <p className="text-xs text-green-600">AI-powered</p>
                             </div>
                             <div>
-                              <p className="text-lg font-bold text-green-800">Instant</p>
+                              <p className="text-base sm:text-lg font-bold text-green-800">Instant</p>
                               <p className="text-xs text-green-600">Generation</p>
                             </div>
                           </div>
@@ -440,14 +440,14 @@ function DiagramGenerator() {
                 </div>
               </div>
               
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-semibold">Generated Diagram</h3>
-                <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
+                <h3 className="text-sm sm:text-base font-semibold">Generated Diagram</h3>
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => {
                       setMode('advanced-code')
                     }}
-                    className="px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center gap-2"
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
                     title="Refine this diagram using code editor"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -466,7 +466,7 @@ function DiagramGenerator() {
                       setGenerationId(null)
                       setGeneratedCode(null)
                     }}
-                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -518,8 +518,8 @@ function DiagramGenerator() {
                 )}
               </div>
               <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-3">
-                  <label htmlFor="downloadFormat" className="text-sm font-medium text-gray-700">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <label htmlFor="downloadFormat" className="text-xs sm:text-sm font-medium text-gray-700">
                     Download as:
                   </label>
                   <select
@@ -527,7 +527,7 @@ function DiagramGenerator() {
                     value={downloadFormat}
                     onChange={(e) => handleFormatChange(e.target.value as OutputFormat)}
                     disabled={isRegenerating}
-                    className="px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="png">PNG</option>
                     <option value="svg">SVG</option>
@@ -535,14 +535,14 @@ function DiagramGenerator() {
                     <option value="dot">DOT</option>
                   </select>
                   {isRegenerating && (
-                    <span className="text-sm text-gray-500">Regenerating...</span>
+                    <span className="text-xs sm:text-sm text-gray-500">Regenerating...</span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <a
                     href={diagramUrl}
                     download
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-center text-sm"
                   >
                     Download {downloadFormat.toUpperCase()}
                   </a>
@@ -551,7 +551,7 @@ function DiagramGenerator() {
                       href="https://app.diagrams.net/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center text-sm"
                     >
                       Open in Draw.io
                     </a>
@@ -561,7 +561,7 @@ function DiagramGenerator() {
                       href="https://edotor.net/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center text-sm"
                     >
                       Open in Edotor
                     </a>
@@ -583,9 +583,9 @@ function DiagramGenerator() {
 
         </div>
 
-        {/* Examples Sidebar - Small */}
+        {/* Examples Sidebar - Responsive */}
         {showExamples && mode === 'natural-language' && (
-          <div className="w-64 flex-shrink-0">
+          <div className="w-full lg:w-64 flex-shrink-0">
             <ExamplesPanel
               provider={selectedProvider}
               onSelectExample={handleExampleSelect}

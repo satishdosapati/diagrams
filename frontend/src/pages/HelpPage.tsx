@@ -693,6 +693,7 @@ component1 >> Edge(label="API calls") >> component2`} />
 function HelpPage() {
   const [selectedSection, setSelectedSection] = useState(sections[0].id)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const filteredSections = searchQuery
     ? sections.filter(section => 
@@ -706,17 +707,34 @@ function HelpPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">Help & Documentation</h1>
-          <p className="mt-1 text-sm text-gray-500">Learn how to use Architecture Diagram Generator</p>
+        <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Help & Documentation</h1>
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">Learn how to use Architecture Diagram Generator</p>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 text-gray-600 hover:text-gray-900"
+              aria-label="Toggle sidebar"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {sidebarOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="flex gap-6">
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Navigation */}
-          <aside className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow p-4 sticky top-4">
+          <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-64 flex-shrink-0`}>
+            <div className="bg-white rounded-lg shadow p-4 lg:sticky lg:top-4">
               {/* Search */}
               <div className="mb-4">
                 <input
@@ -733,7 +751,10 @@ function HelpPage() {
                 {filteredSections.map(section => (
                   <button
                     key={section.id}
-                    onClick={() => setSelectedSection(section.id)}
+                    onClick={() => {
+                      setSelectedSection(section.id)
+                      setSidebarOpen(false)
+                    }}
                     className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                       selectedSection === section.id
                         ? 'bg-blue-50 text-blue-600 font-medium'
@@ -749,8 +770,8 @@ function HelpPage() {
 
           {/* Main Content */}
           <div className="flex-1">
-            <div className="bg-white rounded-lg shadow p-8">
-              <h2 className="text-2xl font-bold mb-6">{currentSection.title}</h2>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-8">
+              <h2 className="text-xl sm:text-2xl font-bold mb-6">{currentSection.title}</h2>
               <div className="prose max-w-none">
                 {currentSection.content}
               </div>

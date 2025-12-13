@@ -100,11 +100,12 @@ class ComponentResolver:
         
         # Get node type as string (NodeType enum value or direct string)
         node_id = component.get_node_id()
+        logger.debug(f"[RESOLVER] Resolving component: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
         
         # Provider-specific fallbacks for components that don't exist in certain providers
         # GCP doesn't have separate subnet components (subnets are part of VPC)
         if provider == "gcp" and node_id.lower() in ["subnet", "subnets", "public_subnet", "private_subnet"]:
-            logger.info(f"Mapping '{node_id}' to 'vpc' for GCP (subnets are part of VPC)")
+            logger.info(f"[RESOLVER] Mapping '{node_id}' to 'vpc' for GCP (subnets are part of VPC)")
             node_id = "vpc"
         
         # STEP 1: Try library discovery first (source of truth)
@@ -115,20 +116,22 @@ class ComponentResolver:
             category_hint = registry_mapping[0]  # category
         
         # Search library for matching class
+        logger.debug(f"[RESOLVER] Searching library for node_id={node_id}, category_hint={category_hint}, provider={provider}")
         library_match = self.discovery.find_class(node_id, category_hint)
         
         if library_match:
             module_path, class_name = library_match
-            logger.info(f"Found '{class_name}' in library for '{node_id}'")
+            logger.info(f"[RESOLVER] Found '{class_name}' in library for '{node_id}'")
             
             # Import and return
             try:
                 module = importlib.import_module(module_path)
                 node_class = getattr(module, class_name)
-                logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
+                logger.debug(f"[RESOLVER] Successfully resolved {provider}.{node_id} -> {module_path}.{class_name}")
                 return node_class
             except (ImportError, AttributeError) as e:
-                logger.warning(f"Failed to import {class_name} from {module_path}: {e}")
+                logger.error(f"[RESOLVER] Failed to import {class_name} from {module_path}: {e}", exc_info=True)
+                logger.error(f"[RESOLVER] Component details: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
                 # Fall through to registry fallback
         
         # STEP 2: Try intelligent resolution (for ambiguous terms)
@@ -178,6 +181,9 @@ class ComponentResolver:
                 return node_class
             else:
                 # Registry class doesn't exist - provide helpful error
+                logger.error(f"[RESOLVER] Registry class '{class_name}' not found in module '{module_path}'")
+                logger.error(f"[RESOLVER] Component: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
+                logger.error(f"[RESOLVER] Available classes in module: {list(available_classes)[:10]}")
                 similar_classes = self.discovery.find_similar_classes(
                     class_name, available_classes
                 )
@@ -185,10 +191,16 @@ class ComponentResolver:
                     provider, node_id, module_path, class_name,
                     available_classes, similar_classes
                 )
+                logger.error(f"[RESOLVER] Error message: {error_msg}")
                 raise ValueError(error_msg)
         
         # STEP 4: Comprehensive error with suggestions
+        logger.error(f"[RESOLVER] FAILED to resolve component: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
+        logger.error(f"[RESOLVER] Tried library discovery: {library_match is not None}")
+        logger.error(f"[RESOLVER] Tried intelligent resolution: {resolved_id if 'resolved_id' in locals() else 'N/A'}")
+        logger.error(f"[RESOLVER] Registry mapping exists: {registry_mapping is not None}")
         error_msg = self._build_comprehensive_error(provider, node_id, component.name)
+        logger.error(f"[RESOLVER] Error message: {error_msg}")
         raise ValueError(error_msg)
     
     def _build_class_not_found_error(
