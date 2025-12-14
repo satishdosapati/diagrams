@@ -30,8 +30,8 @@ apt-get install -y git curl build-essential
 
 # Create application directory
 echo "Creating application directory..."
-mkdir -p /opt/diagram-generator
-mkdir -p /opt/diagram-generator/output
+mkdir -p /opt/diagram-generator/diagrams
+mkdir -p /opt/diagram-generator/diagrams/output
 chown -R $SUDO_USER:$SUDO_USER /opt/diagram-generator
 
 # Create system user for backend (optional, for production)
@@ -40,7 +40,7 @@ chown -R $SUDO_USER:$SUDO_USER /opt/diagram-generator
 echo "EC2 setup completed successfully!"
 echo ""
 echo "Next steps:"
-echo "1. Deploy your application code to /opt/diagram-generator"
+echo "1. Deploy your application code to /opt/diagram-generator/diagrams"
 echo "2. Set up systemd services"
 echo "3. Configure environment variables"
 
