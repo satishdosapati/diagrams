@@ -31,7 +31,16 @@ sudo yum install -y graphviz
 
 # Install other dependencies
 echo "Installing system dependencies..."
-sudo yum install -y git curl gcc gcc-c++ make
+# Check if curl command exists (curl-minimal provides it on AL2023)
+if ! command -v curl &> /dev/null; then
+    echo "Installing curl..."
+    sudo yum install -y curl || sudo yum install -y --allowerasing curl
+else
+    echo "curl already available (via curl-minimal)"
+fi
+
+# Install remaining dependencies
+sudo yum install -y git gcc gcc-c++ make
 
 # Create application directory
 echo "Creating application directory..."
