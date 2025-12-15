@@ -7,7 +7,7 @@ set -e
 
 EC2_HOST="${EC2_HOST:-your-ec2-ip}"
 EC2_USER="${EC2_USER:-ubuntu}"
-DEPLOY_DIR="/opt/diagram-generator/diagrams"
+DEPLOY_DIR="/opt/diagram-generator"
 
 if [ "$EC2_HOST" = "your-ec2-ip" ]; then
     echo "Error: Please set EC2_HOST environment variable"
@@ -34,7 +34,7 @@ rsync -avz deployment/ ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/deployment/
 # Setup backend on EC2
 echo "Setting up backend on EC2..."
 ssh ${EC2_USER}@${EC2_HOST} << 'EOF'
-cd /opt/diagram-generator/diagrams/backend
+cd /opt/diagram-generator/backend
 if [ ! -d "venv" ]; then
     python3.11 -m venv venv
 fi
@@ -47,7 +47,7 @@ EOF
 # Setup systemd services
 echo "Setting up systemd services..."
 ssh ${EC2_USER}@${EC2_HOST} << 'EOF'
-sudo cp /opt/diagram-generator/diagrams/deployment/systemd/*.service /etc/systemd/system/
+sudo cp /opt/diagram-generator/deployment/systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable diagram-api.service
 sudo systemctl enable diagram-frontend.service

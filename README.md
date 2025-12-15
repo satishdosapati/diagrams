@@ -108,64 +108,39 @@ python tests/run_tests.py --coverage
 
 ## Deployment
 
-**📖 For complete deployment instructions, see [Deployment Guide](docs/DEPLOYMENT.md)**
-
-### Quick Start
-
-**Prerequisites:**
-- AWS EC2 instance (Amazon Linux 2023 / EC2 Linux 3)
+### Prerequisites
+- AWS EC2 instance (Amazon Linux 2023)
 - Security group: ports 22, 3000, 8000
 - AWS credentials configured for Bedrock access
 
-**Initial Setup:**
+### Quick Deploy
 ```bash
 # SSH into EC2
 ssh -i your-key.pem ec2-user@your-ec2-ip
 
-# Clone repository
-cd /opt
-sudo git clone https://github.com/your-org/diagram-generator.git diagram-generator
-cd diagram-generator/diagrams
-
-# Run setup script
-sudo bash ../deployment/ec2-setup-amazon-linux.sh
-
-# Setup backend
-cd backend
-python3.11 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-deactivate
-
-# Setup frontend
-cd ../frontend
-npm install
-npm run build
-
-# Configure environment
-cd ../backend
-nano .env  # Add AWS credentials and Bedrock model ID
-
-# Install and start services
-cd ..
-sudo bash deployment/install-services.sh
-sudo systemctl start diagram-api diagram-frontend
-```
-
-**Quick Deploy (Updates):**
-```bash
-cd /opt/diagram-generator/diagrams
+# Pull and deploy
+cd /opt/diagram-generator
+git pull origin main
 bash deployment/deploy-git.sh
 ```
 
-**Health Check:**
-```bash
-bash deployment/health-check.sh
-```
+### Initial Setup
+1. Install dependencies: `sudo yum install -y python3 python3-pip nodejs graphviz git`
+2. Clone repository to `/opt/diagram-generator`
+3. Setup backend: `cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt`
+4. Setup frontend: `cd frontend && npm install && npm run build`
+5. Configure `.env` in `backend/` with AWS credentials and Bedrock model ID
+6. Create systemd services (see `deployment/systemd/` directory)
+7. Start services: `sudo systemctl start diagram-api diagram-frontend`
 
-**Rollback:**
+### Updating
 ```bash
-bash deployment/rollback.sh [backup-timestamp]
+cd /opt/diagram-generator
+git pull origin main
+bash deployment/deploy-git.sh
+# Or manually:
+# cd backend && source venv/bin/activate && pip install -r requirements.txt && sudo systemctl restart diagram-api
+# cd ../frontend && npm install && npm run build && sudo systemctl restart diagram-frontend
 ```
 
 ### Troubleshooting

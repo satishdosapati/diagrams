@@ -24,7 +24,7 @@ log_warn() {
 }
 
 BACKUP_DIR="/opt/diagram-generator-backups"
-APP_DIR="/opt/diagram-generator/diagrams"
+APP_DIR="/opt/diagram-generator"
 
 if [ -z "$1" ]; then
     log_info "Available backups:"

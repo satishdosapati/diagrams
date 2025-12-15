@@ -25,11 +25,344 @@
 - Merge deployment info into README.md
 
 ## Code Style
+
+### Python (Backend)
+- **Type Hints**: Always use type hints for function parameters and return types
+- **Pydantic Models**: Use Pydantic BaseModel for all data structures (consistent with Strands Agents)
+- **Imports**: Group imports: stdlib → third-party → local (with blank lines between groups)
+- **Naming**: 
+  - Classes: `PascalCase`
+  - Functions/variables: `snake_case`
+  - Constants: `UPPER_SNAKE_CASE`
+- **Docstrings**: Use triple-quoted strings for module/class/function docstrings
+- **Error Handling**: Always catch specific exceptions, log with context, re-raise or return appropriate HTTP errors
+- **Logging**: Use structured logging with context (request_id, session_id, component_id)
+  ```python
+  logger.info(f"[COMPONENT] Action: {action}, context: {context}")
+  logger.error(f"[COMPONENT] Error: {error}", exc_info=True)
+  ```
+
+### TypeScript (Frontend)
+- **Type Safety**: Always define types/interfaces, avoid `any`
+- **React Patterns**: 
+  - Use functional components with hooks
+  - Extract custom hooks for reusable logic
+  - Use TypeScript interfaces for props
+- **Naming**:
+  - Components: `PascalCase`
+  - Functions/variables: `camelCase`
+  - Constants: `UPPER_SNAKE_CASE`
+  - Types/Interfaces: `PascalCase` (e.g., `DiagramConfig`, `ApiResponse`)
+- **Error Handling**: Use try-catch blocks, display user-friendly error messages
+- **API Calls**: Always handle errors, show loading states, provide user feedback
+
+### General
 - Follow existing code patterns and architecture
 - Keep changes minimal and focused
 - Add comprehensive logging for debugging and observability
+- One responsibility per file/function
+- Prefer composition over inheritance
+
+## Error Handling & Logging
+
+### Backend (Python)
+- **Structured Logging**: Use Python `logging` module with consistent format
+- **Log Levels**: 
+  - `DEBUG`: Detailed diagnostic info (dev only)
+  - `INFO`: General informational messages (events, state changes)
+  - `WARNING`: Warning messages (fallbacks, deprecations)
+  - `ERROR`: Error messages with full context and stack traces
+  - `FATAL`: Critical errors that require immediate attention
+- **Log Context**: Always include request_id, session_id, component_id when available
+- **Error Responses**: Return appropriate HTTP status codes with clear error messages
+- **Exception Handling**: 
+  ```python
+  try:
+      # operation
+  except SpecificException as e:
+      logger.error(f"[COMPONENT] Error context: {context}", exc_info=True)
+      raise HTTPException(status_code=500, detail="User-friendly message")
+  ```
+
+### Frontend (TypeScript)
+- **Error Boundaries**: Use React error boundaries for component-level error handling
+- **User Feedback**: Display clear, actionable error messages
+- **Logging**: Log errors to console in development, consider error tracking service in production
+- **API Errors**: Handle HTTP errors gracefully, show appropriate UI feedback
+
+## Testing
+
+### Backend Tests
+- **Location**: `backend/tests/` directory
+- **Naming**: `test_*.py` files, `test_*` functions
+- **Coverage**: Focus on critical business logic (resolvers, generators, validators)
+- **Fixtures**: Use pytest fixtures in `conftest.py` for shared test data
+- **Structure**: Mirror source structure (`test_resolvers.py` for `resolvers/`)
+- **Run Tests**: `pytest tests/ -v` or `python tests/run_tests.py`
+
+### Frontend Tests
+- **Location**: Co-locate with components or `__tests__/` directories
+- **Framework**: Use Vitest or React Testing Library (when added)
+- **Focus**: Component rendering, user interactions, API integration
+
+### Test Principles
+- Test behavior, not implementation
+- Use descriptive test names: `test_generate_diagram_with_valid_spec_returns_png`
+- Mock external dependencies (Strands Agents, file system)
+- Test error cases and edge cases
+
+## Security
+
+### Input Validation
+- **Backend**: Use Pydantic validators for all API inputs
+- **Frontend**: Validate user input before sending to API
+- **Path Traversal**: Always validate file paths, reject `..` and absolute paths
+- **Code Execution**: Sandbox dynamic code execution (diagrams generation), restrict imports
+
+### Secrets & Configuration
+- **Never hardcode secrets**: Use `.env` files (gitignored) or secrets manager
+- **Environment Variables**: Load via `python-dotenv` in `main.py` before other imports
+- **Config Files**: Use YAML config files (`config/env.yaml`, `config/features.yaml`)
+- **AWS Credentials**: Store in `.env` file, never commit
+
+### API Security
+- **CORS**: Configure restrictively for production
+- **Rate Limiting**: Consider adding rate limiting for production
+- **Session Management**: Use expiration (1 hour TTL), cleanup expired sessions
+- **File Cleanup**: Automatic cleanup of old files (24-hour retention)
+
+## Configuration Management
+
+### Feature Flags
+- **Location**: `config/features.yaml`
+- **Usage**: Check feature flags before enabling features
+- **Pattern**: 
+  ```python
+  if features.get("feature_name", False):
+      # feature code
+  ```
+- **Rollout**: Use flags for gradual rollout, instant rollback
+
+### Environment Configuration
+- **Location**: `config/env.yaml`
+- **Structure**: Separate by environment (development, production)
+- **Override**: Environment variables take precedence over YAML config
+- **Load Order**: `.env` file → `env.yaml` → environment variables
+
+## API Design
+
+### REST Endpoints
+- **Naming**: Use nouns for resources, verbs for actions (`/api/diagrams`, `/api/diagrams/{id}/modify`)
+- **HTTP Methods**: GET (read), POST (create), PUT (update), DELETE (delete)
+- **Status Codes**: 
+  - 200: Success
+  - 201: Created
+  - 400: Bad Request (validation errors)
+  - 404: Not Found
+  - 500: Internal Server Error
+- **Request Tracking**: Include request_id in all responses (middleware)
+- **Error Format**: Consistent error response structure
+  ```json
+  {
+    "error": "Error message",
+    "request_id": "uuid",
+    "details": {}
+  }
+  ```
+
+### Request/Response Models
+- Use Pydantic models for all API inputs/outputs
+- Validate inputs with Pydantic validators
+- Document with FastAPI docstrings (appears in Swagger UI)
+
+## Backend Patterns
+
+### Agent Integration (Strands Agents)
+- **Initialization**: Create agent instances at module level (singleton pattern)
+- **Error Handling**: Wrap agent calls in try-catch, log errors with context
+- **Structured Output**: Use Pydantic models for agent responses
+- **Caching**: Cache agent instances, not responses (agents are stateful)
+
+### Diagram Generation
+- **Code Generation**: Generate Python code as strings, execute with `exec()` (see ADR-006)
+- **Security**: Validate inputs before code generation, restrict imports
+- **Error Handling**: Catch execution errors, return user-friendly messages
+- **Caching**: Cache DiagramsEngine and ComponentResolver instances per provider
+
+### Component Resolution
+- **Provider-Specific**: Use provider-specific resolvers (AWSResolver, AzureResolver, GCPResolver)
+- **Fuzzy Matching**: Use intelligent fuzzy matching for component names
+- **Fallback**: Provide fallback to generic components when specific ones not found
+- **Registry**: Load node registry from YAML files (`backend/config/*_nodes.yaml`)
+
+### Session Management
+- **Storage**: In-memory dictionary (consider Redis for multi-instance)
+- **Expiration**: 1 hour TTL, cleanup every 5 minutes
+- **Access**: Update `last_accessed` timestamp on each access
+- **Cleanup**: Background task to remove expired sessions
+
+## Frontend Patterns
+
+### Component Structure
+- **Location**: `frontend/src/components/` for reusable components
+- **Pages**: `frontend/src/pages/` for page-level components
+- **Services**: `frontend/src/services/` for API clients and utilities
+- **Types**: `frontend/src/types/` for TypeScript type definitions
+
+### State Management
+- **Local State**: Use React `useState` for component-local state
+- **API State**: Use React hooks for API calls (consider TanStack Query if needed)
+- **Session State**: Store session_id in component state or localStorage
+
+### API Integration
+- **Client**: Use `frontend/src/services/api.ts` for API calls
+- **Error Handling**: Display user-friendly error messages
+- **Loading States**: Show loading indicators during API calls
+- **Type Safety**: Define TypeScript interfaces for API requests/responses
+
+### User Experience
+- **Feedback**: Provide clear feedback for all user actions
+- **Loading States**: Show progress indicators for long operations
+- **Error Messages**: Display actionable error messages
+- **Validation**: Validate inputs before submission
 
 ## Integration Guidelines
-- When integrating new services (like MCP servers), use feature flags for gradual rollout
-- Always include fallback mechanisms for external service failures
-- Log all external service interactions for debugging
+
+### MCP Servers
+- **Feature Flag**: Use `USE_MCP_DIAGRAM_SERVER` environment variable
+- **Fallback**: Always include fallback mechanisms for external service failures
+- **Logging**: Log all external service interactions for debugging
+- **Error Handling**: Handle connection errors gracefully
+
+### Strands Agents
+- **Model Configuration**: Use environment variables for model selection
+- **Error Handling**: Wrap agent calls, handle timeouts and rate limits
+- **Structured Output**: Always use Pydantic models for agent responses
+- **Caching**: Cache agent instances, not responses
+
+### External Services
+- **Timeouts**: Set appropriate timeouts for external API calls
+- **Retries**: Implement retry logic with exponential backoff
+- **Circuit Breaker**: Consider circuit breaker pattern for critical services
+- **Monitoring**: Log all external service calls with timing information
+
+## Deployment
+
+### Environment Setup
+- **Python**: Python 3.10+ required
+- **Node.js**: Node.js 18+ required
+- **System Dependencies**: Graphviz must be installed
+- **AWS Credentials**: Configure AWS credentials for Bedrock access
+
+### Service Management
+- **Backend**: systemd service (`diagram-api.service`)
+- **Frontend**: systemd service (`diagram-frontend.service`)
+- **Logs**: Check logs with `journalctl -u diagram-api.service -f`
+- **Health Checks**: Use `/health` endpoint for monitoring
+
+### Deployment Process
+- **Scripts**: Use `deployment/deploy-git.sh` for updates
+- **Rollback**: Use `deployment/rollback.sh` for rollbacks
+- **Backup**: Backup before deployment
+- **Testing**: Test in staging before production
+
+## Code Organization
+
+### Backend Structure
+```
+backend/
+├── src/
+│   ├── api/          # API routes
+│   ├── agents/       # Strands agents
+│   ├── generators/   # Diagram generators
+│   ├── models/       # Pydantic models
+│   ├── resolvers/    # Component resolvers
+│   ├── advisors/     # Architectural advisors
+│   ├── validators/   # Input validators
+│   ├── services/     # Shared services
+│   └── storage/      # Storage abstractions
+├── config/           # YAML config files
+├── tests/            # Test suite
+└── main.py           # FastAPI app entry point
+```
+
+### Frontend Structure
+```
+frontend/
+├── src/
+│   ├── components/   # React components
+│   ├── pages/        # Page components
+│   ├── services/     # API clients
+│   ├── types/        # TypeScript types
+│   └── data/         # Static data
+└── dist/             # Build output
+```
+
+## Performance
+
+### Backend Optimization
+- **Instance Caching**: Cache DiagramsEngine and ComponentResolver instances
+- **Session Cleanup**: Background task for expired session cleanup
+- **File Cleanup**: Background task for old file cleanup (24-hour retention)
+- **Lazy Loading**: Load node registries on demand
+
+### Frontend Optimization
+- **Code Splitting**: Use React lazy loading for routes
+- **Asset Optimization**: Optimize images and assets
+- **Build**: Use Vite for fast builds and HMR
+
+## Version Control
+
+### Commit Messages
+- prefer short commit messages over long detailed commit messages. 
+- **Format**: `{type}(scope): description`
+- **Types**: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+- **Examples**:
+  - `feat(api): add session management endpoint`
+  - `fix(generator): handle missing node_id gracefully`
+  - `docs(api): update API documentation`
+
+### Branch Strategy
+- **Main**: Production-ready code
+- **Feature Branches**: `feature/description` for new features
+- **Hotfix Branches**: `hotfix/description` for urgent fixes
+
+## Dependencies
+
+### Backend Dependencies
+- **Core**: FastAPI, Pydantic, Strands Agents SDK
+- **Diagram Generation**: diagrams library, Graphviz
+- **Testing**: pytest, pytest-cov, httpx
+- **Utilities**: python-dotenv, pyyaml
+
+### Frontend Dependencies
+- **Core**: React 19+, TypeScript, Vite
+- **Editor**: Monaco Editor (for Advanced Code Mode)
+- **Styling**: Tailwind CSS
+- **Routing**: React Router
+
+### Dependency Management
+- **Pin Versions**: Pin major versions in requirements.txt
+- **Update Regularly**: Keep dependencies updated for security
+- **Audit**: Run security audits regularly (`pip audit`, `npm audit`)
+
+## Best Practices
+
+### Code Quality
+- **Type Safety**: Use type hints/types everywhere
+- **Error Handling**: Always handle errors, never ignore exceptions
+- **Logging**: Log important events and errors with context
+- **Testing**: Write tests for critical business logic
+- **Documentation**: Keep code self-documenting, add comments for complex logic
+
+### Development Workflow
+- **Local Development**: Use `.env` file for local configuration
+- **Testing**: Run tests before committing
+- **Code Review**: Review code for bugs, security, performance
+- **Deployment**: Test in staging before production
+
+### Monitoring & Observability
+- **Logging**: Structured logging with request_id tracking
+- **Error Tracking**: Capture and log all errors with stack traces
+- **Performance**: Log timing information for critical operations
+- **Health Checks**: Implement health check endpoints
