@@ -292,7 +292,7 @@ function DiagramGenerator() {
       </div>
       
       {/* Main Content with Sidebar */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-4 items-stretch">
         {/* Main Content Area */}
         <div className="flex-1 space-y-3">
           <ProviderSelector

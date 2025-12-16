@@ -13,7 +13,7 @@ function ExamplesPanel({ provider, onSelectExample }: ExamplesPanelProps) {
   }
   
   return (
-    <div className="bg-white border rounded-lg p-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+    <div className="bg-white border rounded-lg p-3 overflow-y-auto" style={{ maxHeight: '400px' }}>
       <h3 className="text-xs font-semibold text-gray-700 mb-2 sticky top-0 bg-white pb-2 z-10">
         Examples ({provider.toUpperCase()})
       </h3>
