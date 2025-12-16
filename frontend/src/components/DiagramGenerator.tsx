@@ -291,37 +291,19 @@ function DiagramGenerator() {
         </div>
       </div>
       
-      {/* Three-Box Layout */}
-      <div className="space-y-4">
-        {/* Row 1: Provider Selector + Examples Panel (matching heights) */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-stretch">
-          {/* Box 1: Provider Selector */}
-          <div className="lg:col-span-4 flex">
-            <div className="bg-white border rounded-lg p-4 w-full">
-              <ProviderSelector
-                selectedProvider={selectedProvider}
-                onSelectionChange={setSelectedProvider}
-              />
-            </div>
-          </div>
+      {/* Main Content with Sidebar */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Main Content Area */}
+        <div className="flex-1 space-y-3">
+          <ProviderSelector
+            selectedProvider={selectedProvider}
+            onSelectionChange={setSelectedProvider}
+          />
 
-          {/* Box 2: Examples Panel (narrower) */}
-          {showExamples && mode === 'natural-language' && (
-            <div className="lg:col-span-1 flex">
-              <ExamplesPanel
-                provider={selectedProvider}
-                onSelectExample={handleExampleSelect}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Row 2: Input Fields + Status/Error Messages */}
-        <div className="bg-white border rounded-lg p-4 space-y-3">
           {/* Natural Language Mode */}
           {mode === 'natural-language' && (
-            <>
-              <div>
+              <>
+                <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Describe your {selectedProvider.toUpperCase()} architecture
                 </label>
@@ -377,76 +359,70 @@ function DiagramGenerator() {
             />
           )}
 
-          {/* Status and Error Messages Section */}
-          <div className="space-y-2 pt-2 border-t border-gray-200">
-            {error && (
-              <ErrorDisplay
-                error={error}
-                requestId={errorContext?.requestId || null}
-                prompt={errorContext?.prompt || description}
-                provider={errorContext?.provider || selectedProvider}
-                errorType={errorContext?.errorType || 'generation'}
-                showReportButton={errorContext?.showReportButton !== false}
-              />
-            )}
+          {error && (
+            <ErrorDisplay
+              error={error}
+              requestId={errorContext?.requestId || null}
+              prompt={errorContext?.prompt || description}
+              provider={errorContext?.provider || selectedProvider}
+              errorType={errorContext?.errorType || 'generation'}
+              showReportButton={errorContext?.showReportButton !== false}
+            />
+          )}
 
-            {message && (
-              <div className="p-2 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
-                <div className="flex items-start gap-1.5">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-green-800">Diagram generated successfully!</p>
-                        <p className="text-xs text-green-700 mt-0.5">{message}</p>
-                        
-                        {/* Success Metrics */}
-                        {showSuccessMetrics && (
-                          <div className="mt-1.5 pt-1.5 border-t border-green-200">
-                            <div className="grid grid-cols-3 gap-1 text-center">
-                              <div>
-                                <p className="text-sm font-bold text-green-800">2+ hrs</p>
-                                <p className="text-xs text-green-600">Time saved</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-green-800">100%</p>
-                                <p className="text-xs text-green-600">AI-powered</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-green-800">Instant</p>
-                                <p className="text-xs text-green-600">Generation</p>
-                              </div>
+          {message && (
+            <div className="p-2 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
+              <div className="flex items-start gap-1.5">
+                <div className="flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-green-800">Diagram generated successfully!</p>
+                      <p className="text-xs text-green-700 mt-0.5">{message}</p>
+                      
+                      {/* Success Metrics */}
+                      {showSuccessMetrics && (
+                        <div className="mt-1.5 pt-1.5 border-t border-green-200">
+                          <div className="grid grid-cols-3 gap-1 text-center">
+                            <div>
+                              <p className="text-sm font-bold text-green-800">2+ hrs</p>
+                              <p className="text-xs text-green-600">Time saved</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-green-800">100%</p>
+                              <p className="text-xs text-green-600">AI-powered</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-green-800">Instant</p>
+                              <p className="text-xs text-green-600">Generation</p>
                             </div>
                           </div>
-                        )}
-                      </div>
-                      {showSuccessMetrics && (
-                        <button
-                          onClick={() => setShowSuccessMetrics(false)}
-                          className="ml-2 text-green-600 hover:text-green-800 flex-shrink-0"
-                          aria-label="Dismiss metrics"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        </div>
                       )}
                     </div>
+                    {showSuccessMetrics && (
+                      <button
+                        onClick={() => setShowSuccessMetrics(false)}
+                        className="ml-2 text-green-600 hover:text-green-800 flex-shrink-0"
+                        aria-label="Dismiss metrics"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
 
-        {/* Box 3: Full-Width Diagram Display */}
-        {diagramUrl && (
-          <div className="w-full animate-fade-in">
-            <div className="bg-white border rounded-lg p-4">
+          {diagramUrl && (
+            <div className="mt-4 animate-fade-in">
               {/* Success Celebration Banner */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                 <h3 className="text-sm sm:text-base font-semibold">Generated Diagram</h3>
@@ -740,6 +716,17 @@ function DiagramGenerator() {
                 )}
               </div>
             </div>
+          )}
+
+        </div>
+
+        {/* Examples Sidebar - Responsive */}
+        {showExamples && mode === 'natural-language' && (
+          <div className="w-full lg:w-64 flex-shrink-0">
+            <ExamplesPanel
+              provider={selectedProvider}
+              onSelectExample={handleExampleSelect}
+            />
           </div>
         )}
       </div>
