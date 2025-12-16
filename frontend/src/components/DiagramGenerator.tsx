@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { generateDiagram, getDiagramUrl, regenerateFormat } from '../services/api'
 import ProviderSelector from './ProviderSelector'
 import ExamplesPanel from './ExamplesPanel'
@@ -35,6 +35,41 @@ function DiagramGenerator() {
   const [showExamples, setShowExamples] = useState(true)
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
   const [zoomLevel, setZoomLevel] = useState(100)
+  const [svgFitScale, setSvgFitScale] = useState(100)
+  const svgImageRef = useRef<HTMLImageElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  // Calculate SVG fit scale when SVG is loaded
+  useEffect(() => {
+    if (downloadFormat === 'svg' && diagramUrl && svgImageRef.current) {
+      const img = svgImageRef.current
+      const handleLoad = () => {
+        if (containerRef.current && img.naturalWidth && img.naturalHeight) {
+          const containerWidth = containerRef.current.clientWidth - 32 // Account for padding
+          const containerHeight = 600 - 32 // Max height minus padding
+          
+          const widthScale = (containerWidth / img.naturalWidth) * 100
+          const heightScale = (containerHeight / img.naturalHeight) * 100
+          
+          // Use the smaller scale to ensure it fits both dimensions
+          const fitScale = Math.min(widthScale, heightScale, 100) // Don't scale up beyond 100%
+          setSvgFitScale(fitScale)
+          setZoomLevel(fitScale) // Set initial zoom to fit scale
+        }
+      }
+      
+      if (img.complete) {
+        handleLoad()
+      } else {
+        img.addEventListener('load', handleLoad)
+        return () => img.removeEventListener('load', handleLoad)
+      }
+    } else if (downloadFormat !== 'svg') {
+      // Reset zoom for non-SVG formats
+      setZoomLevel(100)
+      setSvgFitScale(100)
+    }
+  }, [downloadFormat, diagramUrl])
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -53,6 +88,7 @@ function DiagramGenerator() {
     setMessage(null)
     setDiagramUrl(null)
     setZoomLevel(100) // Reset zoom when generating new diagram
+    setSvgFitScale(100) // Reset SVG fit scale
 
     try {
       const response = await generateDiagram(description, selectedProvider, outputFormat)
@@ -396,7 +432,7 @@ function DiagramGenerator() {
                     </svg>
                   </button>
                   <button
-                    onClick={() => setZoomLevel(100)}
+                    onClick={() => setZoomLevel(downloadFormat === 'svg' ? svgFitScale : 100)}
                     className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
                     aria-label="Reset zoom"
                     title="Reset zoom"
@@ -406,7 +442,11 @@ function DiagramGenerator() {
                 </div>
                 
                 {/* Diagram Container with Zoom */}
-                <div className="overflow-auto max-h-[600px] border border-gray-200 rounded bg-white" style={{ scrollbarWidth: 'thin', overflowX: 'auto', overflowY: 'auto' }}>
+                <div 
+                  ref={containerRef}
+                  className="overflow-auto max-h-[600px] border border-gray-200 rounded bg-white" 
+                  style={{ scrollbarWidth: 'thin', overflowX: 'auto', overflowY: 'auto' }}
+                >
                   <div 
                     className="flex items-center justify-center p-4 transition-transform duration-300 ease-in-out" 
                     style={{ 
@@ -430,6 +470,7 @@ function DiagramGenerator() {
                     ) : downloadFormat === 'svg' ? (
                       <div className="flex items-center justify-center" style={{ width: '100%', overflow: 'visible' }}>
                         <img
+                          ref={svgImageRef}
                           src={diagramUrl}
                           alt="Generated architecture diagram"
                           style={{ 
