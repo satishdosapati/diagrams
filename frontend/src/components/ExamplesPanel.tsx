@@ -13,31 +13,33 @@ function ExamplesPanel({ provider, onSelectExample }: ExamplesPanelProps) {
   }
   
   return (
-    <div className="bg-white border rounded-lg p-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-      <h3 className="text-xs font-semibold text-gray-700 mb-2 sticky top-0 bg-white pb-2 z-10">
+    <div className="bg-white border rounded-lg p-3 h-full flex flex-col">
+      <h3 className="text-xs font-semibold text-gray-700 mb-2">
         Examples ({provider.toUpperCase()})
       </h3>
+      <div className="flex-1 overflow-y-auto">
       
-      <div className="space-y-1.5">
-        {examples.map(example => (
-          <button
-            key={example.id}
-            onClick={() => handleUseExample(example)}
-            className="w-full text-left px-2 py-1.5 text-xs bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded transition-all group"
-            title={example.description}
-          >
-            <span className="text-gray-700 group-hover:text-blue-700 leading-relaxed">
-              {example.prompt}
-            </span>
-          </button>
-        ))}
-      </div>
-      
-      {examples.length === 0 && (
-        <div className="text-center py-4 text-xs text-gray-500">
-          No examples found
+        <div className="space-y-1.5">
+          {examples.map(example => (
+            <button
+              key={example.id}
+              onClick={() => handleUseExample(example)}
+              className="w-full text-left px-2 py-1.5 text-xs bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded transition-all group"
+              title={example.description}
+            >
+              <span className="text-gray-700 group-hover:text-blue-700 leading-relaxed">
+                {example.prompt}
+              </span>
+            </button>
+          ))}
         </div>
-      )}
+        
+        {examples.length === 0 && (
+          <div className="text-center py-4 text-xs text-gray-500">
+            No examples found
+          </div>
+        )}
+      </div>
     </div>
   )
 }
