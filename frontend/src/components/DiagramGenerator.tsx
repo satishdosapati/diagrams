@@ -46,7 +46,9 @@ function DiagramGenerator() {
       const handleLoad = () => {
         if (containerRef.current && img.naturalWidth && img.naturalHeight) {
           // Get container dimensions (fixed viewport)
-          const containerWidth = containerRef.current.clientWidth - 32 // Account for padding
+          // Use parent container width, not the scrollable container
+          const scrollContainer = containerRef.current.parentElement
+          const containerWidth = (scrollContainer?.clientWidth || containerRef.current.clientWidth) - 64 // Account for padding on both sides
           const containerHeight = 600 - 32 // Max height minus padding
           
           // Calculate scale to fit within viewport
@@ -457,17 +459,20 @@ function DiagramGenerator() {
                     overflow: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
                     scrollbarWidth: 'thin',
                     position: 'relative',
-                    contain: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'none' : 'layout style paint'
+                    contain: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'none' : (downloadFormat === 'svg' ? 'none' : 'layout style paint')
                   }}
                 >
                   <div 
-                    className="flex items-center justify-center p-4 transition-transform duration-300 ease-in-out" 
+                    className="transition-transform duration-300 ease-in-out p-4"
                     style={{ 
                       transform: (downloadFormat === 'png' || downloadFormat === 'svg') ? `scale(${zoomLevel / 100})` : 'none', 
-                      transformOrigin: 'center center',
-                      width: '100%',
+                      transformOrigin: downloadFormat === 'svg' ? 'top left' : 'center center',
+                      width: downloadFormat === 'svg' ? 'max-content' : '100%',
                       height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '100%',
-                      minHeight: 'fit-content'
+                      minHeight: 'fit-content',
+                      display: downloadFormat === 'svg' ? 'inline-block' : 'flex',
+                      justifyContent: downloadFormat === 'svg' ? 'flex-start' : 'center',
+                      alignItems: downloadFormat === 'svg' ? 'flex-start' : 'center'
                     }}
                   >
                     {downloadFormat === 'dot' ? (
@@ -498,26 +503,25 @@ function DiagramGenerator() {
                         </div>
                       </div>
                     ) : downloadFormat === 'svg' ? (
-                      <div className="flex items-center justify-center">
-                        <img
-                          ref={svgImageRef}
-                          src={diagramUrl}
-                          alt="Generated architecture diagram"
-                          style={{ 
-                            maxWidth: 'none',
-                            width: 'auto',
-                            height: 'auto',
-                            display: 'block',
-                            pointerEvents: 'none' // Prevent image from interfering with scroll
-                          }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            if (target.src !== diagramUrl) {
-                              target.src = diagramUrl || '';
-                            }
-                          }}
-                        />
-                      </div>
+                      <img
+                        ref={svgImageRef}
+                        src={diagramUrl}
+                        alt="Generated architecture diagram"
+                        style={{ 
+                          maxWidth: 'none',
+                          width: 'auto',
+                          height: 'auto',
+                          display: 'block',
+                          pointerEvents: 'none', // Prevent image from interfering with scroll
+                          minWidth: 'fit-content'
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== diagramUrl) {
+                            target.src = diagramUrl || '';
+                          }
+                        }}
+                      />
                     ) : (
                       // PNG format
                       <img
