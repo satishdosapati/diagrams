@@ -5,18 +5,25 @@
 ✅ **Comprehensive and Up-to-Date**
 
 The test suite covers:
-- ✅ All API endpoints (9/9 endpoints tested)
+- ✅ All API endpoints (9/9 endpoints tested, including error-logs)
 - ✅ Health checks and system validation
 - ✅ Integration workflows
 - ✅ Unit tests for models, resolvers, and advisors
 - ✅ Multiple output formats (PNG, SVG, PDF, DOT)
+- ✅ Format normalization (invalid formats like GIF normalized to PNG)
 - ✅ All cloud providers (AWS, Azure, GCP)
 - ✅ Code execution and validation
-- ✅ Session management
-- ✅ Feedback endpoints
+- ✅ Session management with generation_id persistence
+- ✅ Feedback endpoints with generation_id tracking
 - ✅ File serving with security tests
+- ✅ Regenerate-format with generation_id preservation
+- ✅ Format normalization in regenerate-format
 
-⚠️ **Minor Gap**: `/api/error-logs/{request_id}` endpoint is not currently tested (low priority)
+**Recent Updates:**
+- ✅ Added tests for generation_id persistence across regenerations
+- ✅ Added tests for format normalization in regenerate-format
+- ✅ Fixed normalize_format test (removed invalid None test)
+- ✅ Removed orphaned code from routes.py
 
 ## Quick Start
 

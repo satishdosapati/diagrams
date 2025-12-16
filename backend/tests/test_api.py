@@ -494,6 +494,117 @@ class TestFormatRegeneration:
             }
         )
         assert response.status_code in [400, 422]  # Validation error
+    
+    def test_regenerate_format_returns_generation_id(self):
+        """Test that regenerate-format returns generation_id and preserves it."""
+        # Generate initial diagram
+        gen_response = client.post(
+            "/api/generate-diagram",
+            json={
+                "description": "Simple EC2 instance",
+                "provider": "aws",
+                "outformat": "png"
+            }
+        )
+        assert gen_response.status_code == 200
+        gen_data = gen_response.json()
+        session_id = gen_data["session_id"]
+        original_generation_id = gen_data["generation_id"]
+        assert original_generation_id is not None
+        assert len(original_generation_id) > 0
+        
+        # Regenerate as SVG
+        regen_response = client.post(
+            "/api/regenerate-format",
+            json={
+                "session_id": session_id,
+                "outformat": "svg"
+            }
+        )
+        assert regen_response.status_code == 200
+        regen_data = regen_response.json()
+        assert "generation_id" in regen_data
+        assert regen_data["generation_id"] == original_generation_id
+    
+    def test_regenerate_format_normalizes_invalid_format(self):
+        """Test that regenerate-format normalizes invalid formats (e.g., gif -> png)."""
+        # Generate initial diagram
+        gen_response = client.post(
+            "/api/generate-diagram",
+            json={
+                "description": "Simple EC2 instance",
+                "provider": "aws",
+                "outformat": "png"
+            }
+        )
+        assert gen_response.status_code == 200
+        session_id = gen_response.json()["session_id"]
+        
+        # Try to regenerate with invalid format (gif should normalize to png)
+        response = client.post(
+            "/api/regenerate-format",
+            json={
+                "session_id": session_id,
+                "outformat": "gif"  # Should normalize to PNG
+            }
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "diagram_url" in data
+        # Should succeed with normalized format (PNG)
+        assert data["diagram_url"].endswith(".png") or "png" in data["message"].lower()
+    
+    def test_regenerate_format_generation_id_persistence(self):
+        """Test that generation_id persists across multiple regenerations."""
+        # Generate initial diagram
+        gen_response = client.post(
+            "/api/generate-diagram",
+            json={
+                "description": "Simple EC2 instance",
+                "provider": "aws",
+                "outformat": "png"
+            }
+        )
+        assert gen_response.status_code == 200
+        gen_data = gen_response.json()
+        session_id = gen_data["session_id"]
+        original_generation_id = gen_data["generation_id"]
+        
+        # First regeneration
+        regen1_response = client.post(
+            "/api/regenerate-format",
+            json={
+                "session_id": session_id,
+                "outformat": "svg"
+            }
+        )
+        assert regen1_response.status_code == 200
+        regen1_data = regen1_response.json()
+        assert regen1_data["generation_id"] == original_generation_id
+        
+        # Second regeneration
+        regen2_response = client.post(
+            "/api/regenerate-format",
+            json={
+                "session_id": session_id,
+                "outformat": "pdf"
+            }
+        )
+        assert regen2_response.status_code == 200
+        regen2_data = regen2_response.json()
+        assert regen2_data["generation_id"] == original_generation_id
+        
+        # Third regeneration
+        regen3_response = client.post(
+            "/api/regenerate-format",
+            json={
+                "session_id": session_id,
+                "outformat": "dot"
+            }
+        )
+        assert regen3_response.status_code == 200
+        regen3_data = regen3_response.json()
+        assert regen3_data["generation_id"] == original_generation_id
 
 
 class TestCodeExecution:
@@ -880,6 +991,12 @@ class TestSessionManagement:
             }
         )
         assert regen_response.status_code == 200
+        
+        # Note: Actual expiration testing (SESSION_EXPIRY_SECONDS = 3600) requires
+        # time manipulation or waiting 1 hour. The expiration logic is tested
+        # indirectly through invalid session tests. For full expiration testing,
+        # use integration tests with mocked time or test helpers that manipulate
+        # session timestamps.
 
 
 class TestFeedbackEndpoints:

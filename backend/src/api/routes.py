@@ -555,14 +555,6 @@ async def regenerate_format(request: RegenerateFormatRequest):
         )
 
 
-    except Exception as e:
-        logger.error(f"Error undoing diagram: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to undo: {str(e)}"
-        )
-
-
 @router.post("/execute-code", response_model=ExecuteCodeResponse)
 async def execute_code(request: ExecuteCodeRequest):
     """
