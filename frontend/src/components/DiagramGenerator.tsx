@@ -502,7 +502,7 @@ function DiagramGenerator() {
                   </button>
                 </div>
               </div>
-              <div className="border rounded-lg bg-gray-50 animate-slide-up relative overflow-hidden max-h-[400px]">
+              <div className="border rounded-lg bg-gray-50 animate-slide-up relative overflow-hidden">
                 {/* Zoom Controls - Only show for previewable formats (PNG) */}
                 {/* SVG implementation commented out temporarily */}
                 {downloadFormat === 'png' && (
