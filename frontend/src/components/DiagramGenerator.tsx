@@ -421,7 +421,21 @@ function DiagramGenerator() {
             </div>
           )}
 
-          {diagramUrl && (
+        </div>
+
+        {/* Examples Sidebar - Responsive */}
+        {showExamples && mode === 'natural-language' && (
+          <div className="w-full lg:w-64 flex-shrink-0">
+            <ExamplesPanel
+              provider={selectedProvider}
+              onSelectExample={handleExampleSelect}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Diagram Display - Full Width Below Form and Examples */}
+      {diagramUrl && (
             <div className="mt-4 animate-fade-in">
               {/* Success Celebration Banner */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
@@ -717,19 +731,6 @@ function DiagramGenerator() {
               </div>
             </div>
           )}
-
-        </div>
-
-        {/* Examples Sidebar - Responsive */}
-        {showExamples && mode === 'natural-language' && (
-          <div className="w-full lg:w-64 flex-shrink-0">
-            <ExamplesPanel
-              provider={selectedProvider}
-              onSelectExample={handleExampleSelect}
-            />
-          </div>
-        )}
-      </div>
 
       {/* Fullscreen Modal */}
       {isFullscreen && diagramUrl && (
