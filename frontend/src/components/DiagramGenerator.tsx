@@ -101,7 +101,6 @@ function DiagramGenerator() {
     setMessage(null)
     setDiagramUrl(null)
     setZoomLevel(100) // Reset zoom when generating new diagram
-    setSvgFitScale(100) // Reset SVG fit scale
 
     try {
       const response = await generateDiagram(description, selectedProvider, outputFormat)
