@@ -39,17 +39,16 @@ function DiagramGenerator() {
   const svgImageRef = useRef<HTMLImageElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
-  // Calculate SVG fit scale when SVG is loaded
+  // Calculate SVG fit scale when SVG is loaded (for reset button)
   useEffect(() => {
     if (downloadFormat === 'svg' && diagramUrl && svgImageRef.current) {
       const img = svgImageRef.current
       const handleLoad = () => {
         if (containerRef.current && img.naturalWidth && img.naturalHeight) {
-          // Get container dimensions (fixed viewport)
-          // Use parent container width, not the scrollable container
-          const scrollContainer = containerRef.current.parentElement
-          const containerWidth = (scrollContainer?.clientWidth || containerRef.current.clientWidth) - 64 // Account for padding on both sides
-          const containerHeight = 600 - 32 // Max height minus padding
+          // Get the actual scrollable container (parent of containerRef)
+          const scrollContainer = containerRef.current
+          const containerWidth = scrollContainer.clientWidth - 32 // Account for padding
+          const containerHeight = scrollContainer.clientHeight - 32 // Account for padding
           
           // Calculate scale to fit within viewport
           const widthScale = (containerWidth / img.naturalWidth) * 100
@@ -59,7 +58,8 @@ function DiagramGenerator() {
           // Don't scale up beyond 100% (only scale down if needed)
           const fitScale = Math.min(widthScale, heightScale, 100)
           setSvgFitScale(fitScale)
-          setZoomLevel(fitScale) // Set initial zoom to fit scale
+          // Don't auto-apply fit scale - start at 100% and let user zoom
+          // Only use fitScale for reset button
         }
       }
       
@@ -75,6 +75,13 @@ function DiagramGenerator() {
       setSvgFitScale(100)
     }
   }, [downloadFormat, diagramUrl])
+  
+  // Reset zoom to 100% when switching to SVG format
+  useEffect(() => {
+    if (downloadFormat === 'svg' && diagramUrl) {
+      setZoomLevel(100)
+    }
+  }, [downloadFormat])
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -466,13 +473,14 @@ function DiagramGenerator() {
                     className="transition-transform duration-300 ease-in-out p-4"
                     style={{ 
                       transform: (downloadFormat === 'png' || downloadFormat === 'svg') ? `scale(${zoomLevel / 100})` : 'none', 
-                      transformOrigin: downloadFormat === 'svg' ? 'top left' : 'center center',
+                      transformOrigin: 'center center',
                       width: downloadFormat === 'svg' ? 'max-content' : '100%',
                       height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '100%',
                       minHeight: 'fit-content',
                       display: downloadFormat === 'svg' ? 'inline-block' : 'flex',
                       justifyContent: downloadFormat === 'svg' ? 'flex-start' : 'center',
-                      alignItems: downloadFormat === 'svg' ? 'flex-start' : 'center'
+                      alignItems: downloadFormat === 'svg' ? 'flex-start' : 'center',
+                      margin: downloadFormat === 'svg' ? '0 auto' : '0'
                     }}
                   >
                     {downloadFormat === 'dot' ? (
