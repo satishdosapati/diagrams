@@ -34,6 +34,7 @@ function DiagramGenerator() {
   const [message, setMessage] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(true)
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
+  const [zoomLevel, setZoomLevel] = useState(100)
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -51,6 +52,7 @@ function DiagramGenerator() {
     setErrorContext(null)
     setMessage(null)
     setDiagramUrl(null)
+    setZoomLevel(100) // Reset zoom when generating new diagram
 
     try {
       const response = await generateDiagram(description, selectedProvider, outputFormat)
@@ -367,47 +369,94 @@ function DiagramGenerator() {
                   </button>
                 </div>
               </div>
-              <div className="border rounded-lg p-3 bg-gray-50 animate-slide-up">
-                {downloadFormat === 'dot' ? (
-                  <div className="w-full max-w-4xl mx-auto">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-800 mb-2">
-                        <strong>DOT Format:</strong> Download the file to view/edit the Graphviz source code.
-                      </p>
-                      <p className="text-xs text-blue-600">
-                        You can edit DOT files in text editors or use online tools like <a href="https://edotor.net/" target="_blank" rel="noopener noreferrer" className="underline">Edotor</a> or <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank" rel="noopener noreferrer" className="underline">Graphviz Online</a>.
-                      </p>
-                    </div>
-                  </div>
-                ) : downloadFormat === 'svg' ? (
-                  <div className="w-full max-w-4xl mx-auto">
-                    <object
-                      data={diagramUrl}
-                      type="image/svg+xml"
-                      className="w-full"
-                      aria-label="Generated architecture diagram"
-                    >
+              <div className="border rounded-lg p-3 bg-gray-50 animate-slide-up relative">
+                {/* Zoom Controls */}
+                <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-white rounded-lg shadow-md border border-gray-200 p-1">
+                  <button
+                    onClick={() => setZoomLevel(prev => Math.max(25, prev - 25))}
+                    className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                    aria-label="Zoom out"
+                    title="Zoom out"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                    </svg>
+                  </button>
+                  <span className="text-xs font-medium text-gray-700 min-w-[3rem] text-center">
+                    {zoomLevel}%
+                  </span>
+                  <button
+                    onClick={() => setZoomLevel(prev => Math.min(200, prev + 25))}
+                    className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                    aria-label="Zoom in"
+                    title="Zoom in"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setZoomLevel(100)}
+                    className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                    aria-label="Reset zoom"
+                    title="Reset zoom"
+                  >
+                    Reset
+                  </button>
+                </div>
+                
+                {/* Diagram Container with Zoom */}
+                <div className="overflow-auto max-h-[600px] border border-gray-200 rounded bg-white" style={{ scrollbarWidth: 'thin' }}>
+                  <div 
+                    className="flex items-center justify-center p-4 transition-transform duration-300 ease-in-out" 
+                    style={{ 
+                      transform: `scale(${zoomLevel / 100})`, 
+                      transformOrigin: 'center center',
+                      minHeight: `${100 / (zoomLevel / 100)}%`
+                    }}
+                  >
+                    {downloadFormat === 'dot' ? (
+                      <div className="w-full max-w-4xl mx-auto">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <p className="text-sm text-blue-800 mb-2">
+                            <strong>DOT Format:</strong> Download the file to view/edit the Graphviz source code.
+                          </p>
+                          <p className="text-xs text-blue-600">
+                            You can edit DOT files in text editors or use online tools like <a href="https://edotor.net/" target="_blank" rel="noopener noreferrer" className="underline">Edotor</a> or <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank" rel="noopener noreferrer" className="underline">Graphviz Online</a>.
+                          </p>
+                        </div>
+                      </div>
+                    ) : downloadFormat === 'svg' ? (
+                      <div className="w-full max-w-4xl mx-auto">
+                        <object
+                          data={diagramUrl}
+                          type="image/svg+xml"
+                          className="w-full"
+                          aria-label="Generated architecture diagram"
+                        >
+                          <img
+                            src={diagramUrl}
+                            alt="Generated architecture diagram"
+                            className="w-full max-w-4xl mx-auto"
+                            onError={(e) => {
+                              // Fallback: if object fails, try img directly
+                              const target = e.target as HTMLImageElement;
+                              if (target.src !== diagramUrl) {
+                                target.src = diagramUrl || '';
+                              }
+                            }}
+                          />
+                        </object>
+                      </div>
+                    ) : (
                       <img
                         src={diagramUrl}
                         alt="Generated architecture diagram"
                         className="w-full max-w-4xl mx-auto"
-                        onError={(e) => {
-                          // Fallback: if object fails, try img directly
-                          const target = e.target as HTMLImageElement;
-                          if (target.src !== diagramUrl) {
-                            target.src = diagramUrl || '';
-                          }
-                        }}
                       />
-                    </object>
+                    )}
                   </div>
-                ) : (
-                  <img
-                    src={diagramUrl}
-                    alt="Generated architecture diagram"
-                    className="w-full max-w-4xl mx-auto"
-                  />
-                )}
+                </div>
               </div>
               <div className="mt-3 space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
