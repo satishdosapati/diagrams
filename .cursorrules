@@ -123,7 +123,13 @@
 - **Never hardcode secrets**: Use `.env` files (gitignored) or secrets manager
 - **Environment Variables**: Load via `python-dotenv` in `main.py` before other imports
 - **Config Files**: Use YAML config files (`config/env.yaml`, `config/features.yaml`)
-- **AWS Credentials**: Store in `.env` file, never commit
+- **AWS Credentials**: 
+  - **NEVER** store AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) in `.env` files
+  - **ALWAYS** use EC2 instance IAM roles for AWS authentication in production
+  - Use IAM roles attached to EC2 instances - credentials are automatically provided by AWS
+  - For local development, use AWS CLI profiles or temporary credentials
+  - If credentials must be used, use AWS Secrets Manager or Parameter Store, never `.env` files
+- **Other Secrets**: Use secrets manager (AWS Secrets Manager, Parameter Store) for production secrets
 
 ### API Security
 - **CORS**: Configure restrictively for production
@@ -252,7 +258,7 @@
 - **Python**: Python 3.10+ required
 - **Node.js**: Node.js 18+ required
 - **System Dependencies**: Graphviz must be installed
-- **AWS Credentials**: Configure AWS credentials for Bedrock access
+- **AWS Credentials**: Use EC2 instance IAM roles for AWS authentication (never store credentials in `.env` files)
 
 ### Service Management
 - **Backend**: systemd service (`diagram-api.service`)
@@ -356,7 +362,10 @@ frontend/
 - **Documentation**: Keep code self-documenting, add comments for complex logic
 
 ### Development Workflow
-- **Local Development**: Use `.env` file for local configuration
+- **Local Development**: Use `.env` file for local configuration (non-sensitive config only)
+  - **NEVER** include AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) in `.env` files
+  - Use AWS CLI profiles or temporary credentials for local development
+  - Use EC2 instance IAM roles for production deployments
 - **Testing**: Run tests before committing
 - **Code Review**: Review code for bugs, security, performance
 - **Deployment**: Test in staging before production
