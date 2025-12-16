@@ -463,24 +463,51 @@ function DiagramGenerator() {
                     width: '100%',
                     maxWidth: '100%',
                     height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '600px',
-                    overflow: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
+                    overflowX: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
+                    overflowY: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
                     scrollbarWidth: 'thin',
-                    position: 'relative',
-                    contain: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'none' : (downloadFormat === 'svg' ? 'none' : 'layout style paint')
+                    position: 'relative'
                   }}
                 >
+                  {downloadFormat === 'svg' ? (
+                    <div 
+                      className="transition-transform duration-300 ease-in-out"
+                      style={{ 
+                        transform: `scale(${zoomLevel / 100})`,
+                        transformOrigin: 'top left',
+                        padding: '1rem',
+                        display: 'inline-block',
+                        minWidth: '100%'
+                      }}
+                    >
+                      <img
+                        ref={svgImageRef}
+                        src={diagramUrl}
+                        alt="Generated architecture diagram"
+                        style={{ 
+                          maxWidth: 'none',
+                          width: 'auto',
+                          height: 'auto',
+                          display: 'block',
+                          pointerEvents: 'none'
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== diagramUrl) {
+                            target.src = diagramUrl || '';
+                          }
+                        }}
+                      />
+                    </div>
+                  ) : (
                   <div 
-                    className="transition-transform duration-300 ease-in-out p-4"
+                    className="transition-transform duration-300 ease-in-out flex items-center justify-center p-4"
                     style={{ 
-                      transform: (downloadFormat === 'png' || downloadFormat === 'svg') ? `scale(${zoomLevel / 100})` : 'none', 
+                      transform: downloadFormat === 'png' ? `scale(${zoomLevel / 100})` : 'none', 
                       transformOrigin: 'center center',
-                      width: downloadFormat === 'svg' ? 'max-content' : '100%',
+                      width: '100%',
                       height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '100%',
-                      minHeight: 'fit-content',
-                      display: downloadFormat === 'svg' ? 'inline-block' : 'flex',
-                      justifyContent: downloadFormat === 'svg' ? 'flex-start' : 'center',
-                      alignItems: downloadFormat === 'svg' ? 'flex-start' : 'center',
-                      margin: downloadFormat === 'svg' ? '0 auto' : '0'
+                      minHeight: 'fit-content'
                     }}
                   >
                     {downloadFormat === 'dot' ? (
@@ -510,26 +537,6 @@ function DiagramGenerator() {
                           </div>
                         </div>
                       </div>
-                    ) : downloadFormat === 'svg' ? (
-                      <img
-                        ref={svgImageRef}
-                        src={diagramUrl}
-                        alt="Generated architecture diagram"
-                        style={{ 
-                          maxWidth: 'none',
-                          width: 'auto',
-                          height: 'auto',
-                          display: 'block',
-                          pointerEvents: 'none', // Prevent image from interfering with scroll
-                          minWidth: 'fit-content'
-                        }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          if (target.src !== diagramUrl) {
-                            target.src = diagramUrl || '';
-                          }
-                        }}
-                      />
                     ) : (
                       // PNG format
                       <img
@@ -540,6 +547,7 @@ function DiagramGenerator() {
                       />
                     )}
                   </div>
+                  )}
                 </div>
               </div>
               <div className="mt-3 space-y-2">
