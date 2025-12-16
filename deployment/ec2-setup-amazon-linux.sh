@@ -10,20 +10,20 @@ echo "Starting EC2 setup for Architecture Diagram Generator (Amazon Linux 2023).
 echo "Updating system packages..."
 sudo yum update -y
 
-# Install Python 3.11 (required for strands-agents which needs >=3.10)
-echo "Installing Python 3.11..."
-# Check if Python 3.11 is already installed
-if command -v python3.11 &> /dev/null; then
-    PYTHON_CMD=python3.11
-    echo "Python 3.11 already installed"
+# Install Python 3.12 (required for strands-agents which needs >=3.10)
+echo "Installing Python 3.12..."
+# Check if Python 3.12 is already installed
+if command -v python3.12 &> /dev/null; then
+    PYTHON_CMD=python3.12
+    echo "Python 3.12 already installed"
 else
-    # Try to install Python 3.11 from Amazon Linux repositories
-    if sudo yum install -y python3.11 python3.11-pip python3.11-devel 2>/dev/null; then
-        PYTHON_CMD=python3.11
-        echo "Python 3.11 installed successfully"
+    # Try to install Python 3.12 from Amazon Linux repositories
+    if sudo yum install -y python3.12 python3.12-pip python3.12-devel 2>/dev/null; then
+        PYTHON_CMD=python3.12
+        echo "Python 3.12 installed successfully"
     else
-        # Try Python 3.10 as fallback
-        echo "Python 3.11 not available, trying Python 3.10..."
+        # Try Python 3.10 as fallback (skipping 3.11)
+        echo "Python 3.12 not available, trying Python 3.10..."
         if sudo yum install -y python3.10 python3.10-pip python3.10-devel 2>/dev/null; then
             PYTHON_CMD=python3.10
             echo "Python 3.10 installed successfully"
@@ -36,7 +36,7 @@ else
                 PYTHON_CMD=python3
                 echo "Using default Python $DEFAULT_VERSION (>=3.10)"
             else
-                echo "ERROR: Python 3.10+ is required but not available. Please install Python 3.10 or 3.11 manually."
+                echo "ERROR: Python 3.10+ is required but not available. Please install Python 3.12 or 3.10 manually."
                 exit 1
             fi
         fi
