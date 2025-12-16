@@ -39,49 +39,50 @@ function DiagramGenerator() {
   const svgImageRef = useRef<HTMLImageElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
-  // Calculate SVG fit scale when SVG is loaded (for reset button)
-  useEffect(() => {
-    if (downloadFormat === 'svg' && diagramUrl && svgImageRef.current) {
-      const img = svgImageRef.current
-      const handleLoad = () => {
-        if (containerRef.current && img.naturalWidth && img.naturalHeight) {
-          // Get the actual scrollable container (parent of containerRef)
-          const scrollContainer = containerRef.current
-          const containerWidth = scrollContainer.clientWidth - 32 // Account for padding
-          const containerHeight = scrollContainer.clientHeight - 32 // Account for padding
-          
-          // Calculate scale to fit within viewport
-          const widthScale = (containerWidth / img.naturalWidth) * 100
-          const heightScale = (containerHeight / img.naturalHeight) * 100
-          
-          // Use the smaller scale to ensure it fits both dimensions
-          // Don't scale up beyond 100% (only scale down if needed)
-          const fitScale = Math.min(widthScale, heightScale, 100)
-          setSvgFitScale(fitScale)
-          // Don't auto-apply fit scale - start at 100% and let user zoom
-          // Only use fitScale for reset button
-        }
-      }
-      
-      if (img.complete) {
-        handleLoad()
-      } else {
-        img.addEventListener('load', handleLoad)
-        return () => img.removeEventListener('load', handleLoad)
-      }
-    } else if (downloadFormat !== 'svg') {
-      // Reset zoom for non-SVG formats
-      setZoomLevel(100)
-      setSvgFitScale(100)
-    }
-  }, [downloadFormat, diagramUrl])
-  
-  // Reset zoom to 100% when switching to SVG format
-  useEffect(() => {
-    if (downloadFormat === 'svg' && diagramUrl) {
-      setZoomLevel(100)
-    }
-  }, [downloadFormat])
+  // SVG implementation commented out temporarily
+  // // Calculate SVG fit scale when SVG is loaded (for reset button)
+  // useEffect(() => {
+  //   if (downloadFormat === 'svg' && diagramUrl && svgImageRef.current) {
+  //     const img = svgImageRef.current
+  //     const handleLoad = () => {
+  //       if (containerRef.current && img.naturalWidth && img.naturalHeight) {
+  //         // Get the actual scrollable container (parent of containerRef)
+  //         const scrollContainer = containerRef.current
+  //         const containerWidth = scrollContainer.clientWidth - 32 // Account for padding
+  //         const containerHeight = scrollContainer.clientHeight - 32 // Account for padding
+  //         
+  //         // Calculate scale to fit within viewport
+  //         const widthScale = (containerWidth / img.naturalWidth) * 100
+  //         const heightScale = (containerHeight / img.naturalHeight) * 100
+  //         
+  //         // Use the smaller scale to ensure it fits both dimensions
+  //         // Don't scale up beyond 100% (only scale down if needed)
+  //         const fitScale = Math.min(widthScale, heightScale, 100)
+  //         setSvgFitScale(fitScale)
+  //         // Don't auto-apply fit scale - start at 100% and let user zoom
+  //         // Only use fitScale for reset button
+  //       }
+  //     }
+  //     
+  //     if (img.complete) {
+  //       handleLoad()
+  //     } else {
+  //       img.addEventListener('load', handleLoad)
+  //       return () => img.removeEventListener('load', handleLoad)
+  //     }
+  //   } else if (downloadFormat !== 'svg') {
+  //     // Reset zoom for non-SVG formats
+  //     setZoomLevel(100)
+  //     setSvgFitScale(100)
+  //   }
+  // }, [downloadFormat, diagramUrl])
+  // 
+  // // Reset zoom to 100% when switching to SVG format
+  // useEffect(() => {
+  //   if (downloadFormat === 'svg' && diagramUrl) {
+  //     setZoomLevel(100)
+  //   }
+  // }, [downloadFormat])
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -151,6 +152,10 @@ function DiagramGenerator() {
 
   const handleFormatChange = async (newFormat: OutputFormat) => {
     if (!sessionId || !diagramUrl) return
+    // Prevent SVG format selection (temporarily disabled)
+    if (newFormat === 'svg') {
+      return
+    }
     
     setDownloadFormat(newFormat)
     setIsRegenerating(true)
@@ -418,8 +423,9 @@ function DiagramGenerator() {
                 </div>
               </div>
               <div className="border rounded-lg p-3 bg-gray-50 animate-slide-up relative">
-                {/* Zoom Controls - Only show for previewable formats (PNG, SVG) */}
-                {(downloadFormat === 'png' || downloadFormat === 'svg') && (
+                {/* Zoom Controls - Only show for previewable formats (PNG) */}
+                {/* SVG implementation commented out temporarily */}
+                {downloadFormat === 'png' && (
                 <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-white rounded-lg shadow-md border border-gray-200 p-1">
                   <button
                     onClick={() => setZoomLevel(prev => Math.max(25, prev - 25))}
@@ -445,7 +451,7 @@ function DiagramGenerator() {
                     </svg>
                   </button>
                   <button
-                    onClick={() => setZoomLevel(downloadFormat === 'svg' ? svgFitScale : 100)}
+                    onClick={() => setZoomLevel(100)}
                     className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
                     aria-label="Reset zoom"
                     title="Reset zoom"
@@ -469,7 +475,8 @@ function DiagramGenerator() {
                     boxSizing: 'border-box'
                   }}
                 >
-                  {downloadFormat === 'svg' ? (
+                  {/* SVG implementation commented out temporarily */}
+                  {/* {downloadFormat === 'svg' ? (
                     <div 
                       className="transition-transform duration-300 ease-in-out"
                       style={{ 
@@ -502,7 +509,8 @@ function DiagramGenerator() {
                         }}
                       />
                     </div>
-                  ) : (
+                  ) : ( */}
+                  {downloadFormat !== 'svg' && (
                   <div 
                     className="transition-transform duration-300 ease-in-out flex items-center justify-center p-4"
                     style={{ 
@@ -566,7 +574,7 @@ function DiagramGenerator() {
                     className="px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="png">PNG</option>
-                    <option value="svg">SVG</option>
+                    {/* <option value="svg">SVG</option> */}
                     <option value="pdf">PDF</option>
                     <option value="dot">DOT</option>
                   </select>
@@ -608,7 +616,8 @@ function DiagramGenerator() {
                   >
                     Download {downloadFormat.toUpperCase()}
                   </button>
-                  {downloadFormat === 'svg' && (
+                  {/* SVG implementation commented out temporarily */}
+                  {/* {downloadFormat === 'svg' && (
                     <a
                       href="https://app.diagrams.net/"
                       target="_blank"
@@ -617,7 +626,7 @@ function DiagramGenerator() {
                     >
                       Open in Draw.io
                     </a>
-                  )}
+                  )} */}
                   {downloadFormat === 'dot' && (
                     <a
                       href="https://edotor.net/"
