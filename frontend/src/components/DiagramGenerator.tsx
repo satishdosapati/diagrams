@@ -35,9 +35,7 @@ function DiagramGenerator() {
   const [showExamples, setShowExamples] = useState(true)
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
   const [zoomLevel, setZoomLevel] = useState(100)
-  const [svgFitScale, setSvgFitScale] = useState(100)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const svgImageRef = useRef<HTMLImageElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const fullscreenRef = useRef<HTMLDivElement | null>(null)
 
