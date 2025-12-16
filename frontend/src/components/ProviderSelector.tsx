@@ -34,7 +34,6 @@ export function ProviderSelector({
   onSelectionChange,
 }: ProviderSelectorProps) {
   const selectedIndex = PROVIDER_OPTIONS.findIndex(p => p.id === selectedProvider)
-  const progressPercentage = ((selectedIndex + 1) / PROVIDER_OPTIONS.length) * 100
 
   return (
     <div className="space-y-2">

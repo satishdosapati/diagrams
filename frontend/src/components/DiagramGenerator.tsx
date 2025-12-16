@@ -15,7 +15,7 @@ function DiagramGenerator() {
   const [mode, setMode] = useState<Mode>('natural-language')
   const [description, setDescription] = useState('')
   const [selectedProvider, setSelectedProvider] = useState<Provider>('aws')
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>('png')
+  const outputFormat: OutputFormat = 'png' // Always generate PNG by default
   const [diagramUrl, setDiagramUrl] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [generationId, setGenerationId] = useState<string | null>(null)
