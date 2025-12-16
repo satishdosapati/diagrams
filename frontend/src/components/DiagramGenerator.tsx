@@ -409,7 +409,8 @@ function DiagramGenerator() {
                 </div>
               </div>
               <div className="border rounded-lg p-3 bg-gray-50 animate-slide-up relative">
-                {/* Zoom Controls */}
+                {/* Zoom Controls - Only show for previewable formats (PNG, SVG) */}
+                {(downloadFormat === 'png' || downloadFormat === 'svg') && (
                 <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-white rounded-lg shadow-md border border-gray-200 p-1">
                   <button
                     onClick={() => setZoomLevel(prev => Math.max(25, prev - 25))}
@@ -443,6 +444,7 @@ function DiagramGenerator() {
                     Reset
                   </button>
                 </div>
+                )}
                 
                 {/* Diagram Container with Zoom - Fixed Viewport */}
                 <div 
@@ -451,20 +453,20 @@ function DiagramGenerator() {
                   style={{ 
                     width: '100%',
                     maxWidth: '100%',
-                    height: '600px',
-                    overflow: 'auto',
+                    height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '600px',
+                    overflow: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
                     scrollbarWidth: 'thin',
                     position: 'relative',
-                    contain: 'layout style paint' // CSS containment to prevent layout shifts
+                    contain: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'none' : 'layout style paint'
                   }}
                 >
                   <div 
                     className="flex items-center justify-center p-4 transition-transform duration-300 ease-in-out" 
                     style={{ 
-                      transform: `scale(${zoomLevel / 100})`, 
+                      transform: (downloadFormat === 'png' || downloadFormat === 'svg') ? `scale(${zoomLevel / 100})` : 'none', 
                       transformOrigin: 'center center',
                       width: '100%',
-                      height: '100%',
+                      height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '100%',
                       minHeight: 'fit-content'
                     }}
                   >
@@ -477,6 +479,22 @@ function DiagramGenerator() {
                           <p className="text-xs text-blue-600">
                             You can edit DOT files in text editors or use online tools like <a href="https://edotor.net/" target="_blank" rel="noopener noreferrer" className="underline">Edotor</a> or <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank" rel="noopener noreferrer" className="underline">Graphviz Online</a>.
                           </p>
+                        </div>
+                      </div>
+                    ) : downloadFormat === 'pdf' ? (
+                      <div className="w-full max-w-4xl mx-auto">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <p className="text-sm text-blue-800 mb-2">
+                            <strong>PDF Format:</strong> PDF files cannot be previewed in the browser.
+                          </p>
+                          <p className="text-xs text-blue-600">
+                            Click the download button below to save and view the PDF file. PDFs are great for documents and presentations.
+                          </p>
+                          <div className="mt-3 flex items-center justify-center">
+                            <svg className="w-16 h-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
                     ) : downloadFormat === 'svg' ? (
@@ -501,6 +519,7 @@ function DiagramGenerator() {
                         />
                       </div>
                     ) : (
+                      // PNG format
                       <img
                         src={diagramUrl}
                         alt="Generated architecture diagram"
