@@ -33,6 +33,9 @@ export function ProviderSelector({
   selectedProvider,
   onSelectionChange,
 }: ProviderSelectorProps) {
+  const selectedIndex = PROVIDER_OPTIONS.findIndex(p => p.id === selectedProvider)
+  const progressPercentage = ((selectedIndex + 1) / PROVIDER_OPTIONS.length) * 100
+
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -46,7 +49,7 @@ export function ProviderSelector({
             <div
               key={provider.id}
               className={`
-                relative flex items-start space-x-1.5 p-2 border rounded-lg
+                relative flex items-center space-x-1.5 p-1.5 border rounded-lg
                 cursor-pointer transition-all
                 ${isSelected 
                   ? 'border-blue-500 bg-blue-50' 
@@ -61,19 +64,16 @@ export function ProviderSelector({
                 value={provider.id}
                 checked={isSelected}
                 onChange={() => onSelectionChange(provider.id)}
-                className="mt-0.5"
+                className="mt-0"
               />
               <div className="flex-1 min-w-0">
                 <label className="text-sm font-medium text-gray-900 cursor-pointer">
                   {provider.label}
                 </label>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {provider.description}
-                </p>
               </div>
               {isSelected && (
-                <div className="absolute top-1.5 right-1.5">
-                  <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <div className="absolute top-1 right-1">
+                  <svg className="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -82,9 +82,15 @@ export function ProviderSelector({
           )
         })}
       </div>
-      <p className="text-xs text-gray-400">
-        All components will use {selectedProvider.toUpperCase()} icons only
-      </p>
+      {/* Progress bar indicator */}
+      <div className="relative h-0.5 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+          className="absolute top-0 left-0 h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+          style={{ 
+            width: `${((selectedIndex + 1) / PROVIDER_OPTIONS.length) * 100}%`
+          }}
+        />
+      </div>
     </div>
   )
 }
