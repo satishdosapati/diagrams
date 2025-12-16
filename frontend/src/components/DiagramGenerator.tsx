@@ -575,13 +575,39 @@ function DiagramGenerator() {
                   )}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <a
-                    href={diagramUrl}
-                    download
+                  <button
+                    onClick={async () => {
+                      if (!diagramUrl) return
+                      try {
+                        const response = await fetch(diagramUrl)
+                        const blob = await response.blob()
+                        const url = window.URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        // Extract filename from URL or use default
+                        const filename = diagramUrl.split('/').pop() || `diagram.${downloadFormat}`
+                        a.download = filename
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                        window.URL.revokeObjectURL(url)
+                      } catch (error) {
+                        console.error('Download failed:', error)
+                        // Fallback to direct link
+                        const a = document.createElement('a')
+                        a.href = diagramUrl
+                        const filename = diagramUrl.split('/').pop() || `diagram.${downloadFormat}`
+                        a.download = filename
+                        a.target = '_blank'
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                      }
+                    }}
                     className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-center text-sm"
                   >
                     Download {downloadFormat.toUpperCase()}
-                  </a>
+                  </button>
                   {downloadFormat === 'svg' && (
                     <a
                       href="https://app.diagrams.net/"
