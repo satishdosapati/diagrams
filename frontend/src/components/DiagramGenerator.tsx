@@ -294,10 +294,10 @@ function DiagramGenerator() {
       {/* Three-Box Layout */}
       <div className="space-y-4">
         {/* Top Row: Provider Selector + Examples */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
           {/* Box 1: Provider Selector + Status/Error Messages */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border rounded-lg p-4 space-y-3">
+          <div className="lg:col-span-2 flex">
+            <div className="bg-white border rounded-lg p-4 space-y-3 flex flex-col w-full">
               <ProviderSelector
                 selectedProvider={selectedProvider}
                 onSelectionChange={setSelectedProvider}
@@ -363,7 +363,7 @@ function DiagramGenerator() {
               )}
 
               {/* Status and Error Messages Section (at bottom of Box 1) */}
-              <div className="space-y-2 pt-2 border-t border-gray-200">
+              <div className="space-y-2 pt-2 border-t border-gray-200 mt-auto">
                 {error && (
                   <ErrorDisplay
                     error={error}
@@ -431,7 +431,7 @@ function DiagramGenerator() {
 
           {/* Box 2: Examples Panel */}
           {showExamples && mode === 'natural-language' && (
-            <div className="lg:col-span-1 h-full">
+            <div className="lg:col-span-1 flex">
               <ExamplesPanel
                 provider={selectedProvider}
                 onSelectExample={handleExampleSelect}

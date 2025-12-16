@@ -13,7 +13,7 @@ function ExamplesPanel({ provider, onSelectExample }: ExamplesPanelProps) {
   }
   
   return (
-    <div className="bg-white border rounded-lg p-3 h-full flex flex-col">
+    <div className="bg-white border rounded-lg p-3 h-full w-full flex flex-col">
       <h3 className="text-xs font-semibold text-gray-700 mb-2">
         Examples ({provider.toUpperCase()})
       </h3>
