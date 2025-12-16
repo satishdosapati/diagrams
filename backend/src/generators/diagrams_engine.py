@@ -230,35 +230,16 @@ class DiagramsEngine:
                 diagram_params.append(f'outformat="{normalized_format}"')
         
         # Add Graphviz attributes if provided
-        # Start with default node attributes for consistent icon sizes across providers
-        default_node_attrs = {
-            "imagescale": "true",  # Scale icons consistently
-            "fixedsize": "true",   # Use fixed size for icons
-            "width": "2.0",        # Consistent width across all providers
-            "height": "2.0"         # Consistent height across all providers
-        }
-        
         if spec.graphviz_attrs:
             if spec.graphviz_attrs.graph_attr:
                 graph_attr_str = self._format_attr_dict(spec.graphviz_attrs.graph_attr)
                 diagram_params.append(f'graph_attr={graph_attr_str}')
             if spec.graphviz_attrs.node_attr:
-                # Merge default node attributes with user-provided ones (user overrides defaults)
-                user_node_attrs = spec.graphviz_attrs.node_attr.copy()
-                merged_node_attrs = {**default_node_attrs, **user_node_attrs}
-                node_attr_str = self._format_attr_dict(merged_node_attrs)
-                diagram_params.append(f'node_attr={node_attr_str}')
-            else:
-                # No user node attributes, use defaults
-                node_attr_str = self._format_attr_dict(default_node_attrs)
+                node_attr_str = self._format_attr_dict(spec.graphviz_attrs.node_attr)
                 diagram_params.append(f'node_attr={node_attr_str}')
             if spec.graphviz_attrs.edge_attr:
                 edge_attr_str = self._format_attr_dict(spec.graphviz_attrs.edge_attr)
                 diagram_params.append(f'edge_attr={edge_attr_str}')
-        else:
-            # No graphviz_attrs at all, add default node attributes
-            node_attr_str = self._format_attr_dict(default_node_attrs)
-            diagram_params.append(f'node_attr={node_attr_str}')
         
         lines.append(f'with Diagram({", ".join(diagram_params)}):')
         
