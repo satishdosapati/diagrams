@@ -22,12 +22,18 @@ GRAPHVIZ_PRESETS: Dict[str, GraphvizAttributes] = {
             "fillcolor": "#2d2d2d",
             "fontcolor": "white",
             "shape": "box",
-            "penwidth": "1.5"
+            "penwidth": "1.5",
+            "labelloc": "b",
+            "labeldistance": "0.3"
         },
         edge_attr={
             "color": "#888888",
             "fontcolor": "white",
-            "penwidth": "1.5"
+            "penwidth": "1.5",
+            "labeldistance": "0.6",
+            "labelfontsize": "10",
+            "labelloc": "c",
+            "labelangle": "0"
         }
     ),
     
@@ -43,12 +49,18 @@ GRAPHVIZ_PRESETS: Dict[str, GraphvizAttributes] = {
             "fillcolor": "#f0f0f0",
             "fontcolor": "#333333",
             "shape": "box",
-            "penwidth": "1.5"
+            "penwidth": "1.5",
+            "labelloc": "b",
+            "labeldistance": "0.3"
         },
         edge_attr={
             "color": "#666666",
             "fontcolor": "#333333",
-            "penwidth": "1.5"
+            "penwidth": "1.5",
+            "labeldistance": "0.6",
+            "labelfontsize": "10",
+            "labelloc": "c",
+            "labelangle": "0"
         }
     ),
     
@@ -108,11 +120,17 @@ GRAPHVIZ_PRESETS: Dict[str, GraphvizAttributes] = {
         node_attr={
             "style": "filled",
             "fillcolor": "white",
-            "penwidth": "1"
+            "penwidth": "1",
+            "labelloc": "b",
+            "labeldistance": "0.3"
         },
         edge_attr={
             "color": "#333333",
-            "penwidth": "1"
+            "penwidth": "1",
+            "labeldistance": "0.6",
+            "labelfontsize": "10",
+            "labelloc": "c",
+            "labelangle": "0"
         }
     ),
     
@@ -128,7 +146,11 @@ GRAPHVIZ_PRESETS: Dict[str, GraphvizAttributes] = {
         edge_attr={
             "color": "#4a90e2",
             "penwidth": "2",
-            "arrowsize": "1.2"
+            "arrowsize": "1.2",
+            "labeldistance": "0.6",
+            "labelfontsize": "10",
+            "labelloc": "c",
+            "labelangle": "0"
         }
     ),
     
@@ -144,13 +166,19 @@ GRAPHVIZ_PRESETS: Dict[str, GraphvizAttributes] = {
             "fillcolor": "#e8f4f8",
             "fontcolor": "#2c3e50",
             "shape": "box",
-            "penwidth": "1.5"
+            "penwidth": "1.5",
+            "labelloc": "b",
+            "labeldistance": "0.3"
         },
         edge_attr={
             "color": "#34495e",
             "fontcolor": "#2c3e50",
             "penwidth": "1.5",
-            "arrowsize": "0.8"
+            "arrowsize": "0.8",
+            "labeldistance": "0.6",
+            "labelfontsize": "10",
+            "labelloc": "c",
+            "labelangle": "0"
         }
     )
 }

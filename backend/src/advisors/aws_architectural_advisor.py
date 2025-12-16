@@ -606,6 +606,31 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         if "penwidth" not in graphviz_attrs.edge_attr:
             graphviz_attrs.edge_attr["penwidth"] = "1.0"
         
+        # Set label positioning attributes for edge labels (connectors)
+        # labeldistance: Distance from edge (lower = closer, default 1.0)
+        if "labeldistance" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["labeldistance"] = "0.6"  # Closer to edge
+        # labelfontsize: Font size for edge labels
+        if "labelfontsize" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["labelfontsize"] = "10"
+        # labelloc: Label position relative to edge (t=top, c=center, b=bottom)
+        if "labelloc" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["labelloc"] = "c"  # Center label on edge
+        # labelangle: Angle of label text relative to edge (0=horizontal, positive=clockwise)
+        # For orthogonal edges, horizontal labels (0) work best
+        if "labelangle" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["labelangle"] = "0"  # Keep labels horizontal
+        
+        # Set default node attributes for label positioning (always apply if not set)
+        if not graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr = {}
+        # labelloc: Label position relative to node (t=top, b=bottom, l=left, r=right, c=center)
+        if "labelloc" not in graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr["labelloc"] = "b"  # Below icon
+        # labeldistance: Distance from node (lower = closer)
+        if "labeldistance" not in graphviz_attrs.node_attr:
+            graphviz_attrs.node_attr["labeldistance"] = "0.3"  # Closer to icon
+        
         logger.info(f"[ADVISOR] Edge routing: splines={graphviz_attrs.graph_attr.get('splines')}, overlap={graphviz_attrs.graph_attr.get('overlap')}, rankdir={graphviz_attrs.graph_attr.get('rankdir')}, concentrate={graphviz_attrs.graph_attr.get('concentrate', 'false')}")
         
         # Create enhanced spec
