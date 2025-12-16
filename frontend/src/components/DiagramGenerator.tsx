@@ -293,143 +293,19 @@ function DiagramGenerator() {
       
       {/* Three-Box Layout */}
       <div className="space-y-4">
-        {/* Top Row: Provider Selector + Examples */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-          {/* Box 1: Provider Selector + Status/Error Messages */}
-          <div className="lg:col-span-2 flex">
-            <div className="bg-white border rounded-lg p-4 space-y-3 flex flex-col w-full">
+        {/* Row 1: Provider Selector + Examples Panel (matching heights) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-stretch">
+          {/* Box 1: Provider Selector */}
+          <div className="lg:col-span-4 flex">
+            <div className="bg-white border rounded-lg p-4 w-full">
               <ProviderSelector
                 selectedProvider={selectedProvider}
                 onSelectionChange={setSelectedProvider}
               />
-
-              {/* Natural Language Mode */}
-              {mode === 'natural-language' && (
-                <>
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Describe your {selectedProvider.toUpperCase()} architecture
-                    </label>
-                    <textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      disabled={isGenerating}
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !description.trim()}
-                    className="w-full bg-blue-600 text-white py-2.5 px-6 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Generate My Diagram
-                      </>
-                    )}
-                  </button>
-                  
-                  {isGenerating && (
-                    <ProgressBar isActive={isGenerating} />
-                  )}
-                </>
-              )}
-
-              {/* Advanced Code Mode */}
-              {mode === 'advanced-code' && (
-                <AdvancedCodeMode
-                  provider={selectedProvider}
-                  initialCode={generatedCode || undefined}
-                  onDiagramGenerated={handleDiagramGenerated}
-                />
-              )}
-
-              {/* Status and Error Messages Section (at bottom of Box 1) */}
-              <div className="space-y-2 pt-2 border-t border-gray-200 mt-auto">
-                {error && (
-                  <ErrorDisplay
-                    error={error}
-                    requestId={errorContext?.requestId || null}
-                    prompt={errorContext?.prompt || description}
-                    provider={errorContext?.provider || selectedProvider}
-                    errorType={errorContext?.errorType || 'generation'}
-                    showReportButton={errorContext?.showReportButton !== false}
-                  />
-                )}
-
-                {message && (
-                  <div className="p-2 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
-                    <div className="flex items-start gap-1.5">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <svg className="w-4 h-4 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="text-xs font-semibold text-green-800">Diagram generated successfully!</p>
-                            <p className="text-xs text-green-700 mt-0.5">{message}</p>
-                            
-                            {/* Success Metrics */}
-                            {showSuccessMetrics && (
-                              <div className="mt-1.5 pt-1.5 border-t border-green-200">
-                                <div className="grid grid-cols-3 gap-1 text-center">
-                                  <div>
-                                    <p className="text-sm font-bold text-green-800">2+ hrs</p>
-                                    <p className="text-xs text-green-600">Time saved</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-bold text-green-800">100%</p>
-                                    <p className="text-xs text-green-600">AI-powered</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-bold text-green-800">Instant</p>
-                                    <p className="text-xs text-green-600">Generation</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          {showSuccessMetrics && (
-                            <button
-                              onClick={() => setShowSuccessMetrics(false)}
-                              className="ml-2 text-green-600 hover:text-green-800 flex-shrink-0"
-                              aria-label="Dismiss metrics"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
-          {/* Box 2: Examples Panel */}
+          {/* Box 2: Examples Panel (narrower) */}
           {showExamples && mode === 'natural-language' && (
             <div className="lg:col-span-1 flex">
               <ExamplesPanel
@@ -438,6 +314,133 @@ function DiagramGenerator() {
               />
             </div>
           )}
+        </div>
+
+        {/* Row 2: Input Fields + Status/Error Messages */}
+        <div className="bg-white border rounded-lg p-4 space-y-3">
+          {/* Natural Language Mode */}
+          {mode === 'natural-language' && (
+            <>
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Describe your {selectedProvider.toUpperCase()} architecture
+                </label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isGenerating}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
+                </p>
+              </div>
+
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || !description.trim()}
+                className="w-full bg-blue-600 text-white py-2.5 px-6 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Generate My Diagram
+                  </>
+                )}
+              </button>
+              
+              {isGenerating && (
+                <ProgressBar isActive={isGenerating} />
+              )}
+            </>
+          )}
+
+          {/* Advanced Code Mode */}
+          {mode === 'advanced-code' && (
+            <AdvancedCodeMode
+              provider={selectedProvider}
+              initialCode={generatedCode || undefined}
+              onDiagramGenerated={handleDiagramGenerated}
+            />
+          )}
+
+          {/* Status and Error Messages Section */}
+          <div className="space-y-2 pt-2 border-t border-gray-200">
+            {error && (
+              <ErrorDisplay
+                error={error}
+                requestId={errorContext?.requestId || null}
+                prompt={errorContext?.prompt || description}
+                provider={errorContext?.provider || selectedProvider}
+                errorType={errorContext?.errorType || 'generation'}
+                showReportButton={errorContext?.showReportButton !== false}
+              />
+            )}
+
+            {message && (
+              <div className="p-2 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
+                <div className="flex items-start gap-1.5">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-green-800">Diagram generated successfully!</p>
+                        <p className="text-xs text-green-700 mt-0.5">{message}</p>
+                        
+                        {/* Success Metrics */}
+                        {showSuccessMetrics && (
+                          <div className="mt-1.5 pt-1.5 border-t border-green-200">
+                            <div className="grid grid-cols-3 gap-1 text-center">
+                              <div>
+                                <p className="text-sm font-bold text-green-800">2+ hrs</p>
+                                <p className="text-xs text-green-600">Time saved</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-green-800">100%</p>
+                                <p className="text-xs text-green-600">AI-powered</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-green-800">Instant</p>
+                                <p className="text-xs text-green-600">Generation</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {showSuccessMetrics && (
+                        <button
+                          onClick={() => setShowSuccessMetrics(false)}
+                          className="ml-2 text-green-600 hover:text-green-800 flex-shrink-0"
+                          aria-label="Dismiss metrics"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Box 3: Full-Width Diagram Display */}
