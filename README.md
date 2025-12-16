@@ -7,7 +7,6 @@ AI-powered architecture diagram generator that converts natural language descrip
 - ✅ **Natural Language Processing**: Convert text descriptions to diagrams using Strands Agents
 - ✅ **Multi-Cloud Support**: AWS, Azure, and GCP with provider consistency enforcement
 - ✅ **Multiple Output Formats**: PNG, SVG, PDF, DOT
-- ✅ **Chat-Based Modifications**: Iterative refinement through conversation
 - ✅ **Advanced Code Mode**: Direct Python code editing with autocomplete
 - ✅ **Examples Panel**: Pre-built architecture examples for each provider
 - ✅ **Session Management**: Automatic expiration and cleanup
@@ -38,10 +37,11 @@ diagrams/
 │       └── pages/       # Page components (HelpPage)
 ├── deployment/          # EC2 deployment scripts and systemd services
 ├── docs/               # Comprehensive documentation
-│   ├── phases/         # Phase-by-phase implementation docs
 │   ├── API.md          # API endpoint documentation
 │   ├── ARCHITECTURE.md # System architecture
-│   └── DEPLOYMENT.md   # Deployment guide
+│   ├── DECISIONS.md    # Architectural decisions (ADR format)
+│   ├── EC2_DEPLOYMENT_GUIDE.md # EC2 deployment guide
+│   └── EC2_QUICK_REFERENCE.md   # EC2 quick reference
 └── config/             # Feature flags and environment config
 ```
 
@@ -69,7 +69,7 @@ npm run dev
 
 - ✅ **Phase 1**: MVP - Basic AWS diagram generation
 - ✅ **Phase 2**: Provider selection (AWS/Azure/GCP)
-- ✅ **Phase 3**: Chat-based modifications
+- ⏳ **Phase 3**: Chat-based modifications (not yet implemented)
 - ✅ **Phase 4**: Universal generator
 - ✅ **Phase 5**: Polish & production - Security, optimization, documentation
 
@@ -111,7 +111,7 @@ python tests/run_tests.py --coverage
 ### Prerequisites
 - AWS EC2 instance (Amazon Linux 2023)
 - Security group: ports 22, 3000, 8000
-- AWS credentials configured for Bedrock access
+- IAM role attached to EC2 instance with Bedrock access permissions
 
 ### Quick Deploy
 ```bash
@@ -129,7 +129,7 @@ bash deployment/deploy-git.sh
 2. Clone repository to `/opt/diagram-generator`
 3. Setup backend: `cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt`
 4. Setup frontend: `cd frontend && npm install && npm run build`
-5. Configure `.env` in `backend/` with AWS credentials and Bedrock model ID
+5. Configure `.env` in `backend/` with AWS region and Bedrock model ID (IAM role provides credentials)
 6. Create systemd services (see `deployment/systemd/` directory)
 7. Start services: `sudo systemctl start diagram-api diagram-frontend`
 

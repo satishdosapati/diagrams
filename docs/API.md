@@ -50,7 +50,7 @@ Generate an architecture diagram from natural language description.
 - `description` (required): Natural language description of the architecture
 - `provider` (optional, default: "aws"): Cloud provider - "aws", "azure", or "gcp"
 - `outformat` (optional, default: "png"): Output format - "png", "svg", "pdf", "dot"
-- `direction` (optional): Diagram direction - "LR", "TB", "BT", "RL"
+- `direction` (optional, deprecated): Diagram direction - always uses "LR" (left-to-right) regardless of input
 - `graphviz_attrs` (optional): Graphviz styling attributes
 
 **Response:**
@@ -59,6 +59,7 @@ Generate an architecture diagram from natural language description.
   "diagram_url": "/api/diagrams/serverless_api.png",
   "message": "Successfully generated diagram: Serverless API",
   "session_id": "uuid-string",
+  "generation_id": "uuid-string",
   "generated_code": "from diagrams import Diagram..."
 }
 ```
@@ -67,49 +68,6 @@ Generate an architecture diagram from natural language description.
 - `200`: Success
 - `400`: Invalid input
 - `500`: Generation failed
-
-### POST /api/modify-diagram
-
-Modify an existing diagram based on chat message.
-
-**Request:**
-```json
-{
-  "session_id": "uuid-string",
-  "modification": "Add a CDN in front"
-}
-```
-
-**Response:**
-```json
-{
-  "diagram_url": "/api/diagrams/serverless_api.png",
-  "message": "Diagram updated successfully",
-  "changes": ["Added: CloudFront CDN"],
-  "updated_spec": { ... }
-}
-```
-
-### POST /api/undo-diagram
-
-Undo last modification (simplified implementation).
-
-**Request:**
-```json
-{
-  "session_id": "uuid-string"
-}
-```
-
-**Response:**
-```json
-{
-  "diagram_url": "/api/diagrams/serverless_api.png",
-  "message": "Diagram restored",
-  "changes": [],
-  "updated_spec": { ... }
-}
-```
 
 ### POST /api/regenerate-format
 
@@ -133,6 +91,7 @@ Regenerate an existing diagram in a different output format.
   "diagram_url": "/api/diagrams/serverless_api.svg",
   "message": "Diagram regenerated in SVG format",
   "session_id": "uuid-string",
+  "generation_id": "uuid-string",
   "generated_code": null
 }
 ```
@@ -252,6 +211,81 @@ Health check endpoint.
 
 **Status Codes:**
 - `200`: Service is healthy
+
+### POST /api/feedback
+
+Submit thumbs up/down feedback for a diagram generation.
+
+**Request:**
+```json
+{
+  "generation_id": "uuid-string",
+  "session_id": "uuid-string",
+  "thumbs_up": true,
+  "code_hash": "optional-sha256-hash",
+  "code": "optional-python-code-string"
+}
+```
+
+**Parameters:**
+- `generation_id` (required): Unique ID from diagram generation response
+- `session_id` (required): Session ID from diagram generation
+- `thumbs_up` (required): Boolean - true for thumbs up, false for thumbs down
+- `code_hash` (optional): SHA256 hash of generated code
+- `code` (optional): Generated Python code for pattern extraction
+
+**Response:**
+```json
+{
+  "feedback_id": "uuid-string",
+  "message": "Thank you for your feedback!"
+}
+```
+
+**Status Codes:**
+- `200`: Success
+- `500`: Failed to save feedback
+
+### GET /api/error-logs/{request_id}
+
+Get logs for a specific request ID. Used for error reporting and debugging.
+
+**Parameters:**
+- `request_id` (path parameter): Request identifier from `X-Request-ID` header
+
+**Response:**
+```json
+{
+  "request_id": "uuid-string",
+  "logs": ["log line 1", "log line 2", ...],
+  "last_50_lines": false
+}
+```
+
+**Status Codes:**
+- `200`: Success (returns logs for request_id, or last 50 logs if not found)
+
+### GET /api/feedback/stats
+
+Get feedback statistics for the system.
+
+**Parameters:**
+- `days` (query parameter, optional, default: 30): Number of days to look back
+
+**Response:**
+```json
+{
+  "total_feedback": 100,
+  "thumbs_up": 85,
+  "thumbs_down": 15,
+  "success_rate": 0.85,
+  "period_days": 30
+}
+```
+
+**Status Codes:**
+- `200`: Success
+- `500`: Failed to get stats
 
 ## Session Management
 

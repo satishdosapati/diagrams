@@ -2,7 +2,7 @@
 
 ## System Overview
 
-The Architecture Diagram Generator converts natural language descriptions into visual architecture diagrams using AI. Supports AWS, Azure, and GCP with multiple output formats and interactive modifications.
+The Architecture Diagram Generator converts natural language descriptions into visual architecture diagrams using AI. Supports AWS, Azure, and GCP with multiple output formats.
 
 ## Components
 
@@ -54,7 +54,6 @@ Returned to Frontend
 - **FastAPI Router**: REST endpoints with request tracking
 - **Endpoints**:
   - `POST /api/generate-diagram`: Generate diagram from natural language
-  - `POST /api/modify-diagram`: Modify existing diagram via chat
   - `POST /api/execute-code`: Execute Python code directly (Advanced Code Mode)
   - `GET /api/diagrams/{filename}`: Retrieve generated diagram file
   - `POST /api/regenerate-format`: Regenerate diagram in different format
@@ -66,7 +65,7 @@ Returned to Frontend
 
 #### Agents (`src/agents/`)
 - **DiagramAgent**: Converts natural language to ArchitectureSpec
-- **ModificationAgent**: Iterative diagram refinement with state management
+- **ModificationAgent**: Code exists but not currently used by any endpoint (future feature)
 - **ClassifierAgent**: Classifies diagram complexity and type
 - **MCP Tools**: Optional integration with AWS Diagram MCP Server
 

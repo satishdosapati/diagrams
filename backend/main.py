@@ -49,18 +49,19 @@ app = FastAPI(
     * **Natural Language Processing**: Convert text descriptions into architecture diagrams
     * **Multi-Cloud Support**: AWS, Azure, and GCP
     * **Multiple Output Formats**: PNG, SVG, PDF, DOT
-    * **Interactive Modifications**: Chat-based diagram modifications
     * **Advanced Code Mode**: Direct Python code editing
     
     ## Endpoints
     
     * `POST /api/generate-diagram`: Generate diagram from natural language
-    * `POST /api/modify-diagram`: Modify existing diagram via chat
     * `POST /api/execute-code`: Execute Python code to generate diagram
     * `GET /api/diagrams/{filename}`: Retrieve generated diagram file
     * `POST /api/regenerate-format`: Regenerate diagram in different format
     * `GET /api/completions/{provider}`: Get code completions for provider
     * `POST /api/validate-code`: Validate Python code syntax
+    * `POST /api/feedback`: Submit feedback for diagram generation
+    * `GET /api/error-logs/{request_id}`: Get logs for request ID
+    * `GET /api/feedback/stats`: Get feedback statistics
     
     ## Authentication
     
