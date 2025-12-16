@@ -502,11 +502,11 @@ function DiagramGenerator() {
                   </button>
                 </div>
               </div>
-              <div className="border rounded-lg p-3 bg-gray-50 animate-slide-up relative">
+              <div className="border rounded-lg bg-gray-50 animate-slide-up relative overflow-hidden">
                 {/* Zoom Controls - Only show for previewable formats (PNG) */}
                 {/* SVG implementation commented out temporarily */}
                 {downloadFormat === 'png' && (
-                <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-white rounded-lg shadow-md border border-gray-200 p-1">
+                <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-white rounded-lg shadow-md border border-gray-200 p-1">
                   <button
                     onClick={() => setZoomLevel(prev => Math.max(25, prev - 25))}
                     className="p-1.5 hover:bg-gray-100 rounded transition-colors"
@@ -541,18 +541,20 @@ function DiagramGenerator() {
                 </div>
                 )}
                 
-                {/* Diagram Container with Zoom - Fixed Viewport */}
+                {/* Diagram Container with Zoom - Optimized spacing */}
                 <div 
                   ref={containerRef}
-                  className="border border-gray-200 rounded bg-white"
+                  className="bg-white rounded"
                   style={{ 
                     width: '100%',
                     maxWidth: '100%',
-                    height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '600px',
+                    height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : 'fit-content',
                     overflow: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
                     scrollbarWidth: 'thin',
                     position: 'relative',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    margin: 0,
+                    padding: 0
                   }}
                 >
                   {/* SVG implementation commented out temporarily */}
@@ -592,17 +594,21 @@ function DiagramGenerator() {
                   ) : ( */}
                   {downloadFormat !== 'svg' && (
                   <div 
-                    className="transition-transform duration-300 ease-in-out flex items-center justify-center p-4"
+                    className="transition-transform duration-300 ease-in-out"
                     style={{ 
                       transform: downloadFormat === 'png' ? `scale(${zoomLevel / 100})` : 'none', 
                       transformOrigin: 'center center',
                       width: '100%',
-                      height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '100%',
-                      minHeight: 'fit-content'
+                      height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : 'fit-content',
+                      minHeight: 'fit-content',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: downloadFormat === 'png' ? '0.5rem' : '1rem'
                     }}
                   >
                     {downloadFormat === 'dot' ? (
-                      <div className="w-full max-w-4xl mx-auto">
+                      <div className="w-full max-w-4xl mx-auto p-4">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <p className="text-sm text-blue-800 mb-2">
                             <strong>DOT Format:</strong> Download the file to view/edit the Graphviz source code.
@@ -613,7 +619,7 @@ function DiagramGenerator() {
                         </div>
                       </div>
                     ) : downloadFormat === 'pdf' ? (
-                      <div className="w-full max-w-4xl mx-auto">
+                      <div className="w-full max-w-4xl mx-auto p-4">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <p className="text-sm text-blue-800 mb-2">
                             <strong>PDF Format:</strong> PDF files cannot be previewed in the browser.
@@ -629,19 +635,24 @@ function DiagramGenerator() {
                         </div>
                       </div>
                     ) : (
-                      // PNG format
+                      // PNG format - optimized display
                       <img
                         src={diagramUrl}
                         alt="Generated architecture diagram"
-                        className="max-w-full h-auto"
-                        style={{ width: 'auto', height: 'auto' }}
+                        className="max-w-full h-auto block mx-auto"
+                        style={{ 
+                          display: 'block',
+                          margin: '0 auto',
+                          maxWidth: '100%',
+                          height: 'auto'
+                        }}
                       />
                     )}
                   </div>
                   )}
                 </div>
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="mt-2 space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <label htmlFor="downloadFormat" className="text-xs sm:text-sm font-medium text-gray-700">
                     Download as:
