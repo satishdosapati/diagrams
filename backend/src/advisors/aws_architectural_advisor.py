@@ -526,6 +526,8 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         # Add connection labels based on patterns
         logger.info(f"[ADVISOR] Adding connection labels for clarity...")
         new_connections = self._add_connection_labels(new_connections, sorted_components)
+        labeled_count = sum(1 for c in new_connections if c.label)
+        logger.info(f"[ADVISOR] Added labels to {labeled_count} out of {len(new_connections)} connections")
         
         # Enhance component names with full AWS service names and subtitles
         logger.info(f"[ADVISOR] Enhancing component names with full AWS service names...")
@@ -630,7 +632,8 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         )
         
         logger.info(f"[ADVISOR] === Enhancement complete ===")
-        logger.info(f"[ADVISOR] Final: {len(sorted_components)} components, {len(new_connections)} connections, {len(enhanced_spec.clusters)} clusters")
+        labeled_conns = sum(1 for c in final_connections if c.label)
+        logger.info(f"[ADVISOR] Final: {len(sorted_components)} components, {len(new_connections)} connections ({labeled_conns} with labels), {len(enhanced_spec.clusters)} clusters")
         return enhanced_spec
     
     def _auto_create_clusters(self, components: List[Component]) -> List[Cluster]:
@@ -1061,45 +1064,60 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
                 labeled_connections.append(conn)
                 continue
             
+            # Determine label based on pattern
+            label = None
+            
             # Event-Driven patterns
             if from_node_id == "eventbridge" and to_node_id == "lambda":
-                conn.label = "Event Stream"
+                label = "Event Stream"
             elif from_node_id in {"s3", "api_gateway", "iot_core"} and to_node_id == "eventbridge":
-                conn.label = "Events"
+                label = "Events"
             
             # Serverless patterns
             elif from_node_id == "api_gateway" and to_node_id == "lambda":
-                conn.label = "HTTP Request"
+                label = "HTTP Request"
             elif from_node_id == "lambda" and to_node_id == "dynamodb":
-                conn.label = "Query/Write"
+                label = "Query/Write"
             
             # Data Pipeline patterns
             elif from_node_id in {"kinesis", "kinesis_data_streams"} and to_node_id == "lambda":
-                conn.label = "Data Stream"
+                label = "Data Stream"
             elif from_node_id == "lambda" and to_node_id == "s3":
-                conn.label = "Storage"
+                label = "Storage"
             elif from_node_id == "lambda" and to_node_id in {"redshift", "athena"}:
-                conn.label = "Analytics"
+                label = "Analytics"
             
             # Microservices patterns
             elif from_node_id == "api_gateway" and to_node_id in {"lambda", "ecs", "eks"}:
-                conn.label = "API Request"
+                label = "API Request"
             elif from_node_id in {"lambda", "ecs", "eks"} and to_node_id in {"dynamodb", "rds"}:
-                conn.label = "Query"
+                label = "Query"
             
             # Network patterns
             elif from_node_id == "internet_gateway" and to_node_id in {"subnet", "public_subnet"}:
-                conn.label = "Traffic"
+                label = "Traffic"
             elif from_node_id == "nat_gateway" and to_node_id in {"subnet", "private_subnet"}:
-                conn.label = "Outbound Traffic"
+                label = "Outbound Traffic"
             
             # Queue/Stream patterns
             elif from_node_id in {"sqs", "sns"} and to_node_id == "lambda":
-                conn.label = "Message"
+                label = "Message"
             elif from_node_id == "lambda" and to_node_id in {"sqs", "sns"}:
-                conn.label = "Publish"
+                label = "Publish"
             
-            labeled_connections.append(conn)
+            # Create new Connection with label if we found one
+            if label:
+                new_conn = Connection(
+                    from_id=conn.from_id,
+                    to_id=conn.to_id,
+                    label=label,
+                    graphviz_attrs=conn.graphviz_attrs,
+                    direction=conn.direction
+                )
+                logger.debug(f"[ADVISOR] Added label '{label}' to connection: {conn.from_id} → {conn.to_id}")
+                labeled_connections.append(new_conn)
+            else:
+                labeled_connections.append(conn)
         
         return labeled_connections
     
