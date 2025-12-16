@@ -36,8 +36,10 @@ function DiagramGenerator() {
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
   const [zoomLevel, setZoomLevel] = useState(100)
   const [svgFitScale, setSvgFitScale] = useState(100)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const svgImageRef = useRef<HTMLImageElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const fullscreenRef = useRef<HTMLDivElement | null>(null)
 
   // SVG implementation commented out temporarily
   // // Calculate SVG fit scale when SVG is loaded (for reset button)
@@ -149,6 +151,59 @@ function DiagramGenerator() {
   const handleDiagramGenerated = (url: string) => {
     setDiagramUrl(url)
   }
+
+  const handlePresent = () => {
+    setIsFullscreen(true)
+  }
+
+  const handleExitFullscreen = () => {
+    setIsFullscreen(false)
+  }
+
+  const handleCopyToClipboard = async () => {
+    if (!diagramUrl) return
+    
+    try {
+      // Fetch the image
+      const response = await fetch(diagramUrl)
+      const blob = await response.blob()
+      
+      // Copy to clipboard using Clipboard API
+      if (navigator.clipboard && navigator.clipboard.write) {
+        const item = new ClipboardItem({ [blob.type]: blob })
+        await navigator.clipboard.write([item])
+        setMessage('Diagram copied to clipboard!')
+        // Clear the message after 3 seconds
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        // Fallback: create a temporary link and copy
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = diagramUrl.split('/').pop() || 'diagram.png'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        setMessage('Clipboard API not available. Downloading instead.')
+        setTimeout(() => setMessage(null), 3000)
+      }
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      setError('Failed to copy diagram to clipboard')
+    }
+  }
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        handleExitFullscreen()
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isFullscreen])
 
   const handleFormatChange = async (newFormat: OutputFormat) => {
     if (!sessionId || !diagramUrl) return
@@ -319,34 +374,33 @@ function DiagramGenerator() {
           )}
 
           {message && (
-            <div className="p-3 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
-              <div className="flex items-start gap-2">
+            <div className="p-2 bg-green-50 border-l-4 border-green-500 rounded-r-lg animate-fade-in">
+              <div className="flex items-start gap-1.5">
                 <div className="flex-shrink-0 mt-0.5">
-                  <svg className="w-5 h-5 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-green-600 animate-checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-green-800 mb-0.5">Diagram generated successfully!</p>
-                      <p className="text-sm text-green-700">{message}</p>
-                      <p className="text-xs text-green-600 mt-0.5">Ready to share with your team.</p>
+                      <p className="text-xs font-semibold text-green-800">Diagram generated successfully!</p>
+                      <p className="text-xs text-green-700 mt-0.5">{message}</p>
                       
                       {/* Success Metrics */}
                       {showSuccessMetrics && (
-                        <div className="mt-2 pt-2 border-t border-green-200">
-                          <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="mt-1.5 pt-1.5 border-t border-green-200">
+                          <div className="grid grid-cols-3 gap-1 text-center">
                             <div>
-                              <p className="text-base sm:text-lg font-bold text-green-800">2+ hrs</p>
+                              <p className="text-sm font-bold text-green-800">2+ hrs</p>
                               <p className="text-xs text-green-600">Time saved</p>
                             </div>
                             <div>
-                              <p className="text-base sm:text-lg font-bold text-green-800">100%</p>
+                              <p className="text-sm font-bold text-green-800">100%</p>
                               <p className="text-xs text-green-600">AI-powered</p>
                             </div>
                             <div>
-                              <p className="text-base sm:text-lg font-bold text-green-800">Instant</p>
+                              <p className="text-sm font-bold text-green-800">Instant</p>
                               <p className="text-xs text-green-600">Generation</p>
                             </div>
                           </div>
@@ -356,10 +410,10 @@ function DiagramGenerator() {
                     {showSuccessMetrics && (
                       <button
                         onClick={() => setShowSuccessMetrics(false)}
-                        className="ml-3 text-green-600 hover:text-green-800 flex-shrink-0"
+                        className="ml-2 text-green-600 hover:text-green-800 flex-shrink-0"
                         aria-label="Dismiss metrics"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
@@ -373,34 +427,46 @@ function DiagramGenerator() {
           {diagramUrl && (
             <div className="mt-4 animate-fade-in">
               {/* Success Celebration Banner */}
-              <div className="mb-3 p-2 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg flex items-center gap-2">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center animate-checkmark">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Your diagram is ready!</p>
-                  <p className="text-xs text-gray-600">Download, refine, or create another one.</p>
-                </div>
-              </div>
-              
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                 <h3 className="text-sm sm:text-base font-semibold">Generated Diagram</h3>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
+                    onClick={handleCopyToClipboard}
+                    className="group relative px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors flex items-center justify-center"
+                    title="Copy diagram to clipboard for pasting in presentations"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Copy
+                    </span>
+                  </button>
+                  <button
+                    onClick={handlePresent}
+                    className="group relative px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
+                    title="Present diagram in fullscreen"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Present
+                    </span>
+                  </button>
+                  <button
                     onClick={() => {
                       setMode('advanced-code')
                     }}
-                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                    className="group relative px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center justify-center"
                     title="Refine this diagram using code editor"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Refine Diagram
+                    <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Refine Diagram
+                    </span>
                   </button>
                   <button
                     onClick={() => {
@@ -413,12 +479,15 @@ function DiagramGenerator() {
                       setGenerationId(null)
                       setGeneratedCode(null)
                     }}
-                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    className="group relative px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    title="Create another diagram"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Create Another
+                    <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Create Another
+                    </span>
                   </button>
                 </div>
               </div>
@@ -664,6 +733,60 @@ function DiagramGenerator() {
           </div>
         )}
       </div>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen && diagramUrl && (
+        <div
+          ref={fullscreenRef}
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4"
+          onClick={handleExitFullscreen}
+        >
+          <button
+            onClick={handleExitFullscreen}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2"
+            aria-label="Exit fullscreen"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+            {downloadFormat === 'dot' ? (
+              <div className="bg-white rounded-lg p-6 max-w-4xl">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 mb-2">
+                    <strong>DOT Format:</strong> Download the file to view/edit the Graphviz source code.
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    You can edit DOT files in text editors or use online tools like <a href="https://edotor.net/" target="_blank" rel="noopener noreferrer" className="underline">Edotor</a> or <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank" rel="noopener noreferrer" className="underline">Graphviz Online</a>.
+                  </p>
+                </div>
+              </div>
+            ) : downloadFormat === 'pdf' ? (
+              <div className="bg-white rounded-lg p-6 max-w-4xl">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 mb-2">
+                    <strong>PDF Format:</strong> PDF files cannot be previewed in the browser.
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Click the download button to save and view the PDF file.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={diagramUrl}
+                alt="Generated architecture diagram"
+                className="max-w-full max-h-[90vh] object-contain"
+                style={{ width: 'auto', height: 'auto' }}
+              />
+            )}
+          </div>
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-xs">
+            Press ESC to exit
+          </div>
+        </div>
+      )}
     </div>
   )
 }
