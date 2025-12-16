@@ -238,62 +238,28 @@ npm run build
 
 ## Step 7: Create Systemd Services
 
-### Backend Service
+Copy the systemd service files from the repository to the systemd directory:
 
 ```bash
-sudo nano /etc/systemd/system/diagram-api.service
+# Copy backend service file
+sudo cp /opt/diagram-generator/deployment/systemd/diagram-api-amazon-linux.service /etc/systemd/system/diagram-api.service
+
+# Copy frontend service file
+sudo cp /opt/diagram-generator/deployment/systemd/diagram-frontend-amazon-linux.service /etc/systemd/system/diagram-frontend.service
+
+# Verify files were copied correctly
+ls -la /etc/systemd/system/diagram-*.service
 ```
 
-**Paste the following:**
+**Service files location:**
+- Backend: `deployment/systemd/diagram-api-amazon-linux.service`
+- Frontend: `deployment/systemd/diagram-frontend-amazon-linux.service`
 
-```ini
-[Unit]
-Description=Architecture Diagram Generator API
-After=network.target
-
-[Service]
-Type=simple
-User=ec2-user
-WorkingDirectory=/opt/diagram-generator/backend
-Environment="PATH=/opt/diagram-generator/backend/venv/bin"
-EnvironmentFile=/opt/diagram-generator/backend/.env
-ExecStart=/opt/diagram-generator/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Save and exit** (Ctrl+X, Y, Enter)
-
-### Frontend Service
-
-```bash
-sudo nano /etc/systemd/system/diagram-frontend.service
-```
-
-**Paste the following:**
-
-```ini
-[Unit]
-Description=Architecture Diagram Generator Frontend
-After=network.target
-
-[Service]
-Type=simple
-User=ec2-user
-WorkingDirectory=/opt/diagram-generator/frontend
-Environment="PATH=/usr/bin:/usr/local/bin"
-ExecStart=/usr/bin/npm run preview -- --host 0.0.0.0 --port 3000
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Save and exit** (Ctrl+X, Y, Enter)
+**Note:** These service files are pre-configured for Amazon Linux 2023 and include:
+- Correct Python virtual environment path
+- Environment file loading from `.env`
+- Automatic restart on failure
+- Proper user and working directory settings
 
 ---
 

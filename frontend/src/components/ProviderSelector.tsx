@@ -34,11 +34,11 @@ export function ProviderSelector({
   onSelectionChange,
 }: ProviderSelectorProps) {
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
         Select Cloud Provider
       </label>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {PROVIDER_OPTIONS.map((provider) => {
           const isSelected = selectedProvider === provider.id
 
@@ -46,7 +46,7 @@ export function ProviderSelector({
             <div
               key={provider.id}
               className={`
-                relative flex items-start space-x-2 p-3 border rounded-lg
+                relative flex items-start space-x-1.5 p-2 border rounded-lg
                 cursor-pointer transition-all
                 ${isSelected 
                   ? 'border-blue-500 bg-blue-50' 
@@ -61,19 +61,19 @@ export function ProviderSelector({
                 value={provider.id}
                 checked={isSelected}
                 onChange={() => onSelectionChange(provider.id)}
-                className="mt-1"
+                className="mt-0.5"
               />
               <div className="flex-1 min-w-0">
                 <label className="text-sm font-medium text-gray-900 cursor-pointer">
                   {provider.label}
                 </label>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-0.5">
                   {provider.description}
                 </p>
               </div>
               {isSelected && (
-                <div className="absolute top-2 right-2">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <div className="absolute top-1.5 right-1.5">
+                  <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>

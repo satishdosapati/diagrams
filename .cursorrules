@@ -370,6 +370,22 @@ frontend/
 - **Code Review**: Review code for bugs, security, performance
 - **Deployment**: Test in staging before production
 
+### Project Utilities
+- **useful_commands.txt**: Personal cheatsheet file for quick access to common commands
+  - **Purpose**: Keep project-specific commands, shortcuts, and workflows in one place
+  - **Location**: Root directory (`useful_commands.txt`)
+  - **Content**: Development commands, production commands, testing, git operations, process management
+  - **Maintenance**: Update as workflows evolve, keep project-specific paths and commands
+  - **Reusability**: Template structure can be reused across projects, customize per project
+  - **DO NOT** delete or modify without explicit request - this is a personal reference file
+
+- **git_helpful.txt**: Git workflow guide for solo engineer best practices
+  - **Purpose**: Feature branch strategy, safety practices, and common Git patterns
+  - **Location**: Root directory (`git_helpful.txt`)
+  - **Content**: Workflow philosophy, daily patterns, emergency scenarios, best practices
+  - **Integration**: Complements `useful_commands.txt` - detailed Git workflow vs quick reference
+  - **DO NOT** delete or modify without explicit request - this is a personal reference file
+
 ### Monitoring & Observability
 - **Logging**: Structured logging with request_id tracking
 - **Error Tracking**: Capture and log all errors with stack traces

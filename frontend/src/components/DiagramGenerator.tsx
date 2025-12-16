@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { generateDiagram, getDiagramUrl, regenerateFormat } from '../services/api'
 import ProviderSelector from './ProviderSelector'
 import ExamplesPanel from './ExamplesPanel'
@@ -6,6 +6,7 @@ import AdvancedCodeMode from './AdvancedCodeMode'
 import FeedbackWidget from './FeedbackWidget'
 import ProgressBar from './ProgressBar'
 import { ErrorDisplay } from './ErrorDisplay'
+import { getExamplesByProvider } from '../data/examples'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -33,8 +34,40 @@ function DiagramGenerator() {
   } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(true)
-  const [showUrgencyBanner, setShowUrgencyBanner] = useState(true)
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  // Scrolling placeholder examples
+  useEffect(() => {
+    if (mode !== 'natural-language' || description.trim() || isGenerating) {
+      return
+    }
+
+    const examples = getExamplesByProvider(selectedProvider)
+    if (examples.length === 0) return
+
+    // Cycle through examples every 3 seconds
+    placeholderIntervalRef.current = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % examples.length)
+    }, 3000)
+
+    return () => {
+      if (placeholderIntervalRef.current) {
+        clearInterval(placeholderIntervalRef.current)
+      }
+    }
+  }, [selectedProvider, mode, description, isGenerating])
+
+  // Get current placeholder text
+  const getPlaceholderText = () => {
+    const examples = getExamplesByProvider(selectedProvider)
+    if (examples.length === 0) {
+      return `e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB`
+    }
+    return `e.g., ${examples[placeholderIndex]?.prompt || examples[0]?.prompt}`
+  }
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -147,88 +180,6 @@ function DiagramGenerator() {
         </p>
       </div>
 
-      {/* StoryBrand: Urgency/Failure (Subtle) */}
-      {showUrgencyBanner && !diagramUrl && mode === 'natural-language' && (
-        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-xs text-amber-800">
-              <span className="font-medium">Without clear diagrams,</span> your team wastes time explaining architecture instead of building features.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowUrgencyBanner(false)}
-            className="ml-3 text-amber-600 hover:text-amber-800 flex-shrink-0"
-            aria-label="Dismiss"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {/* StoryBrand: 3-Step Process */}
-      {mode === 'natural-language' && (
-        <div className="mb-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-2 gap-2 sm:gap-0">
-            <div className={`flex-1 flex items-center transition-all duration-300 ${isGenerating ? 'opacity-50' : ''}`}>
-              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
-                description.trim() ? 'bg-blue-600 text-white shadow-md scale-110' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {description.trim() && !isGenerating && !diagramUrl ? (
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  '1'
-                )}
-              </div>
-              <span className={`ml-2 text-xs sm:text-sm transition-colors duration-300 ${
-                description.trim() ? 'text-gray-900 font-medium' : 'text-gray-700'
-              }`}>Describe</span>
-            </div>
-            <div className={`hidden sm:block flex-1 h-0.5 mx-2 transition-colors duration-300 ${
-              description.trim() ? 'bg-blue-300' : 'bg-gray-200'
-            }`}></div>
-            <div className={`flex-1 flex items-center transition-all duration-300 ${isGenerating ? '' : 'opacity-50'}`}>
-              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
-                isGenerating ? 'bg-blue-600 text-white shadow-md animate-pulse scale-110' : diagramUrl ? 'bg-green-600 text-white shadow-md scale-110' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {diagramUrl ? (
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  '2'
-                )}
-              </div>
-              <span className={`ml-2 text-xs sm:text-sm transition-colors duration-300 ${
-                (isGenerating || diagramUrl) ? 'text-gray-900 font-medium' : 'text-gray-700'
-              }`}>Generate</span>
-            </div>
-            <div className={`hidden sm:block flex-1 h-0.5 mx-2 transition-colors duration-300 ${
-              (isGenerating || diagramUrl) ? 'bg-blue-300' : 'bg-gray-200'
-            }`}></div>
-            <div className={`flex-1 flex items-center transition-all duration-300 ${diagramUrl ? '' : 'opacity-50'}`}>
-              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
-                diagramUrl ? 'bg-green-600 text-white shadow-md scale-110' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {diagramUrl ? (
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  '3'
-                )}
-              </div>
-              <span className={`ml-2 text-xs sm:text-sm transition-colors duration-300 ${
-                diagramUrl ? 'text-gray-900 font-medium' : 'text-gray-700'
-              }`}>Download</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
         <h2 className="text-base sm:text-lg font-semibold">Generate Architecture Diagram</h2>
         <div className="flex items-center gap-2">
@@ -276,31 +227,6 @@ function DiagramGenerator() {
             onSelectionChange={setSelectedProvider}
           />
 
-          {/* Output Format Selector */}
-          <div>
-            <label htmlFor="outputFormat" className="block text-sm font-medium text-gray-700 mb-2">
-              Output Format
-            </label>
-            <select
-              id="outputFormat"
-              value={outputFormat}
-              onChange={(e) => setOutputFormat(e.target.value as OutputFormat)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
-              disabled={isGenerating}
-            >
-              <option value="png">PNG (Image)</option>
-              <option value="svg">SVG (Editable Vector)</option>
-              <option value="pdf">PDF (Document)</option>
-              <option value="dot">DOT (Source Code)</option>
-            </select>
-            <p className="mt-1 text-xs text-gray-500">
-              {outputFormat === 'svg' && 'SVG can be edited in Draw.io, Figma, or Inkscape'}
-              {outputFormat === 'dot' && 'DOT is the Graphviz source code - edit and regenerate'}
-              {outputFormat === 'pdf' && 'PDF format for documents and presentations'}
-              {outputFormat === 'png' && 'Raster image format'}
-            </p>
-          </div>
-
           {/* Natural Language Mode */}
           {mode === 'natural-language' && (
               <>
@@ -309,13 +235,29 @@ function DiagramGenerator() {
                   Describe your {selectedProvider.toUpperCase()} architecture
                 </label>
                 <textarea
+                  ref={textareaRef}
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
+                  placeholder={getPlaceholderText()}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   disabled={isGenerating}
+                  onFocus={() => {
+                    if (placeholderIntervalRef.current) {
+                      clearInterval(placeholderIntervalRef.current)
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!description.trim() && mode === 'natural-language' && !isGenerating) {
+                      const examples = getExamplesByProvider(selectedProvider)
+                      if (examples.length > 0) {
+                        placeholderIntervalRef.current = setInterval(() => {
+                          setPlaceholderIndex((prev) => (prev + 1) % examples.length)
+                        }, 3000)
+                      }
+                    }
+                  }}
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
