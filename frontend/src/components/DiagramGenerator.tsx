@@ -463,10 +463,10 @@ function DiagramGenerator() {
                     width: '100%',
                     maxWidth: '100%',
                     height: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'auto' : '600px',
-                    overflowX: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
-                    overflowY: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
+                    overflow: (downloadFormat === 'pdf' || downloadFormat === 'dot') ? 'visible' : 'auto',
                     scrollbarWidth: 'thin',
-                    position: 'relative'
+                    position: 'relative',
+                    boxSizing: 'border-box'
                   }}
                 >
                   {downloadFormat === 'svg' ? (
@@ -476,8 +476,10 @@ function DiagramGenerator() {
                         transform: `scale(${zoomLevel / 100})`,
                         transformOrigin: 'top left',
                         padding: '1rem',
-                        display: 'inline-block',
-                        minWidth: '100%'
+                        display: 'block',
+                        width: 'max-content',
+                        height: 'max-content',
+                        boxSizing: 'content-box'
                       }}
                     >
                       <img
@@ -489,7 +491,8 @@ function DiagramGenerator() {
                           width: 'auto',
                           height: 'auto',
                           display: 'block',
-                          pointerEvents: 'none'
+                          pointerEvents: 'none',
+                          verticalAlign: 'top'
                         }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
