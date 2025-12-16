@@ -406,13 +406,14 @@ function DiagramGenerator() {
                 </div>
                 
                 {/* Diagram Container with Zoom */}
-                <div className="overflow-auto max-h-[600px] border border-gray-200 rounded bg-white" style={{ scrollbarWidth: 'thin' }}>
+                <div className="overflow-auto max-h-[600px] border border-gray-200 rounded bg-white" style={{ scrollbarWidth: 'thin', overflowX: 'auto', overflowY: 'auto' }}>
                   <div 
                     className="flex items-center justify-center p-4 transition-transform duration-300 ease-in-out" 
                     style={{ 
                       transform: `scale(${zoomLevel / 100})`, 
                       transformOrigin: 'center center',
-                      minHeight: `${100 / (zoomLevel / 100)}%`
+                      minWidth: 'fit-content',
+                      minHeight: 'fit-content'
                     }}
                   >
                     {downloadFormat === 'dot' ? (
@@ -427,32 +428,30 @@ function DiagramGenerator() {
                         </div>
                       </div>
                     ) : downloadFormat === 'svg' ? (
-                      <div className="w-full max-w-4xl mx-auto">
-                        <object
-                          data={diagramUrl}
-                          type="image/svg+xml"
-                          className="w-full"
-                          aria-label="Generated architecture diagram"
-                        >
-                          <img
-                            src={diagramUrl}
-                            alt="Generated architecture diagram"
-                            className="w-full max-w-4xl mx-auto"
-                            onError={(e) => {
-                              // Fallback: if object fails, try img directly
-                              const target = e.target as HTMLImageElement;
-                              if (target.src !== diagramUrl) {
-                                target.src = diagramUrl || '';
-                              }
-                            }}
-                          />
-                        </object>
+                      <div className="flex items-center justify-center" style={{ width: '100%', overflow: 'visible' }}>
+                        <img
+                          src={diagramUrl}
+                          alt="Generated architecture diagram"
+                          style={{ 
+                            maxWidth: 'none',
+                            width: 'auto',
+                            height: 'auto',
+                            display: 'block'
+                          }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== diagramUrl) {
+                              target.src = diagramUrl || '';
+                            }
+                          }}
+                        />
                       </div>
                     ) : (
                       <img
                         src={diagramUrl}
                         alt="Generated architecture diagram"
-                        className="w-full max-w-4xl mx-auto"
+                        className="max-w-full h-auto"
+                        style={{ width: 'auto', height: 'auto' }}
                       />
                     )}
                   </div>
