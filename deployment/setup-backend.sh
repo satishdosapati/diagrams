@@ -8,8 +8,11 @@ echo "Setting up backend with correct Python version..."
 
 cd /opt/diagram-generator/backend
 
-# Find Python 3.10 or 3.11
-if command -v python3.11 &> /dev/null; then
+# Find Python 3.12, 3.11, or 3.10 (in order of preference)
+if command -v python3.12 &> /dev/null; then
+    PYTHON_CMD=python3.12
+    echo "Using Python 3.12"
+elif command -v python3.11 &> /dev/null; then
     PYTHON_CMD=python3.11
     echo "Using Python 3.11"
 elif command -v python3.10 &> /dev/null; then
@@ -25,8 +28,8 @@ else
         echo "Using default Python $DEFAULT_VERSION"
     else
         echo "ERROR: Python 3.10+ is required. Current version: $DEFAULT_VERSION"
-        echo "Please install Python 3.10 or 3.11 first:"
-        echo "  sudo yum install -y python3.11 python3.11-pip python3.11-devel"
+        echo "Please install Python 3.12, 3.11, or 3.10 first:"
+        echo "  sudo yum install -y python3.12 python3.12-pip python3.12-devel"
         exit 1
     fi
 fi

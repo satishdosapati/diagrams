@@ -85,4 +85,3 @@ echo "Next steps:"
 echo "1. Deploy your application code to /opt/diagram-generator"
 echo "2. Set up systemd services"
 echo "3. Configure environment variables in backend/.env"
-
