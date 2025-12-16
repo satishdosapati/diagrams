@@ -45,14 +45,17 @@ function DiagramGenerator() {
       const img = svgImageRef.current
       const handleLoad = () => {
         if (containerRef.current && img.naturalWidth && img.naturalHeight) {
+          // Get container dimensions (fixed viewport)
           const containerWidth = containerRef.current.clientWidth - 32 // Account for padding
           const containerHeight = 600 - 32 // Max height minus padding
           
+          // Calculate scale to fit within viewport
           const widthScale = (containerWidth / img.naturalWidth) * 100
           const heightScale = (containerHeight / img.naturalHeight) * 100
           
           // Use the smaller scale to ensure it fits both dimensions
-          const fitScale = Math.min(widthScale, heightScale, 100) // Don't scale up beyond 100%
+          // Don't scale up beyond 100% (only scale down if needed)
+          const fitScale = Math.min(widthScale, heightScale, 100)
           setSvgFitScale(fitScale)
           setZoomLevel(fitScale) // Set initial zoom to fit scale
         }
@@ -441,18 +444,27 @@ function DiagramGenerator() {
                   </button>
                 </div>
                 
-                {/* Diagram Container with Zoom */}
+                {/* Diagram Container with Zoom - Fixed Viewport */}
                 <div 
                   ref={containerRef}
-                  className="overflow-auto max-h-[600px] border border-gray-200 rounded bg-white" 
-                  style={{ scrollbarWidth: 'thin', overflowX: 'auto', overflowY: 'auto' }}
+                  className="border border-gray-200 rounded bg-white"
+                  style={{ 
+                    width: '100%',
+                    maxWidth: '100%',
+                    height: '600px',
+                    overflow: 'auto',
+                    scrollbarWidth: 'thin',
+                    position: 'relative',
+                    contain: 'layout style paint' // CSS containment to prevent layout shifts
+                  }}
                 >
                   <div 
                     className="flex items-center justify-center p-4 transition-transform duration-300 ease-in-out" 
                     style={{ 
                       transform: `scale(${zoomLevel / 100})`, 
                       transformOrigin: 'center center',
-                      minWidth: 'fit-content',
+                      width: '100%',
+                      height: '100%',
                       minHeight: 'fit-content'
                     }}
                   >
@@ -468,7 +480,7 @@ function DiagramGenerator() {
                         </div>
                       </div>
                     ) : downloadFormat === 'svg' ? (
-                      <div className="flex items-center justify-center" style={{ width: '100%', overflow: 'visible' }}>
+                      <div className="flex items-center justify-center">
                         <img
                           ref={svgImageRef}
                           src={diagramUrl}
@@ -477,7 +489,8 @@ function DiagramGenerator() {
                             maxWidth: 'none',
                             width: 'auto',
                             height: 'auto',
-                            display: 'block'
+                            display: 'block',
+                            pointerEvents: 'none' // Prevent image from interfering with scroll
                           }}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
