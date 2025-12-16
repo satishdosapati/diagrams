@@ -82,16 +82,9 @@ export function ProviderSelector({
           )
         })}
       </div>
-      {selectedProvider && (
-        <div className="p-2 bg-gray-50 rounded-md">
-          <p className="text-sm font-medium text-gray-700">
-            Selected: {PROVIDER_OPTIONS.find(p => p.id === selectedProvider)?.label}
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            All components will use {selectedProvider.toUpperCase()} icons only
-          </p>
-        </div>
-      )}
+      <p className="text-xs text-gray-400">
+        All components will use {selectedProvider.toUpperCase()} icons only
+      </p>
     </div>
   )
 }

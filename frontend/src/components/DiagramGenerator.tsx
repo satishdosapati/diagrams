@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { generateDiagram, getDiagramUrl, regenerateFormat } from '../services/api'
 import ProviderSelector from './ProviderSelector'
 import ExamplesPanel from './ExamplesPanel'
@@ -6,7 +6,6 @@ import AdvancedCodeMode from './AdvancedCodeMode'
 import FeedbackWidget from './FeedbackWidget'
 import ProgressBar from './ProgressBar'
 import { ErrorDisplay } from './ErrorDisplay'
-import { getExamplesByProvider } from '../data/examples'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -35,39 +34,6 @@ function DiagramGenerator() {
   const [message, setMessage] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(true)
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
-  const [placeholderIndex, setPlaceholderIndex] = useState(0)
-  const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-
-  // Scrolling placeholder examples
-  useEffect(() => {
-    if (mode !== 'natural-language' || description.trim() || isGenerating) {
-      return
-    }
-
-    const examples = getExamplesByProvider(selectedProvider)
-    if (examples.length === 0) return
-
-    // Cycle through examples every 3 seconds
-    placeholderIntervalRef.current = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % examples.length)
-    }, 3000)
-
-    return () => {
-      if (placeholderIntervalRef.current) {
-        clearInterval(placeholderIntervalRef.current)
-      }
-    }
-  }, [selectedProvider, mode, description, isGenerating])
-
-  // Get current placeholder text
-  const getPlaceholderText = () => {
-    const examples = getExamplesByProvider(selectedProvider)
-    if (examples.length === 0) {
-      return `e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB`
-    }
-    return `e.g., ${examples[placeholderIndex]?.prompt || examples[0]?.prompt}`
-  }
 
   const handleGenerate = async () => {
     if (mode === 'advanced-code') {
@@ -235,29 +201,13 @@ function DiagramGenerator() {
                   Describe your {selectedProvider.toUpperCase()} architecture
                 </label>
                 <textarea
-                  ref={textareaRef}
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={getPlaceholderText()}
+                  placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   disabled={isGenerating}
-                  onFocus={() => {
-                    if (placeholderIntervalRef.current) {
-                      clearInterval(placeholderIntervalRef.current)
-                    }
-                  }}
-                  onBlur={() => {
-                    if (!description.trim() && mode === 'natural-language' && !isGenerating) {
-                      const examples = getExamplesByProvider(selectedProvider)
-                      if (examples.length > 0) {
-                        placeholderIntervalRef.current = setInterval(() => {
-                          setPlaceholderIndex((prev) => (prev + 1) % examples.length)
-                        }, 3000)
-                      }
-                    }
-                  }}
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
