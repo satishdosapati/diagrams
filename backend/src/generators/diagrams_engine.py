@@ -4,6 +4,7 @@ DiagramsEngine - Generates diagrams using Diagrams library with multi-provider s
 import tempfile
 import subprocess
 import os
+import sys
 import time
 import logging
 from pathlib import Path
@@ -618,9 +619,9 @@ class DiagramsEngine:
             temp_file = f.name
         
         try:
-            # Execute
+            # Execute using the same Python interpreter as the running process
             result = subprocess.run(
-                ['python', temp_file],
+                [sys.executable, temp_file],
                 capture_output=True,
                 text=True,
                 cwd=str(self.output_dir),
