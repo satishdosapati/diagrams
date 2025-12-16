@@ -519,6 +519,18 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
                 new_connections.append(suggested)
                 logger.debug(f"[ADVISOR] Added: {suggested.from_id} → {suggested.to_id}")
         
+        # Enforce canonical patterns (remove anti-patterns)
+        logger.info(f"[ADVISOR] Enforcing canonical architectural patterns...")
+        new_connections = self._enforce_canonical_patterns(new_connections, sorted_components)
+        
+        # Add connection labels based on patterns
+        logger.info(f"[ADVISOR] Adding connection labels for clarity...")
+        new_connections = self._add_connection_labels(new_connections, sorted_components)
+        
+        # Enhance component names with full AWS service names and subtitles
+        logger.info(f"[ADVISOR] Enhancing component names with full AWS service names...")
+        sorted_components = self._enhance_component_names(sorted_components)
+        
         # Post-process connections to style them based on relationship type
         new_connections = self._style_connections_by_type(new_connections, sorted_components)
         
@@ -626,9 +638,11 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         Automatically create clusters based on component types and architectural layers.
         
         Clustering strategy:
-        1. Group by architectural layer (Frontend, Backend, Data, etc.)
-        2. Group VPC-related components hierarchically
-        3. Group similar component types (all databases, all compute, etc.)
+        1. Detect architectural pattern (event-driven, data pipeline, microservices, etc.)
+        2. Use pattern-specific cluster names for better clarity
+        3. Group by architectural layer (Frontend, Backend, Data, etc.)
+        4. Group VPC-related components hierarchically
+        5. Group similar component types (all databases, all compute, etc.)
         
         Args:
             components: List of components to cluster
@@ -638,6 +652,88 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         """
         clusters = []
         component_ids = {c.id for c in components}
+        
+        # Detect architectural pattern
+        node_ids = [c.get_node_id() for c in components]
+        has_eventbridge = "eventbridge" in node_ids
+        has_kinesis = any(nid in {"kinesis", "kinesis_data_streams"} for nid in node_ids)
+        has_api_gateway = "api_gateway" in node_ids
+        has_multiple_lambdas = node_ids.count("lambda") >= 2
+        has_vpc = "vpc" in node_ids
+        
+        # Determine pattern-specific cluster names
+        if has_eventbridge:
+            # Event-Driven pattern
+            layer_names = {
+                "Frontend/Edge": "Event Sources",
+                "Network": "Network",
+                "Application": "Application",
+                "Compute": "Event Processing",
+                "Integration": "Integration",
+                "Data": "Event Storage",
+                "Analytics": "Analytics",
+                "Security/Management": "Security/Management"
+            }
+        elif has_kinesis:
+            # Data Pipeline pattern
+            layer_names = {
+                "Frontend/Edge": "Data Sources",
+                "Network": "Network",
+                "Application": "Application",
+                "Compute": "Processing Layer",
+                "Integration": "Integration",
+                "Data": "Storage Layer",
+                "Analytics": "Analytics Layer",
+                "Security/Management": "Security/Management"
+            }
+        elif has_api_gateway and has_multiple_lambdas:
+            # Microservices pattern
+            layer_names = {
+                "Frontend/Edge": "API Layer",
+                "Network": "Network",
+                "Application": "Application",
+                "Compute": "Service Layer",
+                "Integration": "Integration",
+                "Data": "Data Layer",
+                "Analytics": "Analytics",
+                "Security/Management": "Security/Management"
+            }
+        elif has_api_gateway:
+            # Serverless pattern
+            layer_names = {
+                "Frontend/Edge": "API Layer",
+                "Network": "Network",
+                "Application": "Application",
+                "Compute": "Compute Layer",
+                "Integration": "Integration",
+                "Data": "Data Layer",
+                "Analytics": "Analytics",
+                "Security/Management": "Security/Management"
+            }
+        elif has_vpc:
+            # Network pattern
+            layer_names = {
+                "Frontend/Edge": "Public Layer",
+                "Network": "Network",
+                "Application": "Application",
+                "Compute": "Compute",
+                "Integration": "Integration",
+                "Data": "Private Layer",
+                "Analytics": "Analytics",
+                "Security/Management": "Security/Management"
+            }
+        else:
+            # Default layer names
+            layer_names = {
+                "Frontend/Edge": "Frontend/Edge",
+                "Network": "Network",
+                "Application": "Application",
+                "Compute": "Compute",
+                "Integration": "Integration",
+                "Data": "Data",
+                "Analytics": "Analytics",
+                "Security/Management": "Security/Management"
+            }
         
         # Group components by layer
         layer_groups = {
@@ -674,16 +770,19 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         
         # Create clusters for layers with 2+ components
         cluster_id_counter = 1
-        for layer_name, comp_ids in layer_groups.items():
+        for layer_key, comp_ids in layer_groups.items():
             if len(comp_ids) >= 2:
                 cluster_id = f"cluster_{cluster_id_counter}"
+                # Use pattern-specific name if available
+                cluster_name = layer_names.get(layer_key, layer_key)
                 clusters.append(Cluster(
                     id=cluster_id,
-                    name=layer_name,
+                    name=cluster_name,
                     component_ids=comp_ids,
                     parent_id=None
                 ))
                 cluster_id_counter += 1
+                logger.debug(f"[ADVISOR] Created cluster: {cluster_name} with {len(comp_ids)} components")
         
         # Special handling: VPC hierarchy
         vpc_components = [c for c in components if c.get_node_id() == "vpc"]
@@ -873,6 +972,242 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
                     blank_node_counter += 1
         
         return new_components, new_connections
+    
+    def _enforce_canonical_patterns(self, connections: List[Connection], components: List[Component]) -> List[Connection]:
+        """
+        Enforce canonical architectural patterns by removing anti-patterns.
+        
+        Patterns enforced:
+        - Event-Driven: Remove direct source-to-processor connections when EventBridge exists
+        - Serverless: Ensure API Gateway → Lambda → DynamoDB order
+        - Microservices: Ensure API Gateway → Services → Database order
+        
+        Args:
+            connections: List of connections
+            components: List of components
+            
+        Returns:
+            Filtered list of connections with anti-patterns removed
+        """
+        component_map = {c.id: c for c in components}
+        node_id_map = {c.id: c.get_node_id() for c in components}
+        
+        # Detect EventBridge pattern
+        eventbridge_components = [c.id for c in components if c.get_node_id() == "eventbridge"]
+        
+        if eventbridge_components:
+            eventbridge_id = eventbridge_components[0]
+            logger.info(f"[ADVISOR] EventBridge detected, enforcing canonical event-driven pattern")
+            
+            # Find event sources (S3, API Gateway, IoT, etc.)
+            event_source_types = {"s3", "api_gateway", "iot_core", "lambda"}
+            event_sources = [c.id for c in components if c.get_node_id() in event_source_types]
+            
+            # Find processors (Lambda functions)
+            processors = [c.id for c in components if c.get_node_id() == "lambda"]
+            
+            # Remove direct source-to-processor connections (should go through EventBridge)
+            filtered_connections = []
+            removed_count = 0
+            
+            for conn in connections:
+                from_node_id = node_id_map.get(conn.from_id)
+                to_node_id = node_id_map.get(conn.to_id)
+                
+                # Check if this is a direct source-to-processor connection
+                is_direct_bypass = (
+                    conn.from_id in event_sources and 
+                    conn.to_id in processors and
+                    conn.from_id != eventbridge_id and
+                    conn.to_id != eventbridge_id
+                )
+                
+                if is_direct_bypass:
+                    logger.debug(f"[ADVISOR] Removing direct bypass: {conn.from_id} → {conn.to_id} (should go through EventBridge)")
+                    removed_count += 1
+                    continue
+                
+                filtered_connections.append(conn)
+            
+            if removed_count > 0:
+                logger.info(f"[ADVISOR] Removed {removed_count} direct bypass connections (canonical pattern enforced)")
+            
+            return filtered_connections
+        
+        return connections
+    
+    def _add_connection_labels(self, connections: List[Connection], components: List[Component]) -> List[Connection]:
+        """
+        Add descriptive labels to connections based on architectural patterns.
+        
+        Args:
+            connections: List of connections
+            components: List of components
+            
+        Returns:
+            List of connections with labels added
+        """
+        component_map = {c.id: c for c in components}
+        node_id_map = {c.id: c.get_node_id() for c in components}
+        
+        labeled_connections = []
+        
+        for conn in connections:
+            from_node_id = node_id_map.get(conn.from_id)
+            to_node_id = node_id_map.get(conn.to_id)
+            
+            # Skip if label already exists or if we can't identify node types
+            if conn.label or not from_node_id or not to_node_id:
+                labeled_connections.append(conn)
+                continue
+            
+            # Event-Driven patterns
+            if from_node_id == "eventbridge" and to_node_id == "lambda":
+                conn.label = "Event Stream"
+            elif from_node_id in {"s3", "api_gateway", "iot_core"} and to_node_id == "eventbridge":
+                conn.label = "Events"
+            
+            # Serverless patterns
+            elif from_node_id == "api_gateway" and to_node_id == "lambda":
+                conn.label = "HTTP Request"
+            elif from_node_id == "lambda" and to_node_id == "dynamodb":
+                conn.label = "Query/Write"
+            
+            # Data Pipeline patterns
+            elif from_node_id in {"kinesis", "kinesis_data_streams"} and to_node_id == "lambda":
+                conn.label = "Data Stream"
+            elif from_node_id == "lambda" and to_node_id == "s3":
+                conn.label = "Storage"
+            elif from_node_id == "lambda" and to_node_id in {"redshift", "athena"}:
+                conn.label = "Analytics"
+            
+            # Microservices patterns
+            elif from_node_id == "api_gateway" and to_node_id in {"lambda", "ecs", "eks"}:
+                conn.label = "API Request"
+            elif from_node_id in {"lambda", "ecs", "eks"} and to_node_id in {"dynamodb", "rds"}:
+                conn.label = "Query"
+            
+            # Network patterns
+            elif from_node_id == "internet_gateway" and to_node_id in {"subnet", "public_subnet"}:
+                conn.label = "Traffic"
+            elif from_node_id == "nat_gateway" and to_node_id in {"subnet", "private_subnet"}:
+                conn.label = "Outbound Traffic"
+            
+            # Queue/Stream patterns
+            elif from_node_id in {"sqs", "sns"} and to_node_id == "lambda":
+                conn.label = "Message"
+            elif from_node_id == "lambda" and to_node_id in {"sqs", "sns"}:
+                conn.label = "Publish"
+            
+            labeled_connections.append(conn)
+        
+        return labeled_connections
+    
+    def _enhance_component_names(self, components: List[Component]) -> List[Component]:
+        """
+        Enhance component names with full AWS service names and descriptive subtitles.
+        
+        Args:
+            components: List of components
+            
+        Returns:
+            List of components with enhanced names
+        """
+        enhanced_components = []
+        
+        # Mapping of node_id to full AWS service name
+        aws_service_names = {
+            "eventbridge": "Amazon EventBridge",
+            "dynamodb": "Amazon DynamoDB",
+            "api_gateway": "Amazon API Gateway",
+            "lambda": "AWS Lambda Function",
+            "s3": "Amazon S3",
+            "rds": "Amazon RDS",
+            "kinesis": "Amazon Kinesis",
+            "kinesis_data_streams": "Amazon Kinesis Data Streams",
+            "redshift": "Amazon Redshift",
+            "sqs": "Amazon SQS",
+            "sns": "Amazon SNS",
+            "cloudfront": "Amazon CloudFront",
+            "route53": "Amazon Route53",
+            "vpc": "Amazon VPC",
+            "ec2": "Amazon EC2",
+            "ecs": "Amazon ECS",
+            "eks": "Amazon EKS",
+            "alb": "Application Load Balancer",
+            "elb": "Elastic Load Balancer",
+            "athena": "Amazon Athena",
+            "glue": "AWS Glue",
+            "quicksight": "Amazon QuickSight",
+        }
+        
+        # Detect diagram type from components to add appropriate subtitles
+        has_eventbridge = any(c.get_node_id() == "eventbridge" for c in components)
+        has_kinesis = any(c.get_node_id() in {"kinesis", "kinesis_data_streams"} for c in components)
+        has_api_gateway = any(c.get_node_id() == "api_gateway" for c in components)
+        has_redshift = any(c.get_node_id() == "redshift" for c in components)
+        
+        for comp in components:
+            node_id = comp.get_node_id()
+            full_name = aws_service_names.get(node_id, comp.name)
+            
+            # Add subtitles based on context
+            subtitle = None
+            
+            # Event-Driven context
+            if has_eventbridge:
+                if node_id == "eventbridge":
+                    subtitle = "Event Bus"
+                elif node_id == "dynamodb":
+                    subtitle = "Event Storage"
+            
+            # Data Pipeline context
+            elif has_kinesis:
+                if node_id in {"kinesis", "kinesis_data_streams"}:
+                    subtitle = "Data Stream"
+                elif node_id == "s3":
+                    subtitle = "Data Lake"
+                elif node_id == "redshift":
+                    subtitle = "Data Warehouse"
+            
+            # Serverless context
+            elif has_api_gateway:
+                if node_id == "api_gateway":
+                    subtitle = "API Management"
+                elif node_id == "lambda":
+                    subtitle = "Business Logic"
+                elif node_id == "dynamodb":
+                    subtitle = "Data Store"
+            
+            # Analytics context
+            elif has_redshift:
+                if node_id == "redshift":
+                    subtitle = "Data Warehouse"
+                elif node_id == "s3":
+                    subtitle = "Data Lake"
+            
+            # Network context
+            elif node_id == "vpc":
+                subtitle = "Network Isolation"
+            elif node_id == "nat_gateway":
+                subtitle = "Outbound Internet"
+            elif node_id == "internet_gateway":
+                subtitle = "Internet Access"
+            
+            # Build final name
+            if subtitle:
+                enhanced_name = f"{full_name} ({subtitle})"
+            else:
+                enhanced_name = full_name
+            
+            # Only update if name changed
+            if enhanced_name != comp.name:
+                comp.name = enhanced_name
+                logger.debug(f"[ADVISOR] Enhanced component name: {comp.id} → {enhanced_name}")
+            
+            enhanced_components.append(comp)
+        
+        return enhanced_components
     
     def _style_connections_by_type(self, connections: List[Connection], components: List[Component]) -> List[Connection]:
         """

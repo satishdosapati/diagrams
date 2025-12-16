@@ -114,8 +114,46 @@ Rules:
 - Set provider field correctly
 - Use the exact node_id strings from the lists above (e.g., "ec2", "lambda", "vpc")
 
+COMPONENT NAMING GUIDELINES (IMPORTANT):
+- Use full AWS service names for professional appearance:
+  * "Amazon EventBridge" (not "EventBridge")
+  * "Amazon DynamoDB" (not "DynamoDB")
+  * "Amazon API Gateway" (not "API Gateway")
+  * "AWS Lambda Function" (not "Lambda")
+  * "Amazon S3" (not "S3")
+- Add descriptive subtitles in parentheses for clarity:
+  * EventBridge: "Amazon EventBridge (Event Bus)"
+  * DynamoDB in event-driven: "Amazon DynamoDB (Event Storage)"
+  * Kinesis: "Amazon Kinesis (Data Stream)"
+  * S3 in data pipelines: "Amazon S3 (Data Lake)"
+  * Redshift: "Amazon Redshift (Data Warehouse)"
+  * API Gateway: "Amazon API Gateway (API Management)"
+
+CONNECTION LABELING GUIDELINES (IMPORTANT):
+- Add labels to connections to clarify data flow and purpose:
+  * Event-Driven: EventBridge → Lambda: label="Event Stream"
+  * Serverless: API Gateway → Lambda: label="HTTP Request", Lambda → DynamoDB: label="Query/Write"
+  * Data Pipeline: Source → Queue: label="Data Stream", Processor → Storage: label="Storage"
+  * Microservices: API Gateway → Service: label="API Request"
+  * Network: Internet Gateway → Subnet: label="Traffic"
+- Use clear, concise labels that describe the connection purpose
+- Example with labels:
+  {{
+    "connections": [
+      {{"from_id": "eventbridge", "to_id": "lambda1", "label": "Event Stream"}},
+      {{"from_id": "api", "to_id": "lambda", "label": "HTTP Request"}},
+      {{"from_id": "lambda", "to_id": "db", "label": "Query"}}
+    ]
+  }}
+
 CLUSTERING GUIDELINES (IMPORTANT):
 - Always create clusters when you have 3+ components of similar types or layers
+- Use pattern-specific cluster names for better clarity:
+  * Event-Driven: "Event Sources", "Event Processing", "Event Storage"
+  * Data Pipeline: "Data Sources", "Processing Layer", "Storage Layer", "Analytics Layer"
+  * Microservices: "API Layer", "Service Layer", "Data Layer"
+  * Serverless: "API Layer", "Compute Layer", "Data Layer"
+  * Network: "Public Layer", "Private Layer", "Data Layer"
 - Group related components together for better visual organization:
   * Frontend/Edge: Route53, CloudFront, WAF, API Gateway
   * Network: VPC, Subnets, Internet Gateway, NAT Gateway
@@ -123,7 +161,6 @@ CLUSTERING GUIDELINES (IMPORTANT):
   * Data: RDS, DynamoDB, S3, ElastiCache
   * Integration: SQS, SNS, EventBridge
 - For VPC architectures, create nested clusters: VPC → Subnets → Resources
-- Use descriptive cluster names like "Frontend Layer", "Backend Services", "Data Layer", "VPC Network"
 - Example cluster structure:
   {{
     "clusters": [
@@ -140,6 +177,15 @@ CLUSTERING GUIDELINES (IMPORTANT):
     ]
   }}
 
+CANONICAL PATTERN ENFORCEMENT (IMPORTANT):
+- Event-Driven Architecture: All event sources MUST connect TO EventBridge, all processors connect FROM EventBridge
+  * Do NOT create direct source-to-processor connections when EventBridge exists
+  * Pattern: Sources → EventBridge → Processors → Storage
+- Serverless Pattern: API Gateway → Lambda → DynamoDB (enforce this order)
+- Microservices Pattern: API Gateway → Services → Database (enforce service boundaries)
+- Data Pipeline Pattern: Source → Queue/Stream → Processor → Storage (enforce flow direction)
+- VPC Pattern: Internet Gateway → VPC → Subnet → EC2 (enforce network hierarchy)
+
 AWS Architectural Best Practices (when provider is AWS):
 {aws_guidance}
 
@@ -149,6 +195,7 @@ IMPORTANT for AWS architectures:
 - Subnets should contain EC2 instances (add connection: Subnet → EC2)
 - Follow common patterns: API Gateway → Lambda → DynamoDB, ALB → EC2 → RDS
 - Add missing dependencies (e.g., if EC2 exists, ensure VPC and Subnet exist)
+- Use full AWS service names for professional diagrams
 
 Example 1 - Simple Architecture:
 Input: "Create a serverless API with API Gateway, Lambda, and DynamoDB"
