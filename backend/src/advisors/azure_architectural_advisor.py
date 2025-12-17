@@ -5,11 +5,12 @@ import os
 import logging
 from typing import Optional, List, Dict, Tuple
 from ..models.spec import ArchitectureSpec, Component, Connection, Cluster, GraphvizAttributes
+from .base_architectural_advisor import BaseArchitecturalAdvisor
 
 logger = logging.getLogger(__name__)
 
 
-class AzureArchitecturalAdvisor:
+class AzureArchitecturalAdvisor(BaseArchitecturalAdvisor):
     """Provides Azure architectural guidance using Azure Well-Architected Framework."""
     
     # Component layer ordering (lower number = appears first/left in diagram)
@@ -388,6 +389,13 @@ Azure Architectural Best Practices (Based on Azure Well-Architected Framework):
         # Post-process connections to style them based on relationship type
         new_connections = self._style_connections_by_type(new_connections, sorted_components)
         
+        # Validate connections for architectural correctness
+        validation_warnings = self._validate_connections(new_connections, sorted_components)
+        if validation_warnings:
+            logger.warning(f"[ADVISOR] Connection validation warnings: {len(validation_warnings)}")
+            for warning in validation_warnings[:5]:  # Log first 5 warnings
+                logger.warning(f"[ADVISOR] {warning}")
+        
         # Auto-create clusters if none exist and we have enough components
         auto_clusters = []
         if not spec.clusters and len(sorted_components) >= 3:
@@ -421,11 +429,16 @@ Azure Architectural Best Practices (Based on Azure Well-Architected Framework):
         spec.direction = "LR"
         graphviz_attrs.graph_attr["rankdir"] = "LR"
         
-        # Improve spacing for better edge routing
+        # Calculate dynamic spacing based on diagram complexity
+        # Spacing scales with complexity to prevent crowding in large diagrams
+        nodesep, ranksep = self._calculate_dynamic_spacing(
+            len(final_components), 
+            len(final_connections)
+        )
         if "nodesep" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["nodesep"] = "1.0"
+            graphviz_attrs.graph_attr["nodesep"] = str(nodesep)
         if "ranksep" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["ranksep"] = "1.5"
+            graphviz_attrs.graph_attr["ranksep"] = str(ranksep)
         
         # For complex diagrams with many connections, merge parallel edges
         if len(final_connections) > 10:
@@ -498,43 +511,16 @@ Azure Architectural Best Practices (Based on Azure Well-Architected Framework):
         clusters = []
         component_ids = {c.id for c in components}
         
-        # Group components by layer
-        layer_groups = {
-            "Frontend/Edge": [],
-            "Network": [],
-            "Application": [],
-            "Compute": [],
-            "Integration": [],
-            "Data": [],
-            "Analytics": [],
-            "Security/Management": []
-        }
+        # Group components by layer using shared base class method
+        layer_groups = self._group_components_by_layer(components)
         
-        for comp in components:
-            node_id = comp.get_node_id()
-            layer_order = self.get_layer_order(node_id)
-            
-            if layer_order == 0 or layer_order == 1:
-                layer_groups["Frontend/Edge"].append(comp.id)
-            elif layer_order == 2 or layer_order == 3:
-                layer_groups["Network"].append(comp.id)
-            elif layer_order == 4:
-                layer_groups["Application"].append(comp.id)
-            elif layer_order == 5:
-                layer_groups["Compute"].append(comp.id)
-            elif layer_order == 6:
-                layer_groups["Integration"].append(comp.id)
-            elif layer_order == 7:
-                layer_groups["Data"].append(comp.id)
-            elif layer_order == 8:
-                layer_groups["Analytics"].append(comp.id)
-            elif layer_order == 9:
-                layer_groups["Security/Management"].append(comp.id)
+        # Use adaptive cluster threshold based on total component count
+        min_cluster_size = self._get_cluster_threshold(len(components))
         
-        # Create clusters for layers with 2+ components
+        # Create clusters for layers with sufficient components
         cluster_id_counter = 1
         for layer_name, comp_ids in layer_groups.items():
-            if len(comp_ids) >= 2:
+            if len(comp_ids) >= min_cluster_size:
                 cluster_id = f"cluster_{cluster_id_counter}"
                 clusters.append(Cluster(
                     id=cluster_id,
