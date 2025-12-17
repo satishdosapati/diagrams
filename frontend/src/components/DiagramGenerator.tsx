@@ -247,32 +247,29 @@ function DiagramGenerator() {
   const handleDirectionChange = async (newDirection: 'TB' | 'BT' | 'LR' | 'RL') => {
     // Don't trigger if conditions aren't met
     if (!sessionId || !diagramUrl || isChangingDirection) {
-      console.log('Direction change blocked:', { sessionId, diagramUrl, isChangingDirection })
       return
     }
     
     // Don't regenerate if direction hasn't changed
     if (newDirection === diagramDirection) {
-      console.log('Direction unchanged, skipping regeneration')
       return
     }
     
-    console.log('Changing direction from', diagramDirection, 'to', newDirection)
     setIsChangingDirection(true)
     setError(null)
     setErrorContext(null)
     
     try {
+      // Regenerate diagram with new direction
       const response = await regenerateFormat(sessionId, downloadFormat, newDirection)
       const filename = response.diagram_url.split('/').pop()
       if (filename) {
         const url = getDiagramUrl(filename)
+        // Update URL and direction - React will re-render the image
         setDiagramUrl(url)
         setDiagramDirection(newDirection)
-        console.log('Direction changed successfully')
       }
     } catch (err) {
-      console.error('Direction change error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to change direction'
       const requestId = (err as any).requestId || null
       
@@ -562,29 +559,70 @@ function DiagramGenerator() {
               </div>
               <div className="border rounded-lg bg-gray-50 animate-slide-up relative overflow-hidden">
                 {/* Direction Selector - Bottom Left Corner */}
-                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 px-1.5 py-1">
-                  <span className="text-[10px] text-gray-500 mr-1">Dir:</span>
-                  <select
-                    value={diagramDirection}
-                    onChange={(e) => {
-                      const newDir = e.target.value as 'TB' | 'BT' | 'LR' | 'RL'
-                      console.log('Select onChange fired:', newDir, 'current:', diagramDirection)
-                      handleDirectionChange(newDir)
-                    }}
+                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 p-0.5">
+                  <button
+                    onClick={() => handleDirectionChange('LR')}
                     disabled={isChangingDirection}
-                    className="text-[10px] text-gray-700 bg-transparent border-none outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:ring-0 p-0"
-                    title="Change diagram direction"
+                    className={`p-1 rounded transition-colors ${
+                      diagramDirection === 'LR'
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    title="Left to Right"
                   >
-                    <option value="LR">LR</option>
-                    <option value="TB">TB</option>
-                    <option value="BT">BT</option>
-                    <option value="RL">RL</option>
-                  </select>
-                  {isChangingDirection && (
-                    <svg className="animate-spin h-3 w-3 text-gray-400 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDirectionChange('RL')}
+                    disabled={isChangingDirection}
+                    className={`p-1 rounded transition-colors ${
+                      diagramDirection === 'RL'
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    title="Right to Left"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDirectionChange('TB')}
+                    disabled={isChangingDirection}
+                    className={`p-1 rounded transition-colors ${
+                      diagramDirection === 'TB'
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    title="Top to Bottom"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDirectionChange('BT')}
+                    disabled={isChangingDirection}
+                    className={`p-1 rounded transition-colors ${
+                      diagramDirection === 'BT'
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    title="Bottom to Top"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  {isChangingDirection && (
+                    <div className="px-1">
+                      <svg className="animate-spin h-3 w-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
                   )}
                 </div>
                 
@@ -722,6 +760,7 @@ function DiagramGenerator() {
                     ) : (
                       // PNG format - optimized display
                       <img
+                        key={`${diagramUrl}-${diagramDirection}`}
                         src={diagramUrl}
                         alt="Generated architecture diagram"
                         className="max-w-full h-auto block mx-auto"
@@ -869,6 +908,7 @@ function DiagramGenerator() {
               </div>
             ) : (
               <img
+                key={`${diagramUrl}-${diagramDirection}`}
                 src={diagramUrl}
                 alt="Generated architecture diagram"
                 className="max-w-full max-h-[90vh] object-contain"
