@@ -122,6 +122,7 @@ class RegenerateFormatRequest(BaseModel):
     """Request model for regenerating diagram in different format."""
     session_id: str
     outformat: str
+    direction: Optional[Literal["TB", "BT", "LR", "RL"]] = None
 
 
 class ExecuteCodeRequest(BaseModel):
@@ -634,7 +635,15 @@ async def regenerate_format(request: RegenerateFormatRequest):
         spec_copy = deepcopy(current_spec)
         spec_copy.outformat = normalize_format_list(request.outformat)
         
-        # Regenerate diagram with new format
+        # Update direction if provided
+        if request.direction:
+            spec_copy.direction = request.direction
+            # Also update rankdir in graph_attr for Graphviz compatibility
+            if not spec_copy.graphviz_attrs:
+                spec_copy.graphviz_attrs = GraphvizAttributes()
+            spec_copy.graphviz_attrs.graph_attr["rankdir"] = request.direction
+        
+        # Regenerate diagram with new format and/or direction
         diagram_path = generator.generate(spec_copy)
         
         # Return relative URL

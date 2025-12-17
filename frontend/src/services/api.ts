@@ -115,12 +115,18 @@ export function getDiagramUrl(filename: string): string {
 
 export async function regenerateFormat(
   sessionId: string,
-  format: string
+  format: string,
+  direction?: string
 ): Promise<GenerateDiagramResponse> {
+  const body: any = { session_id: sessionId, outformat: format };
+  if (direction) {
+    body.direction = direction;
+  }
+  
   const response = await fetch(`${API_BASE_URL}/api/regenerate-format`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, outformat: format }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

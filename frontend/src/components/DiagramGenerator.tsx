@@ -37,6 +37,8 @@ function DiagramGenerator() {
   const [showSuccessMetrics, setShowSuccessMetrics] = useState(true)
   const [zoomLevel, setZoomLevel] = useState(100)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [diagramDirection, setDiagramDirection] = useState<'TB' | 'BT' | 'LR' | 'RL'>('LR')
+  const [isChangingDirection, setIsChangingDirection] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const fullscreenRef = useRef<HTMLDivElement | null>(null)
 
@@ -102,6 +104,7 @@ function DiagramGenerator() {
     setMessage(null)
     setDiagramUrl(null)
     setZoomLevel(100) // Reset zoom when generating new diagram
+    setDiagramDirection('LR') // Reset to default direction
 
     try {
       const response = await generateDiagram(description, selectedProvider, outputFormat)
@@ -216,7 +219,7 @@ function DiagramGenerator() {
     setErrorContext(null)
     
     try {
-      const response = await regenerateFormat(sessionId, newFormat)
+      const response = await regenerateFormat(sessionId, newFormat, diagramDirection)
       const filename = response.diagram_url.split('/').pop()
       if (filename) {
         const url = getDiagramUrl(filename)
@@ -238,6 +241,38 @@ function DiagramGenerator() {
       })
     } finally {
       setIsRegenerating(false)
+    }
+  }
+
+  const handleDirectionChange = async (newDirection: 'TB' | 'BT' | 'LR' | 'RL') => {
+    if (!sessionId || !diagramUrl || isChangingDirection) return
+    
+    setIsChangingDirection(true)
+    setError(null)
+    setErrorContext(null)
+    
+    try {
+      const response = await regenerateFormat(sessionId, downloadFormat, newDirection)
+      const filename = response.diagram_url.split('/').pop()
+      if (filename) {
+        const url = getDiagramUrl(filename)
+        setDiagramUrl(url)
+        setDiagramDirection(newDirection)
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to change direction'
+      const requestId = (err as any).requestId || null
+      
+      setError(errorMessage)
+      setErrorContext({
+        requestId,
+        prompt: description,
+        provider: selectedProvider,
+        errorType: 'generation',
+        showReportButton: true
+      })
+    } finally {
+      setIsChangingDirection(false)
     }
   }
 
@@ -498,6 +533,7 @@ function DiagramGenerator() {
                       setSessionId(null)
                       setGenerationId(null)
                       setGeneratedCode(null)
+                      setDiagramDirection('LR')
                     }}
                     className="group relative px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
                     title="Create another diagram"
@@ -512,6 +548,29 @@ function DiagramGenerator() {
                 </div>
               </div>
               <div className="border rounded-lg bg-gray-50 animate-slide-up relative overflow-hidden">
+                {/* Direction Selector - Bottom Left Corner */}
+                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 px-1.5 py-1">
+                  <span className="text-[10px] text-gray-500 mr-1">Dir:</span>
+                  <select
+                    value={diagramDirection}
+                    onChange={(e) => handleDirectionChange(e.target.value as 'TB' | 'BT' | 'LR' | 'RL')}
+                    disabled={isChangingDirection}
+                    className="text-[10px] text-gray-700 bg-transparent border-none outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:ring-0 p-0"
+                    title="Change diagram direction"
+                  >
+                    <option value="LR">LR</option>
+                    <option value="TB">TB</option>
+                    <option value="BT">BT</option>
+                    <option value="RL">RL</option>
+                  </select>
+                  {isChangingDirection && (
+                    <svg className="animate-spin h-3 w-3 text-gray-400 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </div>
+                
                 {/* Zoom Controls - Only show for previewable formats (PNG) */}
                 {/* SVG implementation commented out temporarily */}
                 {downloadFormat === 'png' && (
