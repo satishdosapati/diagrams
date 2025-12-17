@@ -315,7 +315,7 @@ function DiagramGenerator() {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
                     rows={3}
-                    className="w-full px-3 py-2 pb-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs"
+                    className="w-full px-3 py-2 pb-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-[10px]"
                     disabled={isGenerating}
                   />
                   <PromptRewriter
