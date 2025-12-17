@@ -41,6 +41,47 @@ export interface GenerateDiagramResponse {
   generated_code?: string;
 }
 
+export interface RewritePromptRequest {
+  description: string;
+  provider: string;
+}
+
+export interface SuggestedCluster {
+  name: string;
+  components: string[];
+  pattern?: string;
+}
+
+export interface RewritePromptResponse {
+  rewritten_description: string;
+  improvements: string[];
+  components_identified: string[];
+  suggested_clusters: SuggestedCluster[];
+}
+
+export async function rewritePrompt(
+  description: string,
+  provider: string
+): Promise<RewritePromptResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/rewrite-prompt`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ description, provider }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    const requestId = response.headers.get('X-Request-ID');
+    const errorWithRequestId = new Error(error.detail || 'Failed to rewrite prompt');
+    (errorWithRequestId as any).requestId = requestId;
+    (errorWithRequestId as any).statusCode = response.status;
+    throw errorWithRequestId;
+  }
+
+  return response.json();
+}
 
 export async function generateDiagram(
   description: string,

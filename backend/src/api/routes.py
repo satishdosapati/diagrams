@@ -14,6 +14,7 @@ import re
 
 from typing import Optional, Union, List, Literal
 from ..agents.diagram_agent import DiagramAgent
+from ..agents.prompt_rewriter_agent import PromptRewriterAgent
 from ..generators.universal_generator import UniversalGenerator
 from ..models.spec import ArchitectureSpec, GraphvizAttributes
 from ..storage.feedback_storage import FeedbackStorage
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize agents and generator
 agent = DiagramAgent()
+prompt_rewriter_agent = PromptRewriterAgent()
 generator = UniversalGenerator()
 
 # Initialize feedback storage
@@ -171,6 +173,112 @@ class FeedbackResponse(BaseModel):
     """Response model for feedback submission."""
     feedback_id: str
     message: str
+
+
+class RewritePromptRequest(BaseModel):
+    """Request model for prompt rewriting."""
+    description: str = Field(..., description="Original architecture description")
+    provider: str = Field(..., description="Cloud provider (aws, azure, gcp)")
+
+
+class SuggestedCluster(BaseModel):
+    """Suggested cluster grouping."""
+    name: str
+    components: List[str]
+    pattern: Optional[str] = None
+
+
+class RewritePromptResponse(BaseModel):
+    """Response model for prompt rewriting."""
+    rewritten_description: str
+    improvements: List[str]
+    components_identified: List[str]
+    suggested_clusters: List[SuggestedCluster]
+
+
+@router.post("/rewrite-prompt", response_model=RewritePromptResponse, tags=["diagrams"])
+async def rewrite_prompt(request: RewritePromptRequest, http_request: Request = None):
+    """
+    Rewrite architecture prompt with clustering guidance and icon availability checks.
+    
+    This endpoint enhances user prompts by:
+    - Adding clustering hints for better diagram organization
+    - Checking icon availability and preferring available components
+    - Identifying architectural patterns
+    - Suggesting component groupings
+    
+    **Example Request:**
+    ```json
+    {
+        "description": "serverless app with api gateway lambda dynamodb",
+        "provider": "aws"
+    }
+    ```
+    
+    **Example Response:**
+    ```json
+    {
+        "rewritten_description": "Create a serverless architecture with Amazon API Gateway, AWS Lambda functions, and Amazon DynamoDB. Group API Gateway in the API Layer cluster...",
+        "improvements": ["Added full AWS service names", "Identified serverless pattern"],
+        "components_identified": ["api_gateway", "lambda", "dynamodb"],
+        "suggested_clusters": [...]
+    }
+    ```
+    
+    Args:
+        request: Prompt rewriting request containing description and provider
+        http_request: FastAPI request object (for request ID tracking)
+    
+    Returns:
+        RewritePromptResponse with rewritten prompt and clustering suggestions
+    
+    Raises:
+        HTTPException: If rewriting fails (500) or input is invalid (400)
+    """
+    try:
+        # Get request ID for logging
+        request_id = getattr(http_request.state, 'request_id', 'unknown') if http_request else 'unknown'
+        logger.info(f"[{request_id}] === Starting prompt rewrite ===")
+        logger.info(f"[{request_id}] Provider: {request.provider}")
+        logger.info(f"[{request_id}] Description length: {len(request.description)} characters")
+        
+        # Validate input
+        if not request.description or not request.description.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Description cannot be empty"
+            )
+        
+        if request.provider not in ["aws", "azure", "gcp"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid provider: {request.provider}. Must be one of: aws, azure, gcp"
+            )
+        
+        # Rewrite prompt
+        try:
+            result = prompt_rewriter_agent.rewrite(request.description, request.provider)
+            logger.info(f"[{request_id}] Prompt rewritten successfully")
+            logger.debug(f"[{request_id}] Improvements: {result.get('improvements', [])}")
+            logger.debug(f"[{request_id}] Components identified: {result.get('components_identified', [])}")
+            logger.debug(f"[{request_id}] Clusters suggested: {len(result.get('suggested_clusters', []))}")
+            
+            return RewritePromptResponse(**result)
+        except Exception as rewrite_error:
+            logger.error(f"[{request_id}] ERROR in prompt rewrite: {rewrite_error}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to rewrite prompt: {str(rewrite_error)}"
+            )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in rewrite_prompt: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 
 @router.post("/generate-diagram", response_model=GenerateDiagramResponse, tags=["diagrams"])

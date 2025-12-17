@@ -6,6 +6,7 @@ import AdvancedCodeMode from './AdvancedCodeMode'
 import FeedbackWidget from './FeedbackWidget'
 import ProgressBar from './ProgressBar'
 import { ErrorDisplay } from './ErrorDisplay'
+import PromptRewriter from './PromptRewriter'
 
 type Provider = 'aws' | 'azure' | 'gcp'
 type Mode = 'natural-language' | 'advanced-code'
@@ -307,15 +308,23 @@ function DiagramGenerator() {
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Describe your {selectedProvider.toUpperCase()} architecture
                 </label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  disabled={isGenerating}
-                />
+                <div className="relative">
+                  <textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g., Create a serverless API with API Gateway, Lambda, and DynamoDB"
+                    rows={3}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isGenerating}
+                  />
+                  <PromptRewriter
+                    description={description}
+                    provider={selectedProvider}
+                    onRewrite={(rewritten) => setDescription(rewritten)}
+                    disabled={isGenerating}
+                  />
+                </div>
                 <p className="mt-1 text-xs text-gray-500">
                   Describe the {selectedProvider.toUpperCase()} architecture you want to visualize
                 </p>
