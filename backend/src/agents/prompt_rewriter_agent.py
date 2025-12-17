@@ -65,10 +65,9 @@ Your task:
 3. Identify architectural patterns (event-driven, data pipeline, microservices, serverless, network/VPC)
 4. Suggest component groupings/clusters based on architectural layers
 5. Rewrite the prompt with clustering hints that help DiagramAgent generate better organized diagrams
-6. Silently replace unavailable components with available alternatives when possible
 
 CLUSTERING GUIDELINES:
-- Always suggest clusters when you have 3+ components of similar types or layers
+- Always suggest clusters when you have components of similar types or layers
 - Use pattern-specific cluster names:
   * Event-Driven: "Event Sources", "Event Processing", "Event Storage"
   * Data Pipeline: "Data Sources", "Processing Layer", "Storage Layer", "Analytics Layer"
@@ -84,7 +83,6 @@ CLUSTERING GUIDELINES:
 
 ICON AVAILABILITY CHECK:
 - Prefer components that exist in the available icons list
-- If user mentions unavailable component, silently suggest closest available alternative
 - Use full service names (e.g., "Amazon API Gateway" not "API Gateway")
 - Ensure rewritten prompt uses components that will successfully resolve
 
@@ -135,7 +133,6 @@ Azure: {format_node_list(azure_nodes)}
 GCP: {format_node_list(gcp_nodes)}
 
 When rewriting prompts, prefer components from the appropriate provider's available icons list.
-If a component is not available, suggest the closest available alternative silently.
 """
                 return base_prompt + icon_info
             except Exception as e:

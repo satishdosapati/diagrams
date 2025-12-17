@@ -43,7 +43,7 @@ export default function PromptRewriter({
   }
 
   return (
-    <div className="absolute top-2 right-2">
+    <div className="absolute bottom-2 right-2">
       <button
         onClick={handleRewrite}
         disabled={disabled || isRewriting}
@@ -96,7 +96,7 @@ export default function PromptRewriter({
         )}
       </button>
       {error && (
-        <div className="absolute top-full right-0 mt-1 w-64 p-2 bg-red-50 border border-red-200 rounded-md shadow-lg z-10">
+        <div className="absolute bottom-full right-0 mb-1 w-64 p-2 bg-red-50 border border-red-200 rounded-md shadow-lg z-10">
           <p className="text-xs text-red-600">{error}</p>
         </div>
       )}
