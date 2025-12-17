@@ -87,26 +87,63 @@ ICON AVAILABILITY CHECK:
 - Ensure rewritten prompt uses components that will successfully resolve
 
 OUTPUT FORMAT:
-- rewritten_description: Enhanced prompt with clustering hints embedded naturally
-- improvements: List of specific improvements made (e.g., "Added clustering hints", "Replaced unavailable component")
-- components_identified: List of node_ids found in the prompt
-- suggested_clusters: List of cluster suggestions with component groupings
+The rewritten_description must follow this structured format:
 
-EXAMPLE:
+1. Layer-by-layer flow sections showing data/request flow (use layer names as headers)
+2. CLUSTERING section with explicit cluster groupings
+3. CONNECTIONS section showing component relationships
+
+Format structure:
+[Layer Name] (optional description):
+- Component 1 description and role
+- Component 2 description and role
+...
+
+CLUSTERING:
+- Group [component] in the "[Cluster Name]" cluster
+- Group [components] in the "[Cluster Name]" cluster
+...
+
+CONNECTIONS:
+- [Component A] connects to [Component B] (connection purpose)
+- [Component B] connects to [Component C] (connection purpose)
+...
+
+EXAMPLE 1 - Serverless Architecture:
 Input: "serverless app with api gateway lambda dynamodb"
 Output:
 {
-  "rewritten_description": "Create a serverless architecture with Amazon API Gateway, AWS Lambda functions, and Amazon DynamoDB. Group API Gateway in the API Layer cluster. Group Lambda functions in the Compute Layer cluster. Group DynamoDB in the Data Layer cluster.",
+  "rewritten_description": "Create a serverless architecture with the following structured flow:\n\nAPI Layer (Frontend):\n- Amazon API Gateway receives HTTP requests from clients\n\nCompute Layer (Processing):\n- AWS Lambda functions process requests from API Gateway\n- Lambda functions execute business logic\n\nData Layer (Storage):\n- Amazon DynamoDB stores application data\n- Lambda functions read and write data to DynamoDB\n\nCLUSTERING:\n- Group API Gateway in the \"API Layer\" cluster\n- Group Lambda functions in the \"Compute Layer\" cluster\n- Group DynamoDB in the \"Data Layer\" cluster\n\nCONNECTIONS:\n- API Gateway connects to Lambda functions (HTTP requests)\n- Lambda functions connect to DynamoDB (read/write operations)",
   "improvements": [
     "Added full AWS service names",
     "Identified serverless architectural pattern",
-    "Suggested clustering by architectural layers"
+    "Structured flow by architectural layers",
+    "Added explicit clustering and connection information"
   ],
   "components_identified": ["api_gateway", "lambda", "dynamodb"],
   "suggested_clusters": [
     {"name": "API Layer", "components": ["api_gateway"], "pattern": "serverless"},
     {"name": "Compute Layer", "components": ["lambda"], "pattern": "serverless"},
     {"name": "Data Layer", "components": ["dynamodb"], "pattern": "serverless"}
+  ]
+}
+
+EXAMPLE 2 - Event-Driven Architecture:
+Input: "event driven system: s3 uploads trigger eventbridge which invokes 2 lambdas that write to dynamodb"
+Output:
+{
+  "rewritten_description": "Build an event-driven architecture with the following structured flow:\n\nEvent Sources Layer:\n- Amazon S3 receives file uploads from users\n- S3 generates upload events\n\nEvent Routing Layer:\n- Amazon EventBridge receives events from S3\n- EventBridge routes events to subscribers\n\nEvent Processing Layer:\n- AWS Lambda Function 1 processes events from EventBridge\n- AWS Lambda Function 2 processes events from EventBridge\n- Both Lambda functions execute business logic based on events\n\nEvent Storage Layer:\n- Amazon DynamoDB stores processed event data\n- Lambda Function 1 writes results to DynamoDB\n- Lambda Function 2 writes results to DynamoDB\n\nCLUSTERING:\n- Group S3 in the \"Event Sources\" cluster\n- Group EventBridge in the \"Integration\" layer\n- Group Lambda Function 1 and Lambda Function 2 in the \"Event Processing\" cluster\n- Group DynamoDB in the \"Event Storage\" cluster\n\nCONNECTIONS:\n- S3 connects to EventBridge (event notifications)\n- EventBridge connects to Lambda Function 1 (event routing)\n- EventBridge connects to Lambda Function 2 (event routing)\n- Lambda Function 1 connects to DynamoDB (data writes)\n- Lambda Function 2 connects to DynamoDB (data writes)",
+  "improvements": [
+    "Clarified event flow and relationships",
+    "Identified event-driven architectural pattern",
+    "Structured flow by event processing stages",
+    "Added explicit clustering and connection information"
+  ],
+  "components_identified": ["s3", "eventbridge", "lambda", "dynamodb"],
+  "suggested_clusters": [
+    {"name": "Event Sources", "components": ["s3"], "pattern": "event-driven"},
+    {"name": "Event Processing", "components": ["lambda"], "pattern": "event-driven"},
+    {"name": "Event Storage", "components": ["dynamodb"], "pattern": "event-driven"}
   ]
 }
 """
@@ -174,7 +211,15 @@ Provider: {provider.upper()}
 {available_icons_info}
 
 Analyze the description, check icon availability, identify architectural patterns, and suggest clustering.
-Rewrite the prompt with clustering hints embedded naturally in the description.
+
+IMPORTANT: The rewritten_description must follow this exact structure:
+1. Start with a brief introduction
+2. Include layer-by-layer flow sections (use layer names as headers, e.g., "API Layer (Frontend):")
+3. Each layer section should list components with their roles
+4. Include a "CLUSTERING:" section with explicit cluster groupings
+5. Include a "CONNECTIONS:" section showing component relationships
+
+Format the output with clear sections, bullet points, and explicit clustering/connection information.
 """
         
         try:
