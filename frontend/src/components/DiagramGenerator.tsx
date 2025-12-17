@@ -245,8 +245,19 @@ function DiagramGenerator() {
   }
 
   const handleDirectionChange = async (newDirection: 'TB' | 'BT' | 'LR' | 'RL') => {
-    if (!sessionId || !diagramUrl || isChangingDirection) return
+    // Don't trigger if conditions aren't met
+    if (!sessionId || !diagramUrl || isChangingDirection) {
+      console.log('Direction change blocked:', { sessionId, diagramUrl, isChangingDirection })
+      return
+    }
     
+    // Don't regenerate if direction hasn't changed
+    if (newDirection === diagramDirection) {
+      console.log('Direction unchanged, skipping regeneration')
+      return
+    }
+    
+    console.log('Changing direction from', diagramDirection, 'to', newDirection)
     setIsChangingDirection(true)
     setError(null)
     setErrorContext(null)
@@ -258,8 +269,10 @@ function DiagramGenerator() {
         const url = getDiagramUrl(filename)
         setDiagramUrl(url)
         setDiagramDirection(newDirection)
+        console.log('Direction changed successfully')
       }
     } catch (err) {
+      console.error('Direction change error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to change direction'
       const requestId = (err as any).requestId || null
       
@@ -553,7 +566,11 @@ function DiagramGenerator() {
                   <span className="text-[10px] text-gray-500 mr-1">Dir:</span>
                   <select
                     value={diagramDirection}
-                    onChange={(e) => handleDirectionChange(e.target.value as 'TB' | 'BT' | 'LR' | 'RL')}
+                    onChange={(e) => {
+                      const newDir = e.target.value as 'TB' | 'BT' | 'LR' | 'RL'
+                      console.log('Select onChange fired:', newDir, 'current:', diagramDirection)
+                      handleDirectionChange(newDir)
+                    }}
                     disabled={isChangingDirection}
                     className="text-[10px] text-gray-700 bg-transparent border-none outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:ring-0 p-0"
                     title="Change diagram direction"
