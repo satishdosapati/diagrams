@@ -87,7 +87,7 @@ ICON AVAILABILITY CHECK:
 - Ensure rewritten prompt uses components that will successfully resolve
 
 OUTPUT FORMAT:
-The rewritten_description must follow this structured format and MUST NOT exceed 2000 characters:
+The rewritten_description must follow this structured format:
 
 1. Layer-by-layer flow sections showing data/request flow (use layer names as headers)
 2. CLUSTERING section with explicit cluster groupings
