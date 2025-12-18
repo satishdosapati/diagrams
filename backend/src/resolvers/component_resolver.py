@@ -232,14 +232,26 @@ class ComponentResolver:
                 except Exception as e:
                     logger.error(f"[RESOLVER] ❌ Second direct import attempt failed: {e}", exc_info=True)
                 
-                # Still raise error, but with more context
+                # Class truly doesn't exist - provide helpful error with upgrade suggestion
                 similar_classes = self.discovery.find_similar_classes(
                     class_name, available_classes
                 )
+                
+                # Check if this might be a version issue
                 error_msg = self._build_class_not_found_error(
                     provider, node_id, module_path, class_name,
                     available_classes, similar_classes
                 )
+                
+                # Add version upgrade suggestion if class is in registry but not in library
+                if registry_mapping:
+                    upgrade_hint = (
+                        f"\n\n⚠️  This class exists in the registry but not in the installed diagrams library. "
+                        f"This usually means the diagrams library version is outdated. "
+                        f"Try upgrading: pip install --upgrade diagrams"
+                    )
+                    error_msg += upgrade_hint
+                
                 logger.error(f"[RESOLVER] Error message: {error_msg}")
                 raise ValueError(error_msg)
         
