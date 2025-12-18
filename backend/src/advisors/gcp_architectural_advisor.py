@@ -470,19 +470,36 @@ GCP Architectural Best Practices (Based on Google Cloud Architecture Framework):
             graphviz_attrs.edge_attr["penwidth"] = "1.0"
         
         # Set label positioning attributes for edge labels (connectors)
+        # CRITICAL: With orthogonal routing (splines=ortho), labels can be scattered across
+        # different segments of the multi-segment path. These settings improve consistency:
+        
         # labeldistance: Distance from edge (lower = closer, default 1.0)
+        # Increased to 1.5 for better visibility and to reduce overlap with edge segments
         if "labeldistance" not in graphviz_attrs.edge_attr:
-            graphviz_attrs.edge_attr["labeldistance"] = "0.6"  # Closer to edge
+            graphviz_attrs.edge_attr["labeldistance"] = "1.5"
         # labelfontsize: Font size for edge labels
         if "labelfontsize" not in graphviz_attrs.edge_attr:
-            graphviz_attrs.edge_attr["labelfontsize"] = "10"
+            graphviz_attrs.edge_attr["labelfontsize"] = "9"  # Slightly smaller to reduce clutter
         # labelloc: Label position relative to edge (t=top, c=center, b=bottom)
         if "labelloc" not in graphviz_attrs.edge_attr:
             graphviz_attrs.edge_attr["labelloc"] = "c"  # Center label on edge
         # labelangle: Angle of label text relative to edge (0=horizontal, positive=clockwise)
-        # For orthogonal edges, horizontal labels (0) work best
+        # For orthogonal edges, slight angle (-25) works better than horizontal (0)
+        # This prevents labels from being placed at different segments of the path
         if "labelangle" not in graphviz_attrs.edge_attr:
-            graphviz_attrs.edge_attr["labelangle"] = "0"  # Keep labels horizontal
+            graphviz_attrs.edge_attr["labelangle"] = "-25"  # Slight angle for better positioning
+        # labelpos: Position along edge path (0=start, 0.5=middle, 1=end)
+        # Forces labels to middle of edge path for consistent placement with orthogonal routing
+        if "labelpos" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["labelpos"] = "0.5"  # Middle of edge
+        # labelfloat: Allow label to float for better placement (true/false)
+        # Enables Graphviz to find better positions for labels with orthogonal routing
+        if "labelfloat" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["labelfloat"] = "true"
+        # decorate: Draw line from label to edge (true/false)
+        # Set to false to avoid extra decoration lines that can clutter orthogonal diagrams
+        if "decorate" not in graphviz_attrs.edge_attr:
+            graphviz_attrs.edge_attr["decorate"] = "false"
         
         # Set default node attributes for label positioning (always apply if not set)
         if not graphviz_attrs.node_attr:
