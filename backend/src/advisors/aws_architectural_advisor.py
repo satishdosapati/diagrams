@@ -590,7 +590,7 @@ AWS Architectural Best Practices (Based on AWS Well-Architected Framework):
         if "nodesep" not in graphviz_attrs.graph_attr:
             graphviz_attrs.graph_attr["nodesep"] = "1.0"  # Increased from 0.8 for better spacing
         if "ranksep" not in graphviz_attrs.graph_attr:
-            graphviz_attrs.graph_attr["ranksep"] = "1.5"  # Increased from 1.2 for better spacing
+            graphviz_attrs.graph_attr["ranksep"] = "2.0"  # Increased from 1.2 for better spacing
         
         # For complex diagrams with many connections, merge parallel edges
         # This reduces visual clutter when multiple sources connect to the same target
