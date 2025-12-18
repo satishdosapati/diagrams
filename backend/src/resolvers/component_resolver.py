@@ -172,7 +172,8 @@ class ComponentResolver:
             module_path = self._get_module_path(provider, category)
             
             # Try direct import first (more reliable than discovery cache)
-            logger.debug(f"[RESOLVER] Trying direct import from registry hint: {module_path}.{class_name}")
+            # Use INFO level so it shows in production logs
+            logger.info(f"[RESOLVER] Attempting direct import: {module_path}.{class_name}")
             try:
                 module = importlib.import_module(module_path)
                 logger.debug(f"[RESOLVER] Module imported successfully: {module_path}")
@@ -182,21 +183,25 @@ class ComponentResolver:
                     logger.debug(f"[RESOLVER] Class '{class_name}' found in module, checking if it's a class")
                     
                     if inspect.isclass(node_class):
-                        logger.info(f"[RESOLVER] Found '{class_name}' via direct import from registry hint")
+                        logger.info(f"[RESOLVER] ✅ Found '{class_name}' via direct import from registry hint")
                         logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
                         return node_class
                     else:
                         logger.warning(f"[RESOLVER] '{class_name}' exists but is not a class (type: {type(node_class)})")
                 else:
-                    logger.warning(f"[RESOLVER] Class '{class_name}' not found in module '{module_path}'")
-                    # Check what's actually available
+                    logger.warning(f"[RESOLVER] Class '{class_name}' not found in module '{module_path}' via hasattr check")
+                    # Check what's actually available - use INFO level for production visibility
                     available_attrs = [attr for attr in dir(module) if not attr.startswith("_") and inspect.isclass(getattr(module, attr, None))]
-                    logger.debug(f"[RESOLVER] Available classes in module: {available_attrs[:10]}")
+                    logger.info(f"[RESOLVER] Available classes in module (first 15): {available_attrs[:15]}")
+                    # Check if Bedrock exists with different casing
+                    bedrock_variants = [attr for attr in dir(module) if 'bedrock' in attr.lower() and inspect.isclass(getattr(module, attr, None))]
+                    if bedrock_variants:
+                        logger.info(f"[RESOLVER] Found Bedrock variants: {bedrock_variants}")
                     
             except ImportError as import_error:
-                logger.error(f"[RESOLVER] Failed to import module '{module_path}': {import_error}", exc_info=True)
+                logger.error(f"[RESOLVER] ❌ Failed to import module '{module_path}': {import_error}", exc_info=True)
             except Exception as import_error:
-                logger.error(f"[RESOLVER] Unexpected error during direct import: {import_error}", exc_info=True)
+                logger.error(f"[RESOLVER] ❌ Unexpected error during direct import: {import_error}", exc_info=True)
             
             # If direct import failed, check discovery cache for helpful error message
             # But first, try one more time with fresh discovery (clear cache)
@@ -209,15 +214,23 @@ class ComponentResolver:
                 logger.debug(f"[RESOLVER] Available classes in discovery cache: {list(available_classes)[:10]}")
                 
                 # Last resort: try direct import again (maybe module wasn't imported correctly)
+                logger.info(f"[RESOLVER] Attempting second direct import for '{class_name}'")
                 try:
                     module = importlib.import_module(module_path)
                     if hasattr(module, class_name):
                         node_class = getattr(module, class_name)
                         if inspect.isclass(node_class):
-                            logger.info(f"[RESOLVER] Found '{class_name}' via second direct import attempt")
+                            logger.info(f"[RESOLVER] ✅ Found '{class_name}' via second direct import attempt")
                             return node_class
-                except Exception:
-                    pass  # Already logged above
+                        else:
+                            logger.warning(f"[RESOLVER] '{class_name}' found but not a class: {type(node_class)}")
+                    else:
+                        logger.warning(f"[RESOLVER] '{class_name}' not found via hasattr in second attempt")
+                        # List all classes to help debug
+                        all_classes = [attr for attr in dir(module) if not attr.startswith("_") and inspect.isclass(getattr(module, attr, None))]
+                        logger.info(f"[RESOLVER] All classes in module: {sorted(all_classes)}")
+                except Exception as e:
+                    logger.error(f"[RESOLVER] ❌ Second direct import attempt failed: {e}", exc_info=True)
                 
                 # Still raise error, but with more context
                 similar_classes = self.discovery.find_similar_classes(
