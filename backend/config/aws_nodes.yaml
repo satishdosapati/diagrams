@@ -887,6 +887,10 @@ nodes:
     category: ml
     class_name: SageMaker
     description: "Amazon SageMaker"
+  bedrock:
+    category: ml
+    class_name: Bedrock
+    description: "Amazon Bedrock"
   rekognition:
     category: ml
     class_name: Rekognition
