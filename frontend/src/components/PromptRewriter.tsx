@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { rewritePrompt } from '../services/api'
 
 interface PromptRewriterProps {
@@ -16,6 +16,16 @@ export default function PromptRewriter({
 }: PromptRewriterProps) {
   const [isRewriting, setIsRewriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [originalDescription, setOriginalDescription] = useState<string | null>(null)
+  const [hasBeenRewritten, setHasBeenRewritten] = useState(false)
+
+  // Reset undo state if user manually edits the description back to original
+  useEffect(() => {
+    if (hasBeenRewritten && originalDescription && description === originalDescription) {
+      setHasBeenRewritten(false)
+      setOriginalDescription(null)
+    }
+  }, [description, originalDescription, hasBeenRewritten])
 
   // Only show icon when there's text
   if (!description.trim()) {
@@ -29,21 +39,66 @@ export default function PromptRewriter({
 
     setIsRewriting(true)
     setError(null)
+    // Store original before rewriting
+    setOriginalDescription(description)
 
     try {
       const response = await rewritePrompt(description, provider)
       onRewrite(response.rewritten_description)
+      setHasBeenRewritten(true)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to rewrite prompt'
       setError(errorMessage)
-      // Keep original text on error
+      // Reset original if rewrite failed
+      setOriginalDescription(null)
     } finally {
       setIsRewriting(false)
     }
   }
 
+  const handleUndo = () => {
+    if (originalDescription) {
+      onRewrite(originalDescription)
+      setHasBeenRewritten(false)
+      setOriginalDescription(null)
+    }
+  }
+
   return (
-    <div className="absolute bottom-2 right-2">
+    <div className="absolute bottom-2 right-2 flex gap-1">
+      {/* Undo button - show after successful rewrite */}
+      {hasBeenRewritten && originalDescription && (
+        <button
+          onClick={handleUndo}
+          disabled={disabled}
+          className={`
+            p-1.5 rounded-md transition-all
+            ${disabled
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-gray-100 cursor-pointer hover:text-gray-700'
+            }
+          `}
+          title="Undo rewrite and restore original prompt"
+          type="button"
+        >
+          <svg
+            className="h-5 w-5 text-gray-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+            />
+          </svg>
+        </button>
+      )}
+
+      {/* Rewrite button */}
       <button
         onClick={handleRewrite}
         disabled={disabled || isRewriting}
