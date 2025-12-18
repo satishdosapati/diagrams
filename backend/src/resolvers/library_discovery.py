@@ -127,14 +127,15 @@ class LibraryDiscovery:
                 
                 try:
                     obj = getattr(module, name)
-                    # Check if it's a class and is defined in this module
+                    # Check if it's a class
                     if inspect.isclass(obj):
-                        # Check if it's from this module (not imported)
-                        if hasattr(obj, '__module__') and obj.__module__ == module_path:
-                            classes.add(name)
-                        # Also include if it's a re-exported class (common pattern)
-                        elif hasattr(obj, '__module__') and module_path in obj.__module__:
-                            classes.add(name)
+                        # Include ALL classes available in the module, regardless of where they're defined
+                        # This is more inclusive and handles:
+                        # - Classes defined in the module
+                        # - Classes imported from parent modules
+                        # - Re-exported classes
+                        # - Classes that might have different __module__ values
+                        classes.add(name)
                 except Exception as e:
                     logger.debug(f"Error checking {name} in {module_path}: {e}")
                     continue

@@ -110,13 +110,13 @@ class ComponentResolver:
             node_id = "vpc"
         
         # STEP 1: Try library discovery first (source of truth)
-        # Get category hint from registry if available
+        # Get category hint from registry if available (but don't rely on it)
         category_hint = None
         registry_mapping = self.registry.get_node_mapping(provider, node_id)
         if registry_mapping:
             category_hint = registry_mapping[0]  # category
         
-        # Search library for matching class
+        # Search library for matching class (library-first approach)
         logger.debug(f"[RESOLVER] Searching library for node_id={node_id}, category_hint={category_hint}, provider={provider}")
         library_match = self.discovery.find_class(node_id, category_hint)
         
@@ -133,7 +133,7 @@ class ComponentResolver:
             except (ImportError, AttributeError) as e:
                 logger.error(f"[RESOLVER] Failed to import {class_name} from {module_path}: {e}", exc_info=True)
                 logger.error(f"[RESOLVER] Component details: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
-                # Fall through to registry fallback
+                # Fall through to direct import fallback
         
         # STEP 2: Try intelligent resolution (for ambiguous terms)
         ambiguous_terms = {"subnet", "database", "db", "function", "compute", "storage"}
@@ -165,40 +165,32 @@ class ComponentResolver:
                 node_id = resolved_id
                 registry_mapping = self.registry.get_node_mapping(provider, node_id)
         
-        # STEP 3: Registry fallback with validation
+        # STEP 3: Try direct import from registry hint (if available)
+        # Use registry only as a hint - try direct import without strict validation
         if registry_mapping:
             category, class_name = registry_mapping
             module_path = self._get_module_path(provider, category)
             
-            # Validate class exists before using
-            available_classes = self.discovery.discover_module_classes(module_path)
-            
-            if class_name in available_classes:
-                # Registry class exists - use it
-                logger.info(f"Using registry mapping: {class_name}")
+            # Try direct import first (more reliable than discovery cache)
+            logger.debug(f"[RESOLVER] Trying direct import from registry hint: {module_path}.{class_name}")
+            try:
                 module = importlib.import_module(module_path)
-                node_class = getattr(module, class_name)
-                logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
-                return node_class
-            else:
-                # Class not found in discovery - try direct import as fallback
-                # This handles cases where discovery misses classes (e.g., imported from parent module)
-                logger.debug(f"[RESOLVER] Class '{class_name}' not in discovered classes, trying direct import")
-                try:
-                    module = importlib.import_module(module_path)
-                    if hasattr(module, class_name):
-                        node_class = getattr(module, class_name)
-                        if inspect.isclass(node_class):
-                            logger.info(f"[RESOLVER] Found '{class_name}' via direct import (not in discovery cache)")
-                            logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
-                            return node_class
-                except (ImportError, AttributeError) as import_error:
-                    logger.debug(f"[RESOLVER] Direct import failed: {import_error}")
+                if hasattr(module, class_name):
+                    node_class = getattr(module, class_name)
+                    if inspect.isclass(node_class):
+                        logger.info(f"[RESOLVER] Found '{class_name}' via direct import from registry hint")
+                        logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
+                        return node_class
+            except (ImportError, AttributeError) as import_error:
+                logger.debug(f"[RESOLVER] Direct import from registry hint failed: {import_error}")
+            
+            # If direct import failed, check discovery cache for helpful error message
+            available_classes = self.discovery.discover_module_classes(module_path)
+            if class_name not in available_classes:
+                logger.warning(f"[RESOLVER] Class '{class_name}' not found in discovery cache for '{module_path}'")
+                logger.debug(f"[RESOLVER] Available classes in module: {list(available_classes)[:10]}")
                 
-                # Registry class doesn't exist - provide helpful error
-                logger.error(f"[RESOLVER] Registry class '{class_name}' not found in module '{module_path}'")
-                logger.error(f"[RESOLVER] Component: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
-                logger.error(f"[RESOLVER] Available classes in module: {list(available_classes)[:10]}")
+                # Still raise error, but with more context
                 similar_classes = self.discovery.find_similar_classes(
                     class_name, available_classes
                 )
