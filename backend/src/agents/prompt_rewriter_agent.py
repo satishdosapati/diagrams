@@ -93,7 +93,7 @@ The rewritten_description must follow this structured format:
 2. CLUSTERING section with explicit cluster groupings
 3. CONNECTIONS section showing component relationships
 
-IMPORTANT: Keep descriptions concise. The rewritten_description field is limited to 2000 characters maximum.
+IMPORTANT: Keep descriptions concise.
 
 Format structure:
 [Layer Name] (optional description):
@@ -214,14 +214,14 @@ Provider: {provider.upper()}
 
 Analyze the description, check icon availability, identify architectural patterns, and suggest clustering.
 
-IMPORTANT: The rewritten_description must follow this exact structure and MUST NOT exceed 2000 characters:
+IMPORTANT: The rewritten_description must follow this exact structure:
 1. Start with a brief introduction
 2. Include layer-by-layer flow sections (use layer names as headers, e.g., "API Layer (Frontend):")
 3. Each layer section should list components with their roles
 4. Include a "CLUSTERING:" section with explicit cluster groupings
 5. Include a "CONNECTIONS:" section showing component relationships
 
-Keep descriptions concise. The rewritten_description field is limited to 2000 characters maximum.
+Keep descriptions concise.
 Format the output with clear sections, bullet points, and explicit clustering/connection information.
 """
         
@@ -229,22 +229,9 @@ Format the output with clear sections, bullet points, and explicit clustering/co
             response = self.agent(prompt)
             result = response.structured_output
             
-            # Enforce 2000 character limit on rewritten_description
-            rewritten_desc = result.rewritten_description or description
-            MAX_DESCRIPTION_LENGTH = 2000
-            if len(rewritten_desc) > MAX_DESCRIPTION_LENGTH:
-                logger.warning(f"[PROMPT_REWRITER] Truncating rewritten_description from {len(rewritten_desc)} to {MAX_DESCRIPTION_LENGTH} characters")
-                # Truncate at word boundary if possible
-                truncated = rewritten_desc[:MAX_DESCRIPTION_LENGTH]
-                last_space = truncated.rfind(' ')
-                if last_space > MAX_DESCRIPTION_LENGTH * 0.9:  # Only truncate at word if near limit
-                    rewritten_desc = truncated[:last_space] + "..."
-                else:
-                    rewritten_desc = truncated + "..."
-            
             # Convert Pydantic model to dict
             return {
-                "rewritten_description": rewritten_desc,
+                "rewritten_description": result.rewritten_description or description,
                 "improvements": result.improvements,
                 "components_identified": result.components_identified,
                 "suggested_clusters": [
