@@ -13,6 +13,22 @@ modules:
   management: diagrams.aws.management
   iot: diagrams.aws.iot
   ml: diagrams.aws.ml
+  ar: diagrams.aws.ar
+  blockchain: diagrams.aws.blockchain
+  business: diagrams.aws.business
+  cost: diagrams.aws.cost
+  devtools: diagrams.aws.devtools
+  enablement: diagrams.aws.enablement
+  enduser: diagrams.aws.enduser
+  engagement: diagrams.aws.engagement
+  game: diagrams.aws.game
+  general: diagrams.aws.general
+  media: diagrams.aws.media
+  migration: diagrams.aws.migration
+  mobile: diagrams.aws.mobile
+  quantum: diagrams.aws.quantum
+  robotics: diagrams.aws.robotics
+  satellite: diagrams.aws.satellite
 
 # AWS node mappings: node_id -> (category, class_name)
 nodes:
@@ -21,14 +37,78 @@ nodes:
     category: compute
     class_name: EC2
     description: "EC2 Instance"
+  ec2_instance:
+    category: compute
+    class_name: EC2Instance
+    description: "EC2 Instance (detailed)"
+  ec2_instances:
+    category: compute
+    class_name: EC2Instances
+    description: "Multiple EC2 Instances"
+  ec2_ami:
+    category: compute
+    class_name: EC2Ami
+    description: "EC2 AMI"
+  ec2_auto_scaling:
+    category: compute
+    class_name: EC2AutoScaling
+    description: "EC2 Auto Scaling"
+  ec2_container_registry:
+    category: compute
+    class_name: EC2ContainerRegistry
+    description: "EC2 Container Registry (ECR)"
+  ec2_container_registry_image:
+    category: compute
+    class_name: EC2ContainerRegistryImage
+    description: "ECR Image"
+  ec2_container_registry_registry:
+    category: compute
+    class_name: EC2ContainerRegistryRegistry
+    description: "ECR Registry"
+  ec2_elastic_ip:
+    category: compute
+    class_name: EC2ElasticIpAddress
+    description: "EC2 Elastic IP Address"
+  ec2_image_builder:
+    category: compute
+    class_name: EC2ImageBuilder
+    description: "EC2 Image Builder"
+  ec2_rescue:
+    category: compute
+    class_name: EC2Rescue
+    description: "EC2 Rescue"
+  ec2_spot_instance:
+    category: compute
+    class_name: EC2SpotInstance
+    description: "EC2 Spot Instance"
   lambda:
     category: compute
     class_name: Lambda
     description: "AWS Lambda Function"
+  lambda_function:
+    category: compute
+    class_name: LambdaFunction
+    description: "Lambda Function (detailed)"
   ecs:
     category: compute
     class_name: ECS
     description: "Elastic Container Service"
+  ecs_container:
+    category: compute
+    class_name: ElasticContainerServiceContainer
+    description: "ECS Container"
+  ecs_service:
+    category: compute
+    class_name: ElasticContainerServiceService
+    description: "ECS Service"
+  ecs_service_connect:
+    category: compute
+    class_name: ElasticContainerServiceServiceConnect
+    description: "ECS Service Connect"
+  ecs_task:
+    category: compute
+    class_name: ElasticContainerServiceTask
+    description: "ECS Task"
   eks:
     category: compute
     class_name: ElasticKubernetesService
@@ -49,54 +129,274 @@ nodes:
     category: compute
     class_name: ElasticBeanstalk
     description: "Elastic Beanstalk"
+  elastic_beanstalk_application:
+    category: compute
+    class_name: ElasticBeanstalkApplication
+    description: "Elastic Beanstalk Application"
+  elastic_beanstalk_deployment:
+    category: compute
+    class_name: ElasticBeanstalkDeployment
+    description: "Elastic Beanstalk Deployment"
+  app_runner:
+    category: compute
+    class_name: AppRunner
+    description: "AWS App Runner"
+  application_auto_scaling:
+    category: compute
+    class_name: ApplicationAutoScaling
+    description: "Application Auto Scaling"
+  compute_optimizer:
+    category: compute
+    class_name: ComputeOptimizer
+    description: "Compute Optimizer"
+  local_zones:
+    category: compute
+    class_name: LocalZones
+    description: "Local Zones"
+  outposts:
+    category: compute
+    class_name: Outposts
+    description: "AWS Outposts"
+  serverless_application_repository:
+    category: compute
+    class_name: ServerlessApplicationRepository
+    description: "Serverless Application Repository"
+  vmware_cloud_on_aws:
+    category: compute
+    class_name: VmwareCloudOnAWS
+    description: "VMware Cloud on AWS"
+  wavelength:
+    category: compute
+    class_name: Wavelength
+    description: "AWS Wavelength"
   
   # Storage
   s3:
     category: storage
     class_name: S3
     description: "Simple Storage Service"
+  s3_bucket:
+    category: storage
+    class_name: SimpleStorageServiceS3Bucket
+    description: "S3 Bucket"
+  s3_bucket_with_objects:
+    category: storage
+    class_name: SimpleStorageServiceS3BucketWithObjects
+    description: "S3 Bucket with Objects"
+  s3_object:
+    category: storage
+    class_name: SimpleStorageServiceS3Object
+    description: "S3 Object"
+  s3_access_points:
+    category: storage
+    class_name: S3AccessPoints
+    description: "S3 Access Points"
+  s3_object_lambda_access_points:
+    category: storage
+    class_name: S3ObjectLambdaAccessPoints
+    description: "S3 Object Lambda Access Points"
   ebs:
     category: storage
     class_name: ElasticBlockStoreEBS
     description: "Elastic Block Store"
+  ebs_volume:
+    category: storage
+    class_name: ElasticBlockStoreEBSVolume
+    description: "EBS Volume"
+  ebs_snapshot:
+    category: storage
+    class_name: ElasticBlockStoreEBSSnapshot
+    description: "EBS Snapshot"
   efs:
     category: storage
     class_name: ElasticFileSystemEFS
     description: "Elastic File System"
+  efs_file_system:
+    category: storage
+    class_name: ElasticFileSystemEFSFileSystem
+    description: "EFS File System"
+  efs_standard:
+    category: storage
+    class_name: EFSStandardPrimaryBg
+    description: "EFS Standard"
+  efs_infrequent_access:
+    category: storage
+    class_name: EFSInfrequentaccessPrimaryBg
+    description: "EFS Infrequent Access"
   glacier:
     category: storage
     class_name: S3Glacier
     description: "S3 Glacier"
+  glacier_archive:
+    category: storage
+    class_name: S3GlacierArchive
+    description: "Glacier Archive"
+  glacier_vault:
+    category: storage
+    class_name: S3GlacierVault
+    description: "Glacier Vault"
   fsx:
     category: storage
     class_name: Fsx
     description: "Amazon FSx"
+  fsx_for_lustre:
+    category: storage
+    class_name: FsxForLustre
+    description: "FSx for Lustre"
+  fsx_for_windows_file_server:
+    category: storage
+    class_name: FsxForWindowsFileServer
+    description: "FSx for Windows File Server"
   backup:
     category: storage
     class_name: Backup
     description: "AWS Backup"
+  storage_gateway:
+    category: storage
+    class_name: StorageGateway
+    description: "Storage Gateway"
+  storage_gateway_cached_volume:
+    category: storage
+    class_name: StorageGatewayCachedVolume
+    description: "Storage Gateway Cached Volume"
+  storage_gateway_non_cached_volume:
+    category: storage
+    class_name: StorageGatewayNonCachedVolume
+    description: "Storage Gateway Non-Cached Volume"
+  storage_gateway_virtual_tape_library:
+    category: storage
+    class_name: StorageGatewayVirtualTapeLibrary
+    description: "Storage Gateway Virtual Tape Library"
+  snowball:
+    category: storage
+    class_name: Snowball
+    description: "AWS Snowball"
+  snowball_edge:
+    category: storage
+    class_name: SnowballEdge
+    description: "Snowball Edge"
+  snowmobile:
+    category: storage
+    class_name: Snowmobile
+    description: "AWS Snowmobile"
+  snowball_import_export:
+    category: storage
+    class_name: SnowFamilySnowballImportExport
+    description: "Snowball Import/Export"
+  cloudendure_disaster_recovery:
+    category: storage
+    class_name: CloudendureDisasterRecovery
+    description: "CloudEndure Disaster Recovery"
+  multiple_volumes:
+    category: storage
+    class_name: MultipleVolumesResource
+    description: "Multiple Volumes"
   
   # Database
   dynamodb:
     category: database
     class_name: Dynamodb
     description: "DynamoDB"
+  dynamodb_table:
+    category: database
+    class_name: DynamodbTable
+    description: "DynamoDB Table"
+  dynamodb_item:
+    category: database
+    class_name: DynamodbItem
+    description: "DynamoDB Item"
+  dynamodb_items:
+    category: database
+    class_name: DynamodbItems
+    description: "DynamoDB Items"
+  dynamodb_attribute:
+    category: database
+    class_name: DynamodbAttribute
+    description: "DynamoDB Attribute"
+  dynamodb_attributes:
+    category: database
+    class_name: DynamodbAttributes
+    description: "DynamoDB Attributes"
+  dynamodb_dax:
+    category: database
+    class_name: DynamodbDax
+    description: "DynamoDB DAX"
+  dynamodb_gsi:
+    category: database
+    class_name: DynamodbGlobalSecondaryIndex
+    description: "DynamoDB Global Secondary Index"
+  dynamodb_streams:
+    category: database
+    class_name: DynamodbStreams
+    description: "DynamoDB Streams"
   rds:
     category: database
     class_name: RDS
     description: "Relational Database Service"
+  rds_instance:
+    category: database
+    class_name: RDSInstance
+    description: "RDS Instance"
+  rds_mysql_instance:
+    category: database
+    class_name: RDSMysqlInstance
+    description: "RDS MySQL Instance"
+  rds_postgresql_instance:
+    category: database
+    class_name: RDSPostgresqlInstance
+    description: "RDS PostgreSQL Instance"
+  rds_oracle_instance:
+    category: database
+    class_name: RDSOracleInstance
+    description: "RDS Oracle Instance"
+  rds_sql_server_instance:
+    category: database
+    class_name: RDSSqlServerInstance
+    description: "RDS SQL Server Instance"
+  rds_mariadb_instance:
+    category: database
+    class_name: RDSMariadbInstance
+    description: "RDS MariaDB Instance"
+  rds_on_vmware:
+    category: database
+    class_name: RDSOnVmware
+    description: "RDS on VMware"
   aurora:
     category: database
     class_name: Aurora
     description: "Amazon Aurora"
+  aurora_instance:
+    category: database
+    class_name: AuroraInstance
+    description: "Aurora Instance"
   redshift:
     category: database
     class_name: Redshift
     description: "Amazon Redshift"
+  redshift_dense_compute_node:
+    category: database
+    class_name: RedshiftDenseComputeNode
+    description: "Redshift Dense Compute Node"
+  redshift_dense_storage_node:
+    category: database
+    class_name: RedshiftDenseStorageNode
+    description: "Redshift Dense Storage Node"
   elasticache:
     category: database
     class_name: Elasticache
     description: "ElastiCache"
+  elasticache_cache_node:
+    category: database
+    class_name: ElasticacheCacheNode
+    description: "ElastiCache Cache Node"
+  elasticache_for_redis:
+    category: database
+    class_name: ElasticacheForRedis
+    description: "ElastiCache for Redis"
+  elasticache_for_memcached:
+    category: database
+    class_name: ElasticacheForMemcached
+    description: "ElastiCache for Memcached"
   documentdb:
     category: database
     class_name: DocumentdbMongodbCompatibility
@@ -105,6 +405,22 @@ nodes:
     category: database
     class_name: Neptune
     description: "Amazon Neptune"
+  keyspaces:
+    category: database
+    class_name: KeyspacesManagedApacheCassandraService
+    description: "Amazon Keyspaces"
+  qldb:
+    category: database
+    class_name: QuantumLedgerDatabaseQldb
+    description: "Amazon QLDB"
+  database_migration_service:
+    category: database
+    class_name: DatabaseMigrationService
+    description: "Database Migration Service"
+  database_migration_service_workflow:
+    category: database
+    class_name: DatabaseMigrationServiceDatabaseMigrationWorkflow
+    description: "DMS Workflow"
   
   # Network
   vpc:
@@ -147,6 +463,10 @@ nodes:
     category: network
     class_name: Route53
     description: "Route 53 DNS"
+  route53_hosted_zone:
+    category: network
+    class_name: Route53HostedZone
+    description: "Route 53 Hosted Zone"
   nat_gateway:
     category: network
     class_name: NATGateway
@@ -159,14 +479,82 @@ nodes:
     category: network
     class_name: VpnGateway
     description: "VPN Gateway"
+  vpn_connection:
+    category: network
+    class_name: VpnConnection
+    description: "VPN Connection"
+  site_to_site_vpn:
+    category: network
+    class_name: SiteToSiteVpn
+    description: "Site-to-Site VPN"
   transit_gateway:
     category: network
     class_name: TransitGateway
     description: "Transit Gateway"
+  transit_gateway_attachment:
+    category: network
+    class_name: TransitGatewayAttachment
+    description: "Transit Gateway Attachment"
   direct_connect:
     category: network
     class_name: DirectConnect
     description: "AWS Direct Connect"
+  vpc_customer_gateway:
+    category: network
+    class_name: VPCCustomerGateway
+    description: "VPC Customer Gateway"
+  vpc_elastic_network_adapter:
+    category: network
+    class_name: VPCElasticNetworkAdapter
+    description: "VPC Elastic Network Adapter"
+  vpc_elastic_network_interface:
+    category: network
+    class_name: VPCElasticNetworkInterface
+    description: "VPC Elastic Network Interface"
+  vpc_flow_logs:
+    category: network
+    class_name: VPCFlowLogs
+    description: "VPC Flow Logs"
+  vpc_peering:
+    category: network
+    class_name: VPCPeering
+    description: "VPC Peering"
+  vpc_router:
+    category: network
+    class_name: VPCRouter
+    description: "VPC Router"
+  vpc_traffic_mirroring:
+    category: network
+    class_name: VPCTrafficMirroring
+    description: "VPC Traffic Mirroring"
+  route_table:
+    category: network
+    class_name: RouteTable
+    description: "Route Table"
+  nacl:
+    category: network
+    class_name: Nacl
+    description: "Network ACL"
+  endpoint:
+    category: network
+    class_name: Endpoint
+    description: "VPC Endpoint"
+  privatelink:
+    category: network
+    class_name: Privatelink
+    description: "AWS PrivateLink"
+  global_accelerator:
+    category: network
+    class_name: GlobalAccelerator
+    description: "AWS Global Accelerator"
+  network_firewall:
+    category: network
+    class_name: NetworkFirewall
+    description: "Network Firewall"
+  client_vpn:
+    category: network
+    class_name: ClientVpn
+    description: "Client VPN"
   
   # Integration
   sqs:
@@ -203,6 +591,14 @@ nodes:
     category: analytics
     class_name: KinesisDataFirehose
     description: "Kinesis Data Firehose"
+  kinesis_data_analytics:
+    category: analytics
+    class_name: KinesisDataAnalytics
+    description: "Kinesis Data Analytics"
+  kinesis_video_streams:
+    category: analytics
+    class_name: KinesisVideoStreams
+    description: "Kinesis Video Streams"
   athena:
     category: analytics
     class_name: Athena
@@ -211,20 +607,140 @@ nodes:
     category: analytics
     class_name: EMR
     description: "Elastic MapReduce"
+  emr_cluster:
+    category: analytics
+    class_name: EMRCluster
+    description: "EMR Cluster"
+  emr_hdfs_cluster:
+    category: analytics
+    class_name: EMRHdfsCluster
+    description: "EMR HDFS Cluster"
+  emr_engine:
+    category: analytics
+    class_name: EMREngine
+    description: "EMR Engine"
+  emr_engine_mapr_m3:
+    category: analytics
+    class_name: EMREngineMaprM3
+    description: "EMR Engine MapR M3"
+  emr_engine_mapr_m5:
+    category: analytics
+    class_name: EMREngineMaprM5
+    description: "EMR Engine MapR M5"
+  emr_engine_mapr_m7:
+    category: analytics
+    class_name: EMREngineMaprM7
+    description: "EMR Engine MapR M7"
   glue:
     category: analytics
     class_name: Glue
     description: "AWS Glue"
+  glue_crawlers:
+    category: analytics
+    class_name: GlueCrawlers
+    description: "Glue Crawlers"
+  glue_data_catalog:
+    category: analytics
+    class_name: GlueDataCatalog
+    description: "Glue Data Catalog"
   quicksight:
     category: analytics
     class_name: Quicksight
     description: "Amazon QuickSight"
+  redshift_analytics:
+    category: analytics
+    class_name: Redshift
+    description: "Amazon Redshift"
+  redshift_dense_compute_node_analytics:
+    category: analytics
+    class_name: RedshiftDenseComputeNode
+    description: "Redshift Dense Compute Node"
+  redshift_dense_storage_node_analytics:
+    category: analytics
+    class_name: RedshiftDenseStorageNode
+    description: "Redshift Dense Storage Node"
+  elasticsearch_service:
+    category: analytics
+    class_name: ElasticsearchService
+    description: "Amazon Elasticsearch Service"
+  opensearch_service:
+    category: analytics
+    class_name: AmazonOpensearchService
+    description: "Amazon OpenSearch Service"
+  cloudsearch:
+    category: analytics
+    class_name: Cloudsearch
+    description: "Amazon CloudSearch"
+  cloudsearch_search_documents:
+    category: analytics
+    class_name: CloudsearchSearchDocuments
+    description: "CloudSearch Search Documents"
+  data_pipeline:
+    category: analytics
+    class_name: DataPipeline
+    description: "AWS Data Pipeline"
+  data_lake_resource:
+    category: analytics
+    class_name: DataLakeResource
+    description: "Data Lake Resource"
+  lake_formation:
+    category: analytics
+    class_name: LakeFormation
+    description: "AWS Lake Formation"
+  managed_streaming_for_kafka:
+    category: analytics
+    class_name: ManagedStreamingForKafka
+    description: "Amazon MSK"
   
   # Security
   iam:
     category: security
     class_name: IdentityAndAccessManagementIam
     description: "Identity and Access Management"
+  iam_role:
+    category: security
+    class_name: IdentityAndAccessManagementIamRole
+    description: "IAM Role"
+  iam_permissions:
+    category: security
+    class_name: IdentityAndAccessManagementIamPermissions
+    description: "IAM Permissions"
+  iam_access_analyzer:
+    category: security
+    class_name: IdentityAndAccessManagementIamAccessAnalyzer
+    description: "IAM Access Analyzer"
+  iam_add_on:
+    category: security
+    class_name: IdentityAndAccessManagementIamAddOn
+    description: "IAM Add-On"
+  iam_aws_sts:
+    category: security
+    class_name: IdentityAndAccessManagementIamAWSSts
+    description: "IAM AWS STS"
+  iam_aws_sts_alternate:
+    category: security
+    class_name: IdentityAndAccessManagementIamAWSStsAlternate
+    description: "IAM AWS STS Alternate"
+  iam_data_encryption_key:
+    category: security
+    class_name: IdentityAndAccessManagementIamDataEncryptionKey
+    description: "IAM Data Encryption Key"
+  iam_encrypted_data:
+    category: security
+    class_name: IdentityAndAccessManagementIamEncryptedData
+    description: "IAM Encrypted Data"
+  iam_long_term_security_credential:
+    category: security
+    class_name: IdentityAndAccessManagementIamLongTermSecurityCredential
+    description: "IAM Long-Term Security Credential"
+  iam_mfa_token:
+    category: security
+    class_name: IdentityAndAccessManagementIamMfaToken
+    description: "IAM MFA Token"
+  iam_temporary_security_credential:
+    category: security
+    class_name: IdentityAndAccessManagementIamTemporarySecurityCredential
+    description: "IAM Temporary Security Credential"
   kms:
     category: security
     class_name: KeyManagementService
@@ -241,10 +757,18 @@ nodes:
     category: security
     class_name: WAF
     description: "Web Application Firewall"
+  waf_filtering_rule:
+    category: security
+    class_name: WAFFilteringRule
+    description: "WAF Filtering Rule"
   shield:
     category: security
     class_name: Shield
     description: "AWS Shield"
+  shield_advanced:
+    category: security
+    class_name: ShieldAdvanced
+    description: "AWS Shield Advanced"
   guardduty:
     category: security
     class_name: Guardduty
@@ -253,10 +777,78 @@ nodes:
     category: security
     class_name: SecurityHub
     description: "AWS Security Hub"
+  security_hub_finding:
+    category: security
+    class_name: SecurityHubFinding
+    description: "Security Hub Finding"
   certificate_manager:
     category: security
     class_name: CertificateManager
     description: "AWS Certificate Manager"
+  certificate_authority:
+    category: security
+    class_name: CertificateAuthority
+    description: "Certificate Authority"
+  inspector:
+    category: security
+    class_name: Inspector
+    description: "Amazon Inspector"
+  inspector_agent:
+    category: security
+    class_name: InspectorAgent
+    description: "Inspector Agent"
+  macie:
+    category: security
+    class_name: Macie
+    description: "Amazon Macie"
+  detective:
+    category: security
+    class_name: Detective
+    description: "Amazon Detective"
+  directory_service:
+    category: security
+    class_name: DirectoryService
+    description: "Directory Service"
+  managed_microsoft_ad:
+    category: security
+    class_name: ManagedMicrosoftAd
+    description: "Managed Microsoft AD"
+  simple_ad:
+    category: security
+    class_name: SimpleAd
+    description: "Simple AD"
+  ad_connector:
+    category: security
+    class_name: AdConnector
+    description: "AD Connector"
+  single_sign_on:
+    category: security
+    class_name: SingleSignOn
+    description: "AWS Single Sign-On"
+  cloud_directory:
+    category: security
+    class_name: CloudDirectory
+    description: "Cloud Directory"
+  cloudhsm:
+    category: security
+    class_name: Cloudhsm
+    description: "CloudHSM"
+  resource_access_manager:
+    category: security
+    class_name: ResourceAccessManager
+    description: "Resource Access Manager"
+  firewall_manager:
+    category: security
+    class_name: FirewallManager
+    description: "Firewall Manager"
+  security_lake:
+    category: security
+    class_name: SecurityLake
+    description: "Security Lake"
+  artifact:
+    category: security
+    class_name: Artifact
+    description: "AWS Artifact"
   
   # Management
   cloudwatch:
@@ -315,4 +907,141 @@ nodes:
     category: ml
     class_name: Transcribe
     description: "Amazon Transcribe"
-
+  textract:
+    category: ml
+    class_name: Textract
+    description: "Amazon Textract"
+  lex:
+    category: ml
+    class_name: Lex
+    description: "Amazon Lex"
+  kendra:
+    category: ml
+    class_name: Kendra
+    description: "Amazon Kendra"
+  personalize:
+    category: ml
+    class_name: Personalize
+    description: "Amazon Personalize"
+  forecast:
+    category: ml
+    class_name: Forecast
+    description: "Amazon Forecast"
+  fraud_detector:
+    category: ml
+    class_name: FraudDetector
+    description: "Amazon Fraud Detector"
+  lookout_for_equipment:
+    category: ml
+    class_name: LookoutForEquipment
+    description: "Amazon Lookout for Equipment"
+  lookout_for_metrics:
+    category: ml
+    class_name: LookoutForMetrics
+    description: "Amazon Lookout for Metrics"
+  lookout_for_vision:
+    category: ml
+    class_name: LookoutForVision
+    description: "Amazon Lookout for Vision"
+  augmented_ai:
+    category: ml
+    class_name: AugmentedAI
+    description: "Amazon Augmented AI (A2I)"
+  
+  # AR/VR
+  ar_vr:
+    category: ar
+    class_name: ArVr
+    description: "AR/VR"
+  sumerian:
+    category: ar
+    class_name: Sumerian
+    description: "Amazon Sumerian"
+  
+  # Blockchain
+  blockchain:
+    category: blockchain
+    class_name: Blockchain
+    description: "Blockchain"
+  managed_blockchain:
+    category: blockchain
+    class_name: ManagedBlockchain
+    description: "Amazon Managed Blockchain"
+  qldb_blockchain:
+    category: blockchain
+    class_name: QuantumLedgerDatabaseQldb
+    description: "Amazon QLDB"
+  
+  # Business
+  chime:
+    category: business
+    class_name: Chime
+    description: "Amazon Chime"
+  workmail:
+    category: business
+    class_name: Workmail
+    description: "Amazon WorkMail"
+  alexa_for_business:
+    category: business
+    class_name: AlexaForBusiness
+    description: "Alexa for Business"
+  
+  # Cost
+  budgets:
+    category: cost
+    class_name: Budgets
+    description: "AWS Budgets"
+  cost_explorer:
+    category: cost
+    class_name: CostExplorer
+    description: "AWS Cost Explorer"
+  cost_and_usage_report:
+    category: cost
+    class_name: CostAndUsageReport
+    description: "Cost and Usage Report"
+  savings_plans:
+    category: cost
+    class_name: SavingsPlans
+    description: "Savings Plans"
+  reserved_instance_reporting:
+    category: cost
+    class_name: ReservedInstanceReporting
+    description: "Reserved Instance Reporting"
+  
+  # Quantum
+  braket:
+    category: quantum
+    class_name: Braket
+    description: "Amazon Braket"
+  
+  # Robotics
+  robomaker:
+    category: robotics
+    class_name: Robomaker
+    description: "AWS RoboMaker"
+  robomaker_cloud_extension_ros:
+    category: robotics
+    class_name: RobomakerCloudExtensionRos
+    description: "RoboMaker Cloud Extension ROS"
+  robomaker_development_environment:
+    category: robotics
+    class_name: RobomakerDevelopmentEnvironment
+    description: "RoboMaker Development Environment"
+  robomaker_fleet_management:
+    category: robotics
+    class_name: RobomakerFleetManagement
+    description: "RoboMaker Fleet Management"
+  robomaker_simulator:
+    category: robotics
+    class_name: RobomakerSimulator
+    description: "RoboMaker Simulator"
+  
+  # Satellite
+  ground_station:
+    category: satellite
+    class_name: GroundStation
+    description: "AWS Ground Station"
+  satellite:
+    category: satellite
+    class_name: Satellite
+    description: "Satellite"
