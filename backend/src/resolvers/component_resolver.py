@@ -4,6 +4,7 @@ Uses library-first discovery as source of truth.
 """
 from typing import Dict, Optional, Tuple, Set
 import importlib
+import inspect
 import logging
 
 from ..models.spec import Component, NodeType
@@ -180,6 +181,20 @@ class ComponentResolver:
                 logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
                 return node_class
             else:
+                # Class not found in discovery - try direct import as fallback
+                # This handles cases where discovery misses classes (e.g., imported from parent module)
+                logger.debug(f"[RESOLVER] Class '{class_name}' not in discovered classes, trying direct import")
+                try:
+                    module = importlib.import_module(module_path)
+                    if hasattr(module, class_name):
+                        node_class = getattr(module, class_name)
+                        if inspect.isclass(node_class):
+                            logger.info(f"[RESOLVER] Found '{class_name}' via direct import (not in discovery cache)")
+                            logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
+                            return node_class
+                except (ImportError, AttributeError) as import_error:
+                    logger.debug(f"[RESOLVER] Direct import failed: {import_error}")
+                
                 # Registry class doesn't exist - provide helpful error
                 logger.error(f"[RESOLVER] Registry class '{class_name}' not found in module '{module_path}'")
                 logger.error(f"[RESOLVER] Component: id={component.id}, name={component.name}, node_id={node_id}, provider={provider}")
