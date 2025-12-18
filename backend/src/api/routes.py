@@ -187,6 +187,7 @@ class SuggestedCluster(BaseModel):
     name: str
     components: List[str]
     pattern: Optional[str] = None
+    parent_id: Optional[str] = None
 
 
 class RewritePromptResponse(BaseModel):
