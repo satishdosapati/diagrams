@@ -175,20 +175,49 @@ class ComponentResolver:
             logger.debug(f"[RESOLVER] Trying direct import from registry hint: {module_path}.{class_name}")
             try:
                 module = importlib.import_module(module_path)
+                logger.debug(f"[RESOLVER] Module imported successfully: {module_path}")
+                
                 if hasattr(module, class_name):
                     node_class = getattr(module, class_name)
+                    logger.debug(f"[RESOLVER] Class '{class_name}' found in module, checking if it's a class")
+                    
                     if inspect.isclass(node_class):
                         logger.info(f"[RESOLVER] Found '{class_name}' via direct import from registry hint")
                         logger.debug(f"Resolved {provider}.{node_id} -> {module_path}.{class_name}")
                         return node_class
-            except (ImportError, AttributeError) as import_error:
-                logger.debug(f"[RESOLVER] Direct import from registry hint failed: {import_error}")
+                    else:
+                        logger.warning(f"[RESOLVER] '{class_name}' exists but is not a class (type: {type(node_class)})")
+                else:
+                    logger.warning(f"[RESOLVER] Class '{class_name}' not found in module '{module_path}'")
+                    # Check what's actually available
+                    available_attrs = [attr for attr in dir(module) if not attr.startswith("_") and inspect.isclass(getattr(module, attr, None))]
+                    logger.debug(f"[RESOLVER] Available classes in module: {available_attrs[:10]}")
+                    
+            except ImportError as import_error:
+                logger.error(f"[RESOLVER] Failed to import module '{module_path}': {import_error}", exc_info=True)
+            except Exception as import_error:
+                logger.error(f"[RESOLVER] Unexpected error during direct import: {import_error}", exc_info=True)
             
             # If direct import failed, check discovery cache for helpful error message
+            # But first, try one more time with fresh discovery (clear cache)
+            logger.debug(f"[RESOLVER] Direct import failed, checking discovery cache")
             available_classes = self.discovery.discover_module_classes(module_path)
+            
+            # Double-check: try direct import one more time if not in cache
             if class_name not in available_classes:
                 logger.warning(f"[RESOLVER] Class '{class_name}' not found in discovery cache for '{module_path}'")
-                logger.debug(f"[RESOLVER] Available classes in module: {list(available_classes)[:10]}")
+                logger.debug(f"[RESOLVER] Available classes in discovery cache: {list(available_classes)[:10]}")
+                
+                # Last resort: try direct import again (maybe module wasn't imported correctly)
+                try:
+                    module = importlib.import_module(module_path)
+                    if hasattr(module, class_name):
+                        node_class = getattr(module, class_name)
+                        if inspect.isclass(node_class):
+                            logger.info(f"[RESOLVER] Found '{class_name}' via second direct import attempt")
+                            return node_class
+                except Exception:
+                    pass  # Already logged above
                 
                 # Still raise error, but with more context
                 similar_classes = self.discovery.find_similar_classes(
