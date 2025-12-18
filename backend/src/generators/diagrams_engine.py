@@ -148,6 +148,49 @@ class DiagramsEngine:
         """Instance method wrapper for sanitize_variable_name."""
         return sanitize_variable_name(name)
     
+    def _sanitize_filename(self, title: str) -> str:
+        """
+        Sanitize filename from title.
+        Removes special characters, zero-width spaces, and normalizes to safe filename.
+        
+        Args:
+            title: Original title
+            
+        Returns:
+            Sanitized filename safe for filesystem and URL
+        """
+        import unicodedata
+        import re
+        
+        if not title:
+            return "diagram"
+        
+        # Remove zero-width spaces and other invisible Unicode characters
+        # Zero-width space: \u200d, Zero-width non-joiner: \u200c, etc.
+        # Keep only printable characters (category 'C' = control chars, but allow space)
+        filename = ''.join(
+            char for char in title 
+            if unicodedata.category(char)[0] != 'C' or char in [' ', '\t', '\n']
+        )
+        
+        # Convert to lowercase and replace spaces with underscores
+        filename = filename.lower().replace(" ", "_").replace("\t", "_").replace("\n", "_")
+        
+        # Remove any remaining invalid characters (keep only alphanumeric, dots, underscores, hyphens)
+        filename = re.sub(r'[^a-zA-Z0-9._-]', '', filename)
+        
+        # Remove multiple consecutive underscores/dots
+        filename = re.sub(r'[._]{2,}', '_', filename)
+        
+        # Remove leading/trailing dots and underscores
+        filename = filename.strip('._-')
+        
+        # Ensure it's not empty
+        if not filename:
+            filename = "diagram"
+        
+        return filename
+    
     def render(self, spec: ArchitectureSpec) -> str:
         """
         Render diagram from ArchitectureSpec.
@@ -210,7 +253,8 @@ class DiagramsEngine:
         lines.append("")
         
         # Build Diagram constructor parameters
-        filename = spec.title.lower().replace(" ", "_")
+        # Sanitize filename: remove special chars, zero-width spaces, and normalize
+        filename = self._sanitize_filename(spec.title)
         diagram_params = [
             f'"{spec.title}"',
             'show=False',
@@ -641,7 +685,7 @@ class DiagramsEngine:
                 primary_format = "png"
             
             # Find generated file - diagrams library generates files based on filename parameter
-            filename_base = title.lower().replace(" ", "_")
+            filename_base = self._sanitize_filename(title)
             expected_path = self.output_dir / f"{filename_base}.{primary_format}"
             
             # Check if expected file exists

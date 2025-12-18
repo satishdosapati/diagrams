@@ -7,12 +7,15 @@
 - `docs/ARCHITECTURE.md` - System architecture (1-2 pages max, high-level only)
 - `docs/DECISIONS.md` - Architectural decisions (ADR format)
 - `docs/API.md` - API documentation (if exposing external API)
+- `backend/BUG_FIXES.md` - Concise bug fix documentation (ONLY markdown file allowed in backend/)
 
 **Documentation Rules:**
-- **DO NOT** create new documentation files unless explicitly requested
+- **DO NOT** create new `.md` files unless explicitly requested
+- **DO NOT** create temporary fix docs, diagnosis files, or summary files
 - **DO NOT** create implementation detail docs, phase docs, or brainstorming notes
 - **DO NOT** create separate files for features, changes, or quick references
 - **DO NOT** create archive or meta-documentation files
+- **Bug Fixes**: Document ALL bug fixes concisely in `backend/BUG_FIXES.md` only
 - Prefer inline code comments and self-documenting code
 - Keep existing docs updated or remove them (outdated docs are worse than none)
 - Consolidate information into existing files rather than creating new ones

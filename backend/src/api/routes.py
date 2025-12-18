@@ -537,8 +537,24 @@ async def get_diagram(filename: str, request: Request):
     
     # Validate filename format (alphanumeric, dots, underscores, hyphens only)
     # Note: dots are allowed for file extensions, but we've already checked for '..' above
-    if not re.match(r'^[a-zA-Z0-9._-]+$', filename):
-        raise HTTPException(status_code=400, detail="Invalid filename format")
+    # Also remove zero-width spaces and other invisible Unicode characters before validation
+    import unicodedata
+    # Remove zero-width spaces and other control characters
+    cleaned_filename = ''.join(
+        char for char in filename 
+        if unicodedata.category(char)[0] != 'C' or char in [' ', '\t', '\n']
+    )
+    # Remove spaces and normalize
+    cleaned_filename = cleaned_filename.replace(' ', '').replace('\t', '').replace('\n', '')
+    
+    if not re.match(r'^[a-zA-Z0-9._-]+$', cleaned_filename):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid filename format (contains invalid characters). Filename: {repr(filename[:50])}"
+        )
+    
+    # Use cleaned filename for file lookup
+    filename = cleaned_filename
     
     output_dir = Path(os.getenv("OUTPUT_DIR", "./output"))
     file_path = output_dir / filename
